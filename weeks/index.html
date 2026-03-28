@@ -511,6 +511,15 @@
         }
       }
 
+      // Final decade marker at 90
+      const endSpacer = document.createElement('div');
+      endSpacer.className = 'decade-gap';
+      const endLbl = document.createElement('span');
+      endLbl.className = 'decade-label';
+      endLbl.textContent = '90';
+      endSpacer.appendChild(endLbl);
+      grid.appendChild(endSpacer);
+
       // Stats
       const statsData = [
         { n: weeksLived.toLocaleString(),     l: 'Weeks lived' },

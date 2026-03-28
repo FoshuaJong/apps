@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joshua Fong — Nothing / Something</title>
+  <meta name="description" content="There was something.">
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/apps.css">
+
+  <style>
+    .nothing-stage {
+      position: relative;
+      min-height: 100vh;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    #seeking-text {
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-family: var(--font-display);
+      font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+      color: var(--text-secondary);
+      font-weight: 400;
+      white-space: nowrap;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    #seeking-text a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="grid-spotlight"></div>
+  <script>
+    (function(){var g=document.getElementById('grid-spotlight');document.addEventListener('mousemove',function(e){g.style.setProperty('--mx',e.clientX+'px');g.style.setProperty('--my',e.clientY+'px');});document.addEventListener('mouseleave',function(){g.style.setProperty('--mx','-999px');g.style.setProperty('--my','-999px');});})();
+  </script>
+
+  <!-- NAV -->
+  <nav>
+    <div class="container">
+      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="https://joshua.fong.nz">Portfolio</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/">Apps</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/nothing/">Nothing</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="#" aria-current="page">Something</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nothing-stage" id="stage">
+    <span id="seeking-text">there was <a href="/nothing/">something</a></span>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Joshua Fong</p>
+      <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+    </div>
+  </footer>
+
+  <script>
+    const navToggle = document.getElementById('navToggle');
+    const navLinks  = document.getElementById('navLinks');
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+  </script>
+
+  <script>
+    const el    = document.getElementById('seeking-text');
+    const stage = document.getElementById('stage');
+
+    // Anchor = target the text seeks toward (set on click to cursor position)
+    let anchorX = 0, anchorY = 0;
+
+    // Text center (page coords) + velocity
+    let elX = 0, elY = 0, vx = 0, vy = 0;
+
+    // Stage bounds (page coords)
+    let stageX = 0, stageY = 0, stageW = 0, stageH = 0;
+
+    // Same constants as /nothing/ — matching approach speed to evasion speed
+    const SPRING_K      = 0.030;
+    const DAMPING       = 0.91;
+    const MAX_SPEED     = 15;
+
+    const EDGE_RADIUS   = 200;
+    const EDGE_FORCE    = 2800;
+    const EDGE_MIN      = 40;
+    const GRAVITY_K     = 0.005;
+
+    // Stretch visuals (same as nothing page)
+    const SKEW_SCALE    = 0.018;
+    const SQUEEZE_SCALE = 0.0012;
+
+    function computeLayout() {
+      const r = stage.getBoundingClientRect();
+      stageX = r.left + window.scrollX;
+      stageY = r.top  + window.scrollY;
+      stageW = stage.offsetWidth;
+      stageH = stage.offsetHeight;
+    }
+
+    function setOrigin() {
+      computeLayout();
+      el.style.left       = '0px';
+      el.style.top        = '0px';
+      el.style.marginLeft = -(el.offsetWidth  / 2) + 'px';
+      el.style.marginTop  = -(el.offsetHeight / 2) + 'px';
+      // Start at same default position as nothing page
+      anchorX = stageX + stageW * 0.33;
+      anchorY = stageY + stageH * 0.50;
+      elX = anchorX; elY = anchorY; vx = 0; vy = 0;
+    }
+
+    window.addEventListener('resize', computeLayout);
+    window.addEventListener('load', setOrigin);
+    setOrigin();
+
+    // On click: move anchor directly to cursor — text seeks toward it
+    document.addEventListener('click', e => {
+      anchorX = e.pageX;
+      anchorY = e.pageY;
+    });
+
+    function tick() {
+      const centerX = stageX + stageW * 0.5;
+      const centerY = stageY + stageH * 0.5;
+
+      // Edge repulsion
+      const dL = elX - stageX,          dR = (stageX + stageW) - elX;
+      const dT = elY - stageY,          dB = (stageY + stageH) - elY;
+      if (dL < EDGE_RADIUS) { const e = Math.max(dL, EDGE_MIN); vx += EDGE_FORCE / (e*e); }
+      if (dR < EDGE_RADIUS) { const e = Math.max(dR, EDGE_MIN); vx -= EDGE_FORCE / (e*e); }
+      if (dT < EDGE_RADIUS) { const e = Math.max(dT, EDGE_MIN); vy += EDGE_FORCE / (e*e); }
+      if (dB < EDGE_RADIUS) { const e = Math.max(dB, EDGE_MIN); vy -= EDGE_FORCE / (e*e); }
+
+      // Gentle gravity toward center
+      vx += (centerX - elX) * GRAVITY_K;
+      vy += (centerY - elY) * GRAVITY_K;
+
+      // Spring toward anchor
+      vx += (anchorX - elX) * SPRING_K;
+      vy += (anchorY - elY) * SPRING_K;
+
+      vx *= DAMPING; vy *= DAMPING;
+      const spd = Math.sqrt(vx*vx + vy*vy);
+      if (spd > MAX_SPEED) { vx = vx/spd * MAX_SPEED; vy = vy/spd * MAX_SPEED; }
+
+      elX += vx; elY += vy;
+
+      // Stretch deformation relative to anchor
+      const dispX   = elX - anchorX;
+      const dispY   = elY - anchorY;
+      const dispMag = Math.sqrt(dispX*dispX + dispY*dispY);
+
+      const skewX  =  dispY * SKEW_SCALE;
+      const skewY  = -dispX * SKEW_SCALE * 0.5;
+      const scaleY =  Math.max(0.75, 1 - dispMag * SQUEEZE_SCALE);
+      const scaleX =  1 + dispMag * SQUEEZE_SCALE * 0.4;
+
+      el.style.transform =
+        `translate(${elX - stageX}px, ${elY - stageY}px)` +
+        ` skew(${skewX}deg, ${skewY}deg)` +
+        ` scaleX(${scaleX}) scaleY(${scaleY})`;
+
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+  </script>
+
+</body>
+</html>

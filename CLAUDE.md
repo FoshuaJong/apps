@@ -23,7 +23,8 @@ Feel free to suggest new app ideas that fit the aesthetic.
 - `/css/apps.css` — shared components: nav, buttons, section labels, footer, animations
 - `/images/favicon.svg` — shared favicon
 - `/weeks/index.html` — "Life in weeks" visualization app
-- `/nothing/index.html` - "Fleeing text" app
+- `/nothing/index.html` — Fleeing text app (see App Notes below)
+- `/nothing/something/index.html` — Seeking text, counterpart to /nothing/
 
 ## Adding a New App
 1. Create `/appname/index.html`
@@ -79,3 +80,23 @@ Monochrome palette with a single sharp accent color. Strong typography. Sentence
 ## Responsive Breakpoints
 - 900px: grids collapse from 2-3 col to 1-2 col, mobile nav not yet active
 - 640px: full mobile layout, hamburger nav, single column everything
+
+## App Notes
+
+### /nothing/ and /nothing/something/
+Two linked pages that are thematic opposites.
+
+**`/nothing/`** — "there's **nothing** here" (accent on "nothing")
+- Text evades the cursor using pure lerp physics (no velocity/spring — eliminates oscillation)
+- Each frame: `elX += (targetX - elX) * LERP` where target = anchor + cursor push + edge push + gravity
+- Push forces use smooth quadratic falloff `MAX_PUSH * (1 - dist/REPEL_RADIUS)²`, not 1/d²
+- Single anchor point; relocates perpendicular when text is stretched far and cursor blocks the return path
+- Click anywhere: places anchor between cursor and current anchor (never on cursor)
+- "nothing" is an accent-colored link to `/nothing/something/` with `pointer-events: auto` (parent has `pointer-events: none`)
+
+**`/nothing/something/`** — "there was **something**" (accent on "something")
+- Text seeks the cursor using the same lerp constants as /nothing/ (matching feel)
+- Click anywhere: anchor jumps to cursor position, offset so "something" centre lands on cursor (not full-text centre)
+- Speed cap scales with distance to anchor (`distToAnchor * 0.18`) — guarantees deceleration into target, no overshoot
+- No edge/gravity forces (text only moves on click, won't drift off-screen)
+- "something" links back to `/nothing/`

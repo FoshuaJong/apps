@@ -10,12 +10,24 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
   <style>
+    :root {
+      --bg: #0C0C0E;
+      --text-primary: #E8E6E3;
+      --text-secondary: #9B9A97;
+      --accent: #3DA899;
+      --accent-surface: rgba(61, 168, 153, 0.08);
+      --accent-border: rgba(61, 168, 153, 0.35);
+      --accent-border-hover: rgba(61, 168, 153, 0.6);
+      --font-display: 'DM Serif Display', Georgia, serif;
+      --font-body: 'Outfit', system-ui, sans-serif;
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: #0C0C0E;
-      color: #E8E6E3;
-      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: var(--font-body);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -29,42 +41,41 @@
     }
 
     .code {
-      font-family: 'DM Serif Display', serif;
+      font-family: var(--font-display);
       font-size: clamp(5rem, 20vw, 8rem);
-      color: #3DA899;
+      color: var(--accent);
       line-height: 1;
       margin-bottom: 1.5rem;
     }
 
     h1 {
-      font-family: 'Outfit', sans-serif;
+      font-family: var(--font-body);
       font-weight: 400;
       font-size: 1.25rem;
-      color: #E8E6E3;
+      color: var(--text-primary);
       margin-bottom: 0.75rem;
     }
 
     p {
       font-size: 0.9375rem;
-      color: #9B9A97;
+      color: var(--text-secondary);
       line-height: 1.6;
       margin-bottom: 2rem;
     }
 
     a {
       display: inline-block;
-      color: #3DA899;
+      color: var(--accent);
       text-decoration: none;
       font-size: 0.9375rem;
-      border: 1px solid rgba(61, 168, 153, 0.35);
-      border-radius: 6px;
+      border: 1px solid var(--accent-border);
       padding: 0.6rem 1.4rem;
       transition: background 0.2s, border-color 0.2s;
     }
 
     a:hover {
-      background: rgba(61, 168, 153, 0.08);
-      border-color: rgba(61, 168, 153, 0.6);
+      background: var(--accent-surface);
+      border-color: var(--accent-border-hover);
     }
   </style>
 </head>

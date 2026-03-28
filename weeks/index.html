@@ -129,6 +129,15 @@
       margin-bottom: 1rem;
     }
 
+    .result-subheader {
+      font-family: var(--font-display);
+      font-size: clamp(1.25rem, 3vw, 1.85rem);
+      font-weight: 400;
+      color: var(--text-muted);
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+    }
+
     .result-subtext {
       font-size: 0.95rem;
       color: var(--text-secondary);
@@ -376,6 +385,7 @@
       <div class="container">
         <p class="result-age" id="result-age"></p>
         <h1 class="result-headline" id="result-headline"></h1>
+        <p class="result-subheader" id="result-subheader"></p>
         <p class="result-subtext">Each square below is one week of your life. The filled ones are lived. The one lit in teal is the week you're in right now.</p>
         <button id="reset-btn" class="btn-secondary">← Start over</button>
       </div>
@@ -472,6 +482,8 @@
       document.getElementById('result-age').textContent = yearsOld + ' years old';
       document.getElementById('result-headline').textContent =
         weeksLived.toLocaleString() + ' weeks lived.';
+      document.getElementById('result-subheader').textContent =
+        weeksRemaining.toLocaleString() + ' weeks remaining.';
 
       // Grid
       const grid = document.getElementById('weeks-grid');

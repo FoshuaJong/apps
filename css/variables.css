@@ -1,0 +1,16 @@
+:root {
+  --bg: #0C0C0E;
+  --bg-elevated: #141418;
+  --bg-card: #1A1A20;
+  --text-primary: #E8E6E3;
+  --text-secondary: #9B9A97;
+  --text-muted: #5C5B59;
+  --accent: #3DA899;
+  --accent-glow: rgba(61, 168, 153, 0.15);
+  --accent-border-hover: rgba(61, 168, 153, 0.25);
+  --accent-surface: rgba(61, 168, 153, 0.08);
+  --border: rgba(255,255,255,0.06);
+  --font-display: 'DM Serif Display', Georgia, serif;
+  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}

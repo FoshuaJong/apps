@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joshua Fong — Life in weeks</title>
+  <meta name="description" content="Visualise your life one week at a time.">
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/apps.css">
+
+  <style>
+    /* --- STEP SYSTEM --- */
+    .step { display: none; }
+    .step.active { display: block; }
+    .step.fade-in { animation: fadeUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+    /* ================================
+       STEP 1 — INPUT
+    ================================ */
+    .input-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 6rem 0 4rem;
+    }
+
+    .input-card {
+      max-width: 500px;
+    }
+
+    .input-card .section-label {
+      margin-bottom: 1.25rem;
+    }
+
+    .input-headline {
+      font-family: var(--font-display);
+      font-size: clamp(2.75rem, 6vw, 4.25rem);
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+    }
+
+    .input-subtext {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 2.75rem;
+      font-weight: 300;
+      max-width: 420px;
+    }
+
+    .field-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .field-label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    input[type="date"] {
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      padding: 0.9rem 1.25rem;
+      width: 100%;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: border-color 0.25s ease;
+      color-scheme: dark;
+    }
+
+    input[type="date"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .input-error {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: #e87a5d;
+      letter-spacing: 0.05em;
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    .input-error.visible { display: block; }
+
+    /* ================================
+       STEP 2 — RESULT
+    ================================ */
+
+    /* Header */
+    .result-header {
+      padding: 8rem 0 3.5rem;
+    }
+
+    .result-age {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .result-headline {
+      font-family: var(--font-display);
+      font-size: clamp(2.75rem, 6vw, 4.5rem);
+      font-weight: 400;
+      line-height: 1.1;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+    }
+
+    .result-subtext {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      max-width: 520px;
+      font-weight: 300;
+    }
+
+    /* Grid section */
+    .grid-section {
+      padding: 3rem 0 3.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .grid-legend {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.lived  { background: var(--text-muted); }
+    .legend-dot.current { background: var(--accent); }
+    .legend-dot.future {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .weeks-grid-outer {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-left: 28px;
+    }
+
+    /* Subtle fade on right edge when scrollable */
+    @media (max-width: 640px) {
+      .weeks-grid-outer {
+        -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%);
+        mask-image: linear-gradient(to right, black 92%, transparent 100%);
+      }
+    }
+
+    .weeks-grid {
+      display: grid;
+      grid-template-columns: repeat(52, 1fr);
+      gap: 2px;
+    }
+
+    .decade-gap {
+      grid-column: 1 / -1;
+      height: 6px;
+      position: relative;
+    }
+
+    .decade-label {
+      position: absolute;
+      right: calc(100% + 6px);
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-mono);
+      font-size: 0.5rem;
+      color: var(--accent);
+      white-space: nowrap;
+      letter-spacing: 0;
+    }
+
+    .week-cell {
+      aspect-ratio: 1;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .week-cell.lived {
+      background: var(--text-muted);
+      border-color: transparent;
+    }
+
+    .week-cell.current {
+      background: var(--accent);
+      border-color: transparent;
+    }
+
+    /* Stats section */
+    .stats-section {
+      padding: 4rem 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .stats-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+
+    .stat-item {
+      padding: 2rem 1.75rem;
+      background: var(--bg);
+      transition: background 0.25s ease;
+    }
+
+    .stat-item:hover {
+      background: var(--bg-card);
+    }
+
+    .stat-item .stat-number {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 3vw, 2.25rem);
+      color: var(--text-primary);
+      line-height: 1;
+      margin-bottom: 0.6rem;
+    }
+
+    .stat-item .stat-label {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      line-height: 1.5;
+    }
+
+    .assumption-note {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* ================================
+       RESPONSIVE
+    ================================ */
+    @media (max-width: 900px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .input-screen {
+        padding: 5rem 0 3rem;
+      }
+
+      .result-header {
+        padding: 6rem 0 2.5rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .decade-label {
+        font-size: 0.42rem;
+      }
+
+      .decade-gap {
+        height: 4px;
+      }
+
+      .stat-item {
+        padding: 1.5rem 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="grid-spotlight"></div>
+  <script>
+    (function(){var g=document.getElementById('grid-spotlight');document.addEventListener('mousemove',function(e){g.style.setProperty('--mx',e.clientX+'px');g.style.setProperty('--my',e.clientY+'px');});document.addEventListener('mouseleave',function(){g.style.setProperty('--mx','-999px');g.style.setProperty('--my','-999px');});})();
+  </script>
+
+  <!-- NAV -->
+  <nav>
+    <div class="container">
+      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / apps</div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="https://joshua.fong.nz">Portfolio</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/">Apps</a></li>
+        <li><a href="#" aria-current="page">Weeks</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================================
+       STEP 1 — INPUT
+  ================================ -->
+  <div id="step-input" class="step active">
+    <div class="input-screen">
+      <div class="container">
+        <div class="input-card">
+          <p class="section-label">Life in weeks</p>
+          <h1 class="input-headline">A life,<br>counted in weeks.</h1>
+          <p class="input-subtext">90 years. 4,680 weeks. Most of us never stop to count how many we've spent — or how many remain. Enter your birth date to find out.</p>
+          <form id="birth-form" autocomplete="off">
+            <div class="field-group">
+              <label for="birthdate" class="field-label">Your date of birth</label>
+              <input type="date" id="birthdate" name="birthdate" required>
+            </div>
+            <p class="input-error" id="input-error">Please enter a valid birth date.</p>
+            <button type="submit" class="btn-primary">See my life →</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================
+       STEP 2 — RESULT
+  ================================ -->
+  <div id="step-result" class="step">
+
+    <div class="result-header">
+      <div class="container">
+        <p class="result-age" id="result-age"></p>
+        <h1 class="result-headline" id="result-headline"></h1>
+        <p class="result-subtext">Each square below is one week of your life. The filled ones are lived. The one lit in teal is the week you're in right now.</p>
+        <button id="reset-btn" class="btn-secondary">← Start over</button>
+      </div>
+    </div>
+
+    <div class="grid-section">
+      <div class="container">
+        <div class="grid-legend">
+          <span class="legend-item"><span class="legend-dot lived"></span>Weeks lived</span>
+          <span class="legend-item"><span class="legend-dot current"></span>This week</span>
+          <span class="legend-item"><span class="legend-dot future"></span>Weeks ahead</span>
+        </div>
+        <div class="weeks-grid-outer">
+          <div class="weeks-grid" id="weeks-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <div class="container">
+        <p class="stats-eyebrow">Your numbers</p>
+        <div class="stats-grid" id="stats-grid"></div>
+        <p class="assumption-note">Based on a 90-year lifespan — 4,680 weeks in total.</p>
+      </div>
+    </div>
+
+    <footer>
+      <div class="container">
+        <p>&copy; 2026 Joshua Fong</p>
+        <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+      </div>
+    </footer>
+
+  </div><!-- /step-result -->
+
+  <script>
+    const LIFESPAN_WEEKS = 90 * 52; // 4,680
+
+    // Cap date input at today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    document.getElementById('birthdate').setAttribute('max', today.toISOString().split('T')[0]);
+
+    // Mobile nav
+    const navToggle = document.getElementById('navToggle');
+    const navLinks  = document.getElementById('navLinks');
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    navLinks.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+
+    // ---- Form submission ----
+    document.getElementById('birth-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const inputEl  = document.getElementById('birthdate');
+      const errorEl  = document.getElementById('input-error');
+      const val      = inputEl.value;
+
+      if (!val) {
+        errorEl.textContent = 'Please enter your date of birth.';
+        errorEl.classList.add('visible');
+        return;
+      }
+
+      // Parse as local date to avoid UTC offset shifting the day
+      const [y, m, d] = val.split('-').map(Number);
+      const birthDate = new Date(y, m - 1, d);
+
+      if (birthDate > today) {
+        errorEl.textContent = "Your birth date can't be in the future.";
+        errorEl.classList.add('visible');
+        return;
+      }
+
+      errorEl.classList.remove('visible');
+
+      const MS_DAY  = 86400000;
+      const MS_WEEK = MS_DAY * 7;
+      const msAlive = today - birthDate;
+
+      const daysAlive      = Math.floor(msAlive / MS_DAY);
+      const weeksLived     = Math.floor(msAlive / MS_WEEK);
+      const yearsOld       = Math.floor(daysAlive / 365.25);
+      const seasonsWit     = Math.floor(weeksLived / 13);
+      const fullMoons      = Math.floor(daysAlive / 29.53);
+      const weeksRemaining = Math.max(0, LIFESPAN_WEEKS - weeksLived);
+      const pctElapsed     = ((weeksLived / LIFESPAN_WEEKS) * 100).toFixed(1);
+
+      // Header
+      document.getElementById('result-age').textContent = yearsOld + ' years old';
+      document.getElementById('result-headline').textContent =
+        weeksLived.toLocaleString() + ' weeks lived.';
+
+      // Grid
+      const grid = document.getElementById('weeks-grid');
+      grid.innerHTML = '';
+
+      for (let year = 0; year < 90; year++) {
+        // Insert decade spacer before every 10th year (except year 0)
+        if (year > 0 && year % 10 === 0) {
+          const spacer = document.createElement('div');
+          spacer.className = 'decade-gap';
+          const lbl = document.createElement('span');
+          lbl.className = 'decade-label';
+          lbl.textContent = String(year);
+          spacer.appendChild(lbl);
+          grid.appendChild(spacer);
+        }
+
+        for (let week = 0; week < 52; week++) {
+          const idx  = year * 52 + week;
+          const cell = document.createElement('div');
+          cell.className = 'week-cell';
+          if (idx < weeksLived)       cell.classList.add('lived');
+          else if (idx === weeksLived) cell.classList.add('current');
+          grid.appendChild(cell);
+        }
+      }
+
+      // Stats
+      const statsData = [
+        { n: weeksLived.toLocaleString(),     l: 'Weeks lived' },
+        { n: daysAlive.toLocaleString(),      l: 'Days alive' },
+        { n: seasonsWit.toLocaleString(),     l: 'Seasons witnessed' },
+        { n: pctElapsed + '%',                l: 'Of a 90-year life elapsed' },
+        { n: weeksRemaining.toLocaleString(), l: 'Weeks remaining' },
+        { n: fullMoons.toLocaleString(),      l: 'Full moons seen' },
+      ];
+
+      document.getElementById('stats-grid').innerHTML = statsData.map(s => `
+        <div class="stat-item">
+          <div class="stat-number">${s.n}</div>
+          <div class="stat-label">${s.l}</div>
+        </div>
+      `).join('');
+
+      // Transition
+      document.getElementById('step-input').classList.remove('active');
+      document.getElementById('step-result').classList.add('active', 'fade-in');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+
+    // ---- Reset ----
+    document.getElementById('reset-btn').addEventListener('click', function () {
+      document.getElementById('step-result').classList.remove('active', 'fade-in');
+      document.getElementById('step-input').classList.add('active', 'fade-in');
+      document.getElementById('birthdate').value = '';
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  </script>
+
+</body>
+</html>

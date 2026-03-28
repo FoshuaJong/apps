@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Joshua Fong — Nothing / Something</title>
+  <title>Joshua Fong — Something</title>
   <meta name="description" content="There was something.">
   <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg">
 
@@ -52,12 +52,9 @@
     <div class="container">
       <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
       <ul class="nav-links" id="navLinks">
-        <li><a href="https://joshua.fong.nz">Portfolio</a></li>
-        <li class="nav-sep"></li>
         <li><a href="/">Apps</a></li>
         <li class="nav-sep"></li>
         <li><a href="/nothing/">Nothing</a></li>
-        <li class="nav-sep"></li>
         <li><a href="#" aria-current="page">Something</a></li>
       </ul>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
@@ -137,35 +134,32 @@
     window.addEventListener('load', setOrigin);
     setOrigin();
 
-    // On click: move anchor directly to cursor — text seeks toward it
+    // On click: move anchor so the centre of "something" lands on the cursor,
+    // not the centre of the full text element.
     document.addEventListener('click', e => {
-      anchorX = e.pageX;
-      anchorY = e.pageY;
+      const textRect = el.getBoundingClientRect();
+      const linkRect = el.querySelector('a').getBoundingClientRect();
+      // Offset from "something" centre to full-text centre (viewport px, scroll-invariant as a delta)
+      const offsetX = (textRect.left + textRect.right) / 2 - (linkRect.left + linkRect.right) / 2;
+      const offsetY = (textRect.top  + textRect.bottom) / 2 - (linkRect.top  + linkRect.bottom) / 2;
+      anchorX = e.pageX + offsetX;
+      anchorY = e.pageY + offsetY;
     });
 
     function tick() {
       const centerX = stageX + stageW * 0.5;
       const centerY = stageY + stageH * 0.5;
 
-      // Edge repulsion
-      const dL = elX - stageX,          dR = (stageX + stageW) - elX;
-      const dT = elY - stageY,          dB = (stageY + stageH) - elY;
-      if (dL < EDGE_RADIUS) { const e = Math.max(dL, EDGE_MIN); vx += EDGE_FORCE / (e*e); }
-      if (dR < EDGE_RADIUS) { const e = Math.max(dR, EDGE_MIN); vx -= EDGE_FORCE / (e*e); }
-      if (dT < EDGE_RADIUS) { const e = Math.max(dT, EDGE_MIN); vy += EDGE_FORCE / (e*e); }
-      if (dB < EDGE_RADIUS) { const e = Math.max(dB, EDGE_MIN); vy -= EDGE_FORCE / (e*e); }
-
-      // Gentle gravity toward center
-      vx += (centerX - elX) * GRAVITY_K;
-      vy += (centerY - elY) * GRAVITY_K;
-
-      // Spring toward anchor
+      // Spring toward anchor — no competing forces so text lands exactly on click position
       vx += (anchorX - elX) * SPRING_K;
       vy += (anchorY - elY) * SPRING_K;
 
       vx *= DAMPING; vy *= DAMPING;
+      // Speed cap scales with distance to anchor — guarantees deceleration into target, no overshoot
+      const distToAnchor = Math.hypot(anchorX - elX, anchorY - elY);
+      const speedLimit = Math.min(MAX_SPEED, distToAnchor * 0.18);
       const spd = Math.sqrt(vx*vx + vy*vy);
-      if (spd > MAX_SPEED) { vx = vx/spd * MAX_SPEED; vy = vy/spd * MAX_SPEED; }
+      if (spd > speedLimit && spd > 0) { vx = vx/spd * speedLimit; vy = vy/spd * speedLimit; }
 
       elX += vx; elY += vy;
 

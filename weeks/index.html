@@ -185,14 +185,14 @@
     }
 
     .weeks-grid-outer {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
       padding-left: 28px;
     }
 
     /* Subtle fade on right edge when scrollable */
     @media (max-width: 640px) {
       .weeks-grid-outer {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
         -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%);
         mask-image: linear-gradient(to right, black 92%, transparent 100%);
       }

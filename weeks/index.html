@@ -332,7 +332,7 @@
   <!-- NAV -->
   <nav>
     <div class="container">
-      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / apps</div>
+      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
       <ul class="nav-links" id="navLinks">
         <li><a href="https://joshua.fong.nz">Portfolio</a></li>
         <li class="nav-sep"></li>
@@ -461,6 +461,9 @@
       const daysAlive      = Math.floor(msAlive / MS_DAY);
       const weeksLived     = Math.floor(msAlive / MS_WEEK);
       const yearsOld       = Math.floor(daysAlive / 365.25);
+      const lastBirthday   = new Date(birthDate.getFullYear() + yearsOld, birthDate.getMonth(), birthDate.getDate());
+      const weeksIntoYear  = Math.min(Math.floor((today - lastBirthday) / MS_WEEK), 51);
+      const currentGridIdx = yearsOld * 52 + weeksIntoYear;
       const seasonsWit     = Math.floor(weeksLived / 13);
       const fullMoons      = Math.floor(daysAlive / 29.53);
       const weeksRemaining = Math.max(0, LIFESPAN_WEEKS - weeksLived);
@@ -491,8 +494,8 @@
           const idx  = year * 52 + week;
           const cell = document.createElement('div');
           cell.className = 'week-cell';
-          if (idx < weeksLived)       cell.classList.add('lived');
-          else if (idx === weeksLived) cell.classList.add('current');
+          if (idx < currentGridIdx)        cell.classList.add('lived');
+          else if (idx === currentGridIdx) cell.classList.add('current');
           grid.appendChild(cell);
         }
       }

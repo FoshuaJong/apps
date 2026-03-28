@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joshua Fong — Nothing / Nothing</title>
+  <meta name="description" content="There was something.">
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/apps.css">
+
+  <style>
+    .nothing-stage {
+      position: relative;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    #resting-text {
+      position: absolute;
+      left: 33%;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-display);
+      font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+      color: var(--text-secondary);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    #resting-text a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="grid-spotlight"></div>
+  <script>
+    (function(){var g=document.getElementById('grid-spotlight');document.addEventListener('mousemove',function(e){g.style.setProperty('--mx',e.clientX+'px');g.style.setProperty('--my',e.clientY+'px');});document.addEventListener('mouseleave',function(){g.style.setProperty('--mx','-999px');g.style.setProperty('--my','-999px');});})();
+  </script>
+
+  <!-- NAV -->
+  <nav>
+    <div class="container">
+      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="https://joshua.fong.nz">Portfolio</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/">Apps</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/nothing/">Nothing</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="#" aria-current="page">Nothing</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nothing-stage">
+    <span id="resting-text">there was <a href="/nothing/">something</a></span>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Joshua Fong</p>
+      <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+    </div>
+  </footer>
+
+  <script>
+    const navToggle = document.getElementById('navToggle');
+    const navLinks  = document.getElementById('navLinks');
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+  </script>
+
+</body>
+</html>

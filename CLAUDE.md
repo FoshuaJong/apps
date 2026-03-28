@@ -23,6 +23,7 @@ Feel free to suggest new app ideas that fit the aesthetic.
 - `/css/apps.css` — shared components: nav, buttons, section labels, footer, animations
 - `/images/favicon.svg` — shared favicon
 - `/weeks/index.html` — "Life in weeks" visualization app
+- `/nothing/index.html` - "Fleeing text" app
 
 ## Adding a New App
 1. Create `/appname/index.html`

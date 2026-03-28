@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joshua Fong — Nothing</title>
+  <meta name="description" content="There's nothing here.">
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/apps.css">
+
+  <style>
+    .nothing-stage {
+      position: relative;
+      min-height: 100vh;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    #fleeing-text {
+      position: absolute;
+      font-family: var(--font-display);
+      font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+      color: var(--text-secondary);
+      font-weight: 400;
+      white-space: nowrap;
+      user-select: none;
+      pointer-events: none;
+      will-change: transform;
+      /* origin set by JS — roughly 1/3 from left, 50% down */
+      top: 0;
+      left: 0;
+      transform-origin: center center;
+    }
+  </style>
+</head>
+<body>
+  <div id="grid-spotlight"></div>
+  <script>
+    (function(){var g=document.getElementById('grid-spotlight');document.addEventListener('mousemove',function(e){g.style.setProperty('--mx',e.clientX+'px');g.style.setProperty('--my',e.clientY+'px');});document.addEventListener('mouseleave',function(){g.style.setProperty('--mx','-999px');g.style.setProperty('--my','-999px');});})();
+  </script>
+
+  <!-- NAV -->
+  <nav>
+    <div class="container">
+      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="https://joshua.fong.nz">Portfolio</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/">Apps</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="#" aria-current="page">Nothing</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nothing-stage" id="stage">
+    <span id="fleeing-text">there's <a href="/nothing/nothing/" style="color: var(--accent); text-decoration: none; pointer-events: auto;">nothing</a> here</span>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Joshua Fong</p>
+      <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile nav
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+  </script>
+
+  <script>
+    const el    = document.getElementById('fleeing-text');
+    const stage = document.getElementById('stage');
+
+    // Single anchor (page coords) — relocates when text is stretched and return path is blocked
+    let anchorX = 0, anchorY = 0;
+
+    // Text center (page coords) + velocity
+    let elX = 0, elY = 0, vx = 0, vy = 0;
+
+    // Stage bounds (page coords), updated on layout
+    let stageX = 0, stageY = 0, stageW = 0, stageH = 0;
+
+    // Mouse (page coords)
+    let mx = -9999, my = -9999;
+
+    // Frames before anchor can relocate again
+    let relocateCooldown = 0;
+
+    // ── Constants ─────────────────────────────────────────────────
+    const REPEL_RADIUS  = 780;   // cursor awareness radius from text center (px)
+    const REPEL_FORCE   = 3200;  // cursor repulsion (1/d²) — softer, less lurching
+    const MIN_APPROACH  = 32;    // floor distance for cursor force — caps the spike
+
+    const EDGE_RADIUS   = 200;   // same range as cursor
+    const EDGE_FORCE    = 2800;  // similar feel to cursor
+    const EDGE_MIN      = 40;    // floor distance for edge force
+
+    const GRAVITY_K     = 0.005; // gentle pull toward stage center
+    const SPRING_K      = 0.030; // softer spring — patient, unhurried return
+    const DAMPING       = 0.91;  // high damping — velocity bleeds off slowly, feels like gliding
+    const MAX_SPEED     = 15;    // low cap — calm outmanoeuvring, not fleeing
+
+    // Anchor relocation
+    const RELOCATE_DISP = 55;    // lower threshold — reanchors sooner
+    const PATH_RADIUS   = 85;    // cursor must be within this dist of return-path segment
+    const RELOCATE_COOL = 50;    // cooldown frames after relocating
+    const ANCHOR_DIST   = 160;   // how far from text to place new anchor
+    const ANCHOR_MARGIN = 110;   // min px from stage edge for any anchor
+
+    // Stretch visuals
+    const SKEW_SCALE    = 0.018;
+    const SQUEEZE_SCALE = 0.0012;
+
+    // ── Layout ────────────────────────────────────────────────────
+    function computeLayout() {
+      const r = stage.getBoundingClientRect();
+      stageX = r.left + window.scrollX;
+      stageY = r.top  + window.scrollY;
+      stageW = stage.offsetWidth;
+      stageH = stage.offsetHeight;
+    }
+
+    function setOrigin() {
+      computeLayout();
+      el.style.left       = '0px';
+      el.style.top        = '0px';
+      el.style.marginLeft = -(el.offsetWidth  / 2) + 'px';
+      el.style.marginTop  = -(el.offsetHeight / 2) + 'px';
+      anchorX = stageX + stageW * 0.33;
+      anchorY = stageY + stageH * 0.50;
+      elX = anchorX; elY = anchorY; vx = 0; vy = 0;
+    }
+
+    window.addEventListener('resize', computeLayout);
+    window.addEventListener('load', setOrigin);
+    setOrigin();
+
+    document.addEventListener('mousemove', e => { mx = e.pageX; my = e.pageY; });
+    document.addEventListener('mouseleave', () => { mx = -9999; my = -9999; });
+
+    // On click: move anchor to a point near the cursor, between it and the current anchor.
+    const CLICK_GAP = 80; // min px between new anchor and cursor
+    document.addEventListener('click', e => {
+      const cx = e.pageX, cy = e.pageY;
+      const dx = anchorX - cx, dy = anchorY - cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      // How far from the cursor to place the anchor — shrinks if click is very near old anchor
+      const gap = dist > CLICK_GAP ? CLICK_GAP : Math.max(12, dist * 0.5);
+      const nx = dist > 0 ? dx / dist : 1; // unit vector toward old anchor
+      const ny = dist > 0 ? dy / dist : 0;
+      const clamped = clampAnchor(cx + nx * gap, cy + ny * gap);
+      anchorX = clamped.x;
+      anchorY = clamped.y;
+      relocateCooldown = RELOCATE_COOL;
+    });
+
+    // Returns true if point (px,py) is within `r` px of segment (x1,y1)→(x2,y2)
+    function nearSegment(px, py, x1, y1, x2, y2, r) {
+      const ax = x2 - x1, ay = y2 - y1;
+      const len2 = ax*ax + ay*ay;
+      const t = len2 > 0 ? Math.max(0, Math.min(1, ((px-x1)*ax + (py-y1)*ay) / len2)) : 0;
+      return Math.hypot(px - (x1 + t*ax), py - (y1 + t*ay)) < r;
+    }
+
+    // Clamp anchor inside stage with margin
+    function clampAnchor(x, y) {
+      return {
+        x: Math.max(stageX + ANCHOR_MARGIN, Math.min(stageX + stageW - ANCHOR_MARGIN, x)),
+        y: Math.max(stageY + ANCHOR_MARGIN, Math.min(stageY + stageH - ANCHOR_MARGIN, y)),
+      };
+    }
+
+    // ── Main loop ──────────────────────────────────────────────────
+    function tick() {
+      const centerX = stageX + stageW * 0.5;
+      const centerY = stageY + stageH * 0.5;
+
+      // Cursor repulsion — distance from text center, creating a circular repulsion field.
+      // Uniform in all directions, so thin text isn't easier to approach top/bottom.
+      const rect = el.getBoundingClientRect();
+      const cvx  = mx - window.scrollX;
+      const cvy  = my - window.scrollY;
+      const dx   = (rect.left + rect.right)  / 2 - cvx;
+      const dy   = (rect.top  + rect.bottom) / 2 - cvy;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+      if (dist < REPEL_RADIUS && dist > 0) {
+        const eff = Math.max(dist, MIN_APPROACH);
+        vx += dx / dist * REPEL_FORCE / (eff * eff);
+        vy += dy / dist * REPEL_FORCE / (eff * eff);
+      }
+
+      // Edge repulsion — same 1/d² formula, pushes toward center
+      const dL = elX - stageX,              dR = (stageX + stageW) - elX;
+      const dT = elY - stageY,              dB = (stageY + stageH) - elY;
+      if (dL < EDGE_RADIUS) { const e = Math.max(dL, EDGE_MIN); vx += EDGE_FORCE / (e*e); }
+      if (dR < EDGE_RADIUS) { const e = Math.max(dR, EDGE_MIN); vx -= EDGE_FORCE / (e*e); }
+      if (dT < EDGE_RADIUS) { const e = Math.max(dT, EDGE_MIN); vy += EDGE_FORCE / (e*e); }
+      if (dB < EDGE_RADIUS) { const e = Math.max(dB, EDGE_MIN); vy -= EDGE_FORCE / (e*e); }
+
+      // Gentle gravity toward stage center
+      vx += (centerX - elX) * GRAVITY_K;
+      vy += (centerY - elY) * GRAVITY_K;
+
+      // Spring toward anchor
+      vx += (anchorX - elX) * SPRING_K;
+      vy += (anchorY - elY) * SPRING_K;
+
+      vx *= DAMPING; vy *= DAMPING;
+      const spd = Math.sqrt(vx*vx + vy*vy);
+      if (spd > MAX_SPEED) { vx = vx/spd * MAX_SPEED; vy = vy/spd * MAX_SPEED; }
+
+      elX += vx; elY += vy;
+
+      // Anchor relocation:
+      // Trigger when text is stretched far AND the cursor sits on the return-path segment.
+      const dispX   = elX - anchorX;
+      const dispY   = elY - anchorY;
+      const dispMag = Math.sqrt(dispX*dispX + dispY*dispY);
+
+      if (relocateCooldown > 0) {
+        relocateCooldown--;
+      } else if (dispMag > RELOCATE_DISP &&
+                 nearSegment(mx, my, elX, elY, anchorX, anchorY, PATH_RADIUS)) {
+
+        // Unit displacement vector and its two perpendiculars
+        const dh = dispX / dispMag, dv = dispY / dispMag;
+        const p1x = -dv, p1y =  dh;   // +90°
+        const p2x =  dv, p2y = -dh;   // −90°
+
+        // Candidate anchors: perpendicular from text's current position
+        const c1 = clampAnchor(elX + p1x * ANCHOR_DIST, elY + p1y * ANCHOR_DIST);
+        const c2 = clampAnchor(elX + p2x * ANCHOR_DIST, elY + p2y * ANCHOR_DIST);
+
+        // Score: prefer closer to center, and farther from cursor
+        const score = c =>
+          -Math.hypot(c.x - centerX, c.y - centerY)
+          + Math.hypot(c.x - mx, c.y - my) * 0.5;
+
+        const chosen = score(c1) >= score(c2) ? c1 : c2;
+        anchorX = chosen.x;
+        anchorY = chosen.y;
+        relocateCooldown = RELOCATE_COOL;
+      }
+
+      // Stretch deformation relative to current anchor
+      const aDispX   = elX - anchorX;
+      const aDispY   = elY - anchorY;
+      const aDispMag = Math.sqrt(aDispX*aDispX + aDispY*aDispY);
+
+      const skewX  =  aDispY * SKEW_SCALE;
+      const skewY  = -aDispX * SKEW_SCALE * 0.5;
+      const scaleY =  Math.max(0.75, 1 - aDispMag * SQUEEZE_SCALE);
+      const scaleX =  1 + aDispMag * SQUEEZE_SCALE * 0.4;
+
+      el.style.transform =
+        `translate(${elX - stageX}px, ${elY - stageY}px)` +
+        ` skew(${skewX}deg, ${skewY}deg)` +
+        ` scaleX(${scaleX}) scaleY(${scaleY})`;
+
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+  </script>
+
+</body>
+</html>

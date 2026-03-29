@@ -917,13 +917,13 @@
       // Add these lines to sync the color picker labels
       document.getElementById('labelColorA').textContent = swapped ? 'Destination Color' : 'Origin Color';
       document.getElementById('labelColorB').textContent = swapped ? 'Origin Color' : 'Destination Color';
-
-      swapBtn.classList.toggle('active', swapped);
+      
       swapBtn.setAttribute('aria-pressed', String(swapped));
     }
 
     swapBtn.addEventListener('click', () => {
       swapped = !swapped;
+      swapBtn.classList.toggle('active', swapped);
       updateSwapState();
     });
 

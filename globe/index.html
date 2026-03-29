@@ -63,6 +63,33 @@
       cursor: grabbing;
     }
 
+    .city-label-container {
+      /* Positioning & Interaction */
+      display: inline-block;
+      pointer-events: none;
+      z-index: 10;
+      white-space: nowrap;
+
+      /* Typography */
+      font-family: var(--font-mono), 'Courier New', monospace;
+      font-size: 0.5rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 4px rgba(45, 212, 191, 0.6); /* Soft teal glow */
+
+      /* The "Backplate" Visuals */
+      background: rgba(10, 15, 20, 0.6);
+      backdrop-filter: blur(2px);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      border-radius: 4px;
+      padding: 4px 8px;
+      
+      /* Final Polish */
+      opacity: 0.9;
+      transition: opacity 0.2s ease;
+    }
+
     /* --- CONTROLS --- */
     .globe-controls {
       padding-top: 0.5rem;
@@ -772,31 +799,34 @@
         .htmlAltitude(0.01)
         .htmlElement(d => {
           const wrapper = document.createElement('div');
-          wrapper.style.cssText = 'position:relative;pointer-events:none;position: relative;pointer-events: none;transform: translate(-50%, -50%);';
+          // Cleaned up the duplicate CSS properties from the original
+          wrapper.style.cssText = 'position:relative;pointer-events:none;transform: translate(-50%, -50%);';
+          
+          const color = d.labelColor || PRESETS[0];
+
           if (pulsingCitiesOut.has(d.name)) {
             const ring = document.createElement('div');
             ring.classList.add('city-pulse-ring', 'ring-send');
-            ring.style.borderColor = d.labelColor || PRESETS[0];
+            ring.style.borderColor = color;
             wrapper.appendChild(ring);
           }
           if (pulsingCitiesIn.has(d.name)) {
             const ring = document.createElement('div');
             ring.classList.add('city-pulse-ring', 'ring-receive');
-            ring.style.borderColor = d.labelColor || PRESETS[0];
+            ring.style.borderColor = color;
             wrapper.appendChild(ring);
           }
+          
           const label = document.createElement('div');
-          label.style.cssText = [
-            "font-family:'JetBrains Mono',monospace",
-            'font-size:0.58rem',
-            `color:${d.labelColor || PRESETS[0]}`,
-            'letter-spacing:0.12em',
-            'text-transform:uppercase',
-            'pointer-events:none',
-            'white-space:nowrap',
-            'padding:2px 0 0 7px',
-            'opacity:0.85',
-          ].join(';');
+          label.className = 'city-label-container';
+          
+          // Apply the dynamic color to the text, text-shadow (60% opacity), and border (30% opacity)
+          label.style.color = '#ffffff'; // Keeps text white for contrast, change to `color` if you want colored text
+          label.style.textShadow = `0 0 4px ${color}99`; 
+          label.style.borderColor = color; // Solid border (no transparency)
+          label.style.backgroundColor = `${color}26`; // 15% opacity tint
+          label.style.textShadow = `0 0 6px ${color}`; // Stronger glow
+          
           label.textContent = d.name;
           wrapper.appendChild(label);
           return wrapper;

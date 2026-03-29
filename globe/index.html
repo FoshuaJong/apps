@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joshua Fong — Globe</title>
+  <meta name="description" content="Connect cities across the world. An interactive WebGL globe with draggable rotation and multi-city arc drawing.">
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/apps.css">
+
+  <style>
+    .globe-header {
+      padding: var(--nav-offset) 0 2.5rem;
+    }
+
+    .globe-header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      font-weight: 400;
+      color: var(--text-primary);
+      margin: 0.5rem 0 0.75rem;
+      line-height: 1.1;
+    }
+
+    .globe-header p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 300;
+      line-height: 1.8;
+      max-width: 420px;
+    }
+
+    /* --- LAYOUT --- */
+    .globe-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 3rem;
+      align-items: start;
+      padding-bottom: 6rem;
+    }
+
+    /* --- GLOBE --- */
+    .globe-wrapper {
+      position: sticky;
+      top: calc(var(--nav-offset) + 1rem);
+    }
+
+    #globeCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: grab;
+    }
+
+    #globeCanvas:active {
+      cursor: grabbing;
+    }
+
+    /* --- CONTROLS --- */
+    .globe-controls {
+      padding-top: 0.5rem;
+    }
+
+    .controls-heading {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    .field-group {
+      margin-bottom: 0.75rem;
+    }
+
+    .field-label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 0.75rem 2.25rem 0.75rem 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.25s ease;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235C5B59'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.9rem center;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    select option {
+      background: var(--bg-elevated);
+    }
+
+    .add-btn {
+      width: 100%;
+      margin-top: 1rem;
+      justify-content: center;
+    }
+
+    /* --- CONNECTION LIST --- */
+    .connections-section {
+      margin-top: 2rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+
+    .connections-heading {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .connection-empty {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 300;
+      padding: 0.5rem 0;
+    }
+
+    .connection-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .connection-label {
+      flex: 1;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .connection-remove {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0.1rem 0.25rem;
+      flex-shrink: 0;
+      transition: color 0.2s ease;
+    }
+
+    .connection-remove:hover {
+      color: var(--text-primary);
+    }
+
+    /* --- ERROR STATE --- */
+    .globe-error {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--color-error);
+      letter-spacing: 0.05em;
+      padding: 0.75rem 0;
+      display: none;
+    }
+
+    .globe-error.visible {
+      display: block;
+    }
+
+    /* --- RESPONSIVE --- */
+    @media (max-width: 900px) {
+      .globe-layout {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+
+      .globe-wrapper {
+        position: static;
+        max-width: 480px;
+        margin: 0 auto;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .globe-header {
+        padding: 5.5rem 0 1.5rem;
+      }
+
+      .globe-layout {
+        padding-bottom: 4rem;
+      }
+
+      .globe-wrapper {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="grid-spotlight"></div>
+  <script>
+    (function(){var g=document.getElementById('grid-spotlight');document.addEventListener('mousemove',function(e){g.style.setProperty('--mx',e.clientX+'px');g.style.setProperty('--my',e.clientY+'px');});document.addEventListener('mouseleave',function(){g.style.setProperty('--mx','-999px');g.style.setProperty('--my','-999px');});})();
+  </script>
+
+  <!-- NAV -->
+  <nav>
+    <div class="container">
+      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/">Apps</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/globe/" aria-current="page">Globe</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- HEADER -->
+  <section class="globe-header">
+    <div class="container">
+      <p class="section-label">Interactive</p>
+      <h1>Globe</h1>
+      <p>Connect cities across the world. Drag to rotate, add arcs between city pairs.</p>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <div class="container">
+    <div class="globe-layout">
+
+      <!-- GLOBE -->
+      <div class="globe-wrapper">
+        <canvas id="globeCanvas"></canvas>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="globe-controls">
+        <p class="controls-heading">Add connection</p>
+
+        <div class="field-group">
+          <label class="field-label" for="cityA">City 1</label>
+          <select id="cityA"><option value="">Loading…</option></select>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="cityB">City 2</label>
+          <select id="cityB"><option value="">Loading…</option></select>
+        </div>
+
+        <p class="globe-error" id="addError"></p>
+
+        <button class="btn-primary add-btn" id="addBtn" disabled>Loading…</button>
+
+        <div class="connections-section">
+          <p class="connections-heading">Active connections</p>
+          <div id="connectionList">
+            <p class="connection-empty">No connections yet.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Joshua Fong</p>
+      <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+    </div>
+  </footer>
+
+  <!-- MOBILE NAV -->
+  <script>
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+    navLinks.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => navLinks.classList.remove('open'));
+    });
+  </script>
+
+  <!-- GLOBE APP -->
+  <script type="module">
+    import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe@2/+esm';
+
+    // --- PALETTE ---
+    const PALETTE = [
+      '#3DA899',
+      '#E87A5D',
+      '#7B8CDE',
+      '#F5C842',
+      '#A78BFA',
+      '#34D399',
+      '#FB923C',
+      '#F472B6',
+    ];
+
+
+    // --- STATE ---
+    let connections = [];
+    let cities = [];
+    let errorTimer = null;
+
+    // --- GLOBE STATE ---
+    const canvas = document.getElementById('globeCanvas');
+    let phi = 0;
+    let theta = 0.3;
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    let vx = 0;
+    let vy = 0;
+    let globe = null;
+    let rafId = null;
+
+    function getSize() {
+      return canvas.parentElement.offsetWidth;
+    }
+
+    function getMarkers() {
+      const seen = new Set();
+      const markers = [];
+      for (const { cityA, cityB } of connections) {
+        if (!seen.has(cityA.name)) {
+          seen.add(cityA.name);
+          markers.push({ location: [cityA.lat, cityA.lng], size: 0.05 });
+        }
+        if (!seen.has(cityB.name)) {
+          seen.add(cityB.name);
+          markers.push({ location: [cityB.lat, cityB.lng], size: 0.05 });
+        }
+      }
+      return markers;
+    }
+
+    function hexToRgb(hex) {
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      return [r, g, b];
+    }
+
+    // Great-circle midpoint via cartesian average — used to split long arcs above globe surface
+    function gcMidpoint(lat1, lng1, lat2, lng2) {
+      const r = Math.PI / 180;
+      const φ1 = lat1 * r, λ1 = lng1 * r;
+      const φ2 = lat2 * r, λ2 = lng2 * r;
+      const x1 = Math.cos(φ1) * Math.cos(λ1), y1 = Math.cos(φ1) * Math.sin(λ1), z1 = Math.sin(φ1);
+      const x2 = Math.cos(φ2) * Math.cos(λ2), y2 = Math.cos(φ2) * Math.sin(λ2), z2 = Math.sin(φ2);
+      const mx = x1 + x2, my = y1 + y2, mz = z1 + z2;
+      const len = Math.sqrt(mx * mx + my * my + mz * mz);
+      return [Math.asin(mz / len) / r, Math.atan2(my, mx) / r];
+    }
+
+    // Haversine angular distance in radians
+    function angularDistance(lat1, lng1, lat2, lng2) {
+      const r = Math.PI / 180;
+      const a = Math.sin((lat2 - lat1) * r / 2) ** 2 +
+        Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lng2 - lng1) * r / 2) ** 2;
+      return 2 * Math.asin(Math.sqrt(a));
+    }
+
+    const SPLIT_THRESHOLD = Math.PI / 2; // split arcs > 90° to prevent clipping through globe
+
+    function getArcs() {
+      const arcs = [];
+      for (const { cityA, cityB, color } of connections) {
+        const rgb = hexToRgb(color);
+        const dist = angularDistance(cityA.lat, cityA.lng, cityB.lat, cityB.lng);
+        if (dist <= SPLIT_THRESHOLD) {
+          arcs.push({ from: [cityA.lat, cityA.lng], to: [cityB.lat, cityB.lng], color: rgb });
+        } else {
+          const [midLat, midLng] = gcMidpoint(cityA.lat, cityA.lng, cityB.lat, cityB.lng);
+          arcs.push(
+            { from: [cityA.lat, cityA.lng], to: [midLat, midLng], color: rgb },
+            { from: [midLat, midLng], to: [cityB.lat, cityB.lng], color: rgb },
+          );
+        }
+      }
+      return arcs;
+    }
+
+    function initGlobe() {
+      const size = getSize();
+      canvas.width = size * devicePixelRatio;
+      canvas.height = size * devicePixelRatio;
+      canvas.style.width = size + 'px';
+      canvas.style.height = size + 'px';
+
+      globe = createGlobe(canvas, {
+        devicePixelRatio: devicePixelRatio,
+        width: size * devicePixelRatio,
+        height: size * devicePixelRatio,
+        phi,
+        theta,
+        dark: 1,
+        diffuse: 1.2,
+        mapSamples: 16000,
+        mapBrightness: 1.2,
+        baseColor: [1, 1, 1],
+        markerColor: [0.24, 0.66, 0.6],
+        glowColor: [0.12, 0.12, 0.2],
+        markers: [],
+        arcs: [],
+      });
+
+      if (rafId) cancelAnimationFrame(rafId);
+      loop();
+    }
+
+    function loop() {
+      if (!isDragging) {
+        phi += 0.003;
+        phi += vx;
+        theta = clampTheta(theta + vy);
+        vx *= 0.92;
+        vy *= 0.92;
+      }
+      globe.update({ phi, theta });
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function clampTheta(t) {
+      return Math.max(-Math.PI / 2, Math.min(Math.PI / 2, t));
+    }
+
+    // --- DRAG ---
+    canvas.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      vx = 0;
+      vy = 0;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      vx = dx * 0.005;
+      vy = dy * 0.005;
+      phi += vx;
+      theta = clampTheta(theta + vy);
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+
+    canvas.addEventListener('pointerup', () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener('pointercancel', () => {
+      isDragging = false;
+    });
+
+    // --- RESIZE ---
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (globe) globe.destroy();
+        initGlobe();
+        if (connections.length) {
+          globe.update({ markers: getMarkers(), arcs: getArcs() });
+        }
+      }, 200);
+    });
+
+    // --- UI ---
+    const cityASelect = document.getElementById('cityA');
+    const cityBSelect = document.getElementById('cityB');
+    const addBtn = document.getElementById('addBtn');
+    const addError = document.getElementById('addError');
+    const connectionList = document.getElementById('connectionList');
+
+    connectionList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.connection-remove');
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.index, 10);
+      connections.splice(idx, 1);
+      renderConnections();
+      globe.update({ markers: getMarkers(), arcs: getArcs() });
+    });
+
+    function populateSelect(sel, excludeIdx) {
+      const current = sel.value;
+      sel.innerHTML = '<option value="">Select a city…</option>';
+      cities.forEach((city, i) => {
+        if (String(i) === String(excludeIdx)) return;
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = city.country ? `${city.name}, ${city.country}` : city.name;
+        sel.appendChild(opt);
+      });
+      sel.value = current;
+    }
+
+    function populateSelects() {
+      populateSelect(cityASelect, cityBSelect.value);
+      populateSelect(cityBSelect, cityASelect.value);
+      addBtn.disabled = false;
+      addBtn.textContent = 'Add connection';
+    }
+
+    cityASelect.addEventListener('change', () => populateSelect(cityBSelect, cityASelect.value));
+    cityBSelect.addEventListener('change', () => populateSelect(cityASelect, cityBSelect.value));
+
+    function showError(msg) {
+      clearTimeout(errorTimer);
+      addError.textContent = msg;
+      addError.classList.add('visible');
+      errorTimer = setTimeout(() => addError.classList.remove('visible'), 2500);
+    }
+
+    function renderConnections() {
+      if (connections.length === 0) {
+        connectionList.innerHTML = '<p class="connection-empty">No connections yet.</p>';
+        return;
+      }
+      connectionList.innerHTML = '';
+      connections.forEach(({ cityA, cityB, color }, i) => {
+        const row = document.createElement('div');
+        row.className = 'connection-row';
+        row.innerHTML = `
+          <span class="connection-dot" style="background:${color}"></span>
+          <span class="connection-label">${cityA.name} ↔ ${cityB.name}</span>
+          <button class="connection-remove" data-index="${i}" aria-label="Remove connection">×</button>
+        `;
+        connectionList.appendChild(row);
+      });
+
+    }
+
+    addBtn.addEventListener('click', () => {
+      const ai = cityASelect.value;
+      const bi = cityBSelect.value;
+
+      if (ai === '' || bi === '') {
+        showError('Select both cities.');
+        return;
+      }
+      if (ai === bi) {
+        showError('Choose two different cities.');
+        return;
+      }
+
+      const cityA = cities[parseInt(ai, 10)];
+      const cityB = cities[parseInt(bi, 10)];
+
+      const isDuplicate = connections.some(c =>
+        (c.cityA.name === cityA.name && c.cityB.name === cityB.name) ||
+        (c.cityA.name === cityB.name && c.cityB.name === cityA.name)
+      );
+      if (isDuplicate) {
+        showError(`${cityA.name} ↔ ${cityB.name} already exists.`);
+        return;
+      }
+
+      const usedColors = new Set(connections.map(c => c.color));
+      const color = PALETTE.find(c => !usedColors.has(c)) ?? PALETTE[connections.length % PALETTE.length];
+
+      connections.push({ cityA, cityB, color });
+      cityBSelect.value = '';
+      populateSelect(cityASelect, '');
+      renderConnections();
+      globe.update({ markers: getMarkers(), arcs: getArcs() });
+    });
+
+    // --- BOOT ---
+    fetch('cities.json')
+      .then(r => {
+        if (!r.ok) throw new Error('Failed to load cities.json');
+        return r.json();
+      })
+      .then(data => {
+        cities = data.sort((a, b) => a.name.localeCompare(b.name));
+        populateSelects();
+        initGlobe();
+      })
+      .catch(err => {
+        cityASelect.innerHTML = '<option>Error loading cities</option>';
+        cityBSelect.innerHTML = '<option>Error loading cities</option>';
+        addBtn.textContent = 'Unavailable';
+        addError.textContent = 'Could not load cities.json.';
+        addError.classList.add('visible');
+        initGlobe();
+      });
+  </script>
+</body>
+</html>

@@ -454,12 +454,12 @@
   <script>
     // --- PRESETS (5 colours with strong contrast on dark bg) ---
     const PRESETS = [
-      '#3DA899', // teal — default
+      '#BBD7FO', // baby blue - default
+      '#3DA899', // teal
       '#E87A5D', // coral
       '#7B8CDE', // periwinkle
       '#F5C842', // amber
       '#F472B6', // pink
-      '#BBD7FO', // blue
     ];
 
     // --- STATE ---
@@ -495,7 +495,8 @@
     function updateGlobe() {
       if (!globe) return;
       const pts = getPoints();
-      // Sync cityColors: seed new cities, prune removed ones
+
+      // 1. Sync cityColors (Keep your original logic)
       const activeNames = new Set(pts.map(p => p.name));
       for (const name of cityColors.keys()) {
         if (!activeNames.has(name)) cityColors.delete(name);
@@ -503,8 +504,21 @@
       for (const p of pts) {
         if (!cityColors.has(p.name)) cityColors.set(p.name, PRESETS[0]);
       }
-      const labelPts = pts.map(p => ({ ...p, labelColor: cityColors.get(p.name) || PRESETS[0] }));
-      globe.arcsData([...connections]).pointsData(pts).htmlElementsData(labelPts);
+
+      // 2. Map the data so BOTH pts and labelPts have the color
+      const dataWithColors = pts.map(p => ({ 
+        ...p, 
+        labelColor: cityColors.get(p.name) || PRESETS[0] 
+      }));
+
+      // 3. Update the globe (The critical fix is .pointColor)
+      globe
+        .arcsData([...connections])
+        .pointsData(dataWithColors) 
+        .pointColor(d => d.labelColor) // This links the 3D dot to your color map
+        .htmlElementsData(dataWithColors);
+
+      // 4. Call your original render function
       renderCityLabels();
     }
 
@@ -592,8 +606,6 @@
         .height(getSize())
         .backgroundColor('rgba(0,0,0,0)')
         .globeImageUrl(textureUrl)
-        .atmosphereColor('#3DA899')
-        .atmosphereAltitude(0.15)
         .arcsData([])
         .arcStartLat(d => d.cityA.lat)
         .arcStartLng(d => d.cityA.lng)

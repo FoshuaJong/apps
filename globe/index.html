@@ -188,6 +188,10 @@
       color: var(--text-primary);
     }
 
+    #clear-all-connections {
+      display: none;
+    }
+
     /* --- ERROR STATE --- */
     .globe-error {
       font-family: var(--font-mono);
@@ -288,13 +292,14 @@
         <p class="globe-error" id="addError"></p>
 
         <button class="btn-primary add-btn" id="addBtn" disabled>Loading…</button>
-
+        
         <div class="connections-section">
           <p class="connections-heading">Active connections</p>
           <div id="connectionList">
             <p class="connection-empty">No connections yet.</p>
           </div>
         </div>
+        <button class="btn-secondary add-btn" id="clear-all-connections">Remove all connections</button>          
       </div>
 
     </div>
@@ -522,6 +527,15 @@
       globe.update({ markers: getMarkers(), arcs: getArcs() });
     });
 
+    document.getElementById('clear-all-connections').addEventListener('click', () => {
+      connections.length = 0;
+      renderConnections();
+      globe.update({ markers: getMarkers(), arcs: getArcs() });
+      const clearBtn = document.getElementById('clear-all-connections');
+      clearBtn.style.display = 'none';
+    });
+
+
     function populateSelect(sel, excludeIdx) {
       const current = sel.value;
       sel.innerHTML = '<option value="">Select a city…</option>';
@@ -562,15 +576,21 @@
         const row = document.createElement('div');
         row.className = 'connection-row';
         row.innerHTML = `
-          <span class="connection-dot" style="background:${color}"></span>
-          <span class="connection-label">${cityA.name} ↔ ${cityB.name}</span>
-          <button class="connection-remove" data-index="${i}" aria-label="Remove connection">×</button>
+        <span class="connection-dot" style="background:${color}"></span>
+        <span class="connection-label">${cityA.name} ↔ ${cityB.name}</span>
+        <button class="connection-remove" data-index="${i}" aria-label="Remove connection">×</button>
         `;
         connectionList.appendChild(row);
       });
-
+      
+      const clearBtn = document.getElementById('clear-all-connections');
+      if (connections.length >= 2) {
+        clearBtn.style.display = 'block';
+      } else {
+        clearBtn.style.display = 'none';
+      }
     }
-
+    
     addBtn.addEventListener('click', () => {
       const ai = cityASelect.value;
       const bi = cityBSelect.value;

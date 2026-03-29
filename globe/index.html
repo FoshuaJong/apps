@@ -454,7 +454,7 @@
   <script>
     // --- PRESETS (5 colours with strong contrast on dark bg) ---
     const PRESETS = [
-      '#BBD7FO', // baby blue - default
+      '#BBD7F0', // baby blue - default
       '#3DA899', // teal
       '#E87A5D', // coral
       '#7B8CDE', // periwinkle
@@ -610,7 +610,7 @@
         .pointsData([])
         .pointLat(d => d.lat)
         .pointLng(d => d.lng)
-        .pointColor(() => '#3DA899')
+        .pointColor(d => cityColors.get(d.name) || PRESETS[0])
         .pointAltitude(0.005)
         .pointRadius(0.6)
         .htmlElementsData([])

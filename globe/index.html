@@ -49,16 +49,15 @@
     .globe-wrapper {
       position: sticky;
       top: calc(var(--nav-offset) + 1rem);
+      opacity: 0.8;
     }
 
-    #globeCanvas {
-      display: block;
+    #globeViz {
       width: 100%;
-      height: auto;
       cursor: grab;
     }
 
-    #globeCanvas:active {
+    #globeViz:active {
       cursor: grabbing;
     }
 
@@ -150,19 +149,58 @@
       padding: 0.5rem 0;
     }
 
+    .connection-item {
+      border-bottom: 1px solid var(--border);
+    }
+
     .connection-row {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       padding: 0.7rem 0;
-      border-bottom: 1px solid var(--border);
     }
 
-    .connection-dot {
-      width: 8px;
-      height: 8px;
+    .connection-dot-btn {
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
+      border: 1.5px solid transparent;
       flex-shrink: 0;
+      padding: 0;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .connection-dot-btn:hover {
+      transform: scale(1.35);
+    }
+
+    .connection-dot-btn.picker-open {
+      border-color: var(--text-primary);
+    }
+
+    .color-picker-row {
+      display: flex;
+      gap: 0.55rem;
+      padding: 0 0 0.65rem 1.4375rem;
+    }
+
+    .color-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid transparent;
+      padding: 0;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.25);
+    }
+
+    .color-swatch.active {
+      border-color: var(--text-primary);
     }
 
     .connection-label {
@@ -246,7 +284,6 @@
   <script>
     (function(){var g=document.getElementById('grid-spotlight');document.addEventListener('mousemove',function(e){g.style.setProperty('--mx',e.clientX+'px');g.style.setProperty('--my',e.clientY+'px');});document.addEventListener('mouseleave',function(){g.style.setProperty('--mx','-999px');g.style.setProperty('--my','-999px');});})();
   </script>
-
   <!-- NAV -->
   <nav>
     <div class="container">
@@ -277,7 +314,7 @@
 
       <!-- GLOBE -->
       <div class="globe-wrapper">
-        <canvas id="globeCanvas"></canvas>
+        <div id="globeViz"></div>
       </div>
 
       <!-- CONTROLS -->
@@ -285,12 +322,12 @@
         <p class="controls-heading">Add connection</p>
 
         <div class="field-group">
-          <label class="field-label" for="cityA">City 1</label>
+          <label class="field-label" for="cityA">Origin</label>
           <select id="cityA"><option value="">Loading…</option></select>
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="cityB">City 2</label>
+          <label class="field-label" for="cityB">Destination</label>
           <select id="cityB"><option value="">Loading…</option></select>
         </div>
 
@@ -304,7 +341,11 @@
             <p class="connection-empty">No connections yet.</p>
           </div>
         </div>
-        <button class="btn-secondary add-btn" id="clear-all-connections">Remove all connections</button>          
+        <div class="connections-section" id="cityLabelsSection" style="display:none">
+          <p class="connections-heading">City labels</p>
+          <div id="cityLabelsList"></div>
+        </div>
+        <button class="btn-secondary add-btn" id="clear-all-connections">Remove all connections</button>
       </div>
 
     </div>
@@ -329,191 +370,189 @@
   </script>
 
   <!-- GLOBE APP -->
-  <script type="module">
-    import createGlobe from 'https://cdn.jsdelivr.net/npm/cobe@2/+esm';
-
-    // --- PALETTE ---
-    const PALETTE = [
-      '#3DA899',
-      '#E87A5D',
-      '#7B8CDE',
-      '#F5C842',
-      '#A78BFA',
-      '#34D399',
-      '#FB923C',
-      '#F472B6',
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
+  <script>
+    // --- PRESETS (5 colours with strong contrast on dark bg) ---
+    const PRESETS = [
+      '#3DA899', // teal — default
+      '#E87A5D', // coral
+      '#7B8CDE', // periwinkle
+      '#F5C842', // amber
+      '#F472B6', // pink
     ];
-
 
     // --- STATE ---
     let connections = [];
     let cities = [];
     let errorTimer = null;
+    let activeColorPicker = null;     // arc connection index with picker open, or null
+    let activeCityColorPicker = null; // city name with label picker open, or null
+    const cityColors = new Map();     // city name → hex color
 
-    // --- GLOBE STATE ---
-    const canvas = document.getElementById('globeCanvas');
-    let phi = 0;
-    let theta = 0.3;
-    let isDragging = false;
-    let lastX = 0;
-    let lastY = 0;
-    let vx = 0;
-    let vy = 0;
-    let globe = null;
-    let rafId = null;
+    // --- GLOBE ---
+    const globeViz = document.getElementById('globeViz');
 
     function getSize() {
-      return canvas.parentElement.offsetWidth;
+      return globeViz.offsetWidth;
     }
 
-    function getMarkers() {
+    function getPoints() {
       const seen = new Set();
-      const markers = [];
+      const points = [];
       for (const { cityA, cityB } of connections) {
-        if (!seen.has(cityA.name)) {
-          seen.add(cityA.name);
-          markers.push({ location: [cityA.lat, cityA.lng], size: 0.05 });
-        }
-        if (!seen.has(cityB.name)) {
-          seen.add(cityB.name);
-          markers.push({ location: [cityB.lat, cityB.lng], size: 0.05 });
+        if (!seen.has(cityA.name)) { seen.add(cityA.name); points.push(cityA); }
+        if (!seen.has(cityB.name)) { seen.add(cityB.name); points.push(cityB); }
+      }
+      return points;
+    }
+
+    let globe = null;
+
+    function updateGlobe() {
+      if (!globe) return;
+      const pts = getPoints();
+      // Sync cityColors: seed new cities, prune removed ones
+      const activeNames = new Set(pts.map(p => p.name));
+      for (const name of cityColors.keys()) {
+        if (!activeNames.has(name)) cityColors.delete(name);
+      }
+      for (const p of pts) {
+        if (!cityColors.has(p.name)) cityColors.set(p.name, PRESETS[0]);
+      }
+      const labelPts = pts.map(p => ({ ...p, labelColor: cityColors.get(p.name) || PRESETS[0] }));
+      globe.arcsData([...connections]).pointsData(pts).htmlElementsData(labelPts);
+      renderCityLabels();
+    }
+
+    async function buildDotTexture() {
+      const W = 2048, H = 1024;
+
+      const topo = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json').then(r => r.json());
+      const landFeature = topojson.feature(topo, topo.objects.land);
+      const features = landFeature.type === 'FeatureCollection' ? landFeature.features : [landFeature];
+
+      // Rasterize land polygons onto a mask canvas (equirectangular projection)
+      const maskCanvas = document.createElement('canvas');
+      maskCanvas.width = W; maskCanvas.height = H;
+      const maskCtx = maskCanvas.getContext('2d');
+      maskCtx.fillStyle = 'white';
+      maskCtx.beginPath();
+      for (const feature of features) {
+        const geom = feature.geometry;
+        const polys = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates;
+        for (const poly of polys) {
+          for (const ring of poly) {
+            let prevLng = null;
+            for (let i = 0; i < ring.length; i++) {
+              const [lng, lat] = ring[i];
+              const x = (lng + 180) / 360 * W;
+              const y = (90 - lat) / 180 * H;
+              if (i === 0) {
+                maskCtx.moveTo(x, y);
+              } else if (Math.abs(lng - prevLng) > 180) {
+                // Antimeridian crossing — close current segment, start new one
+                maskCtx.closePath();
+                maskCtx.moveTo(x, y);
+              } else {
+                maskCtx.lineTo(x, y);
+              }
+              prevLng = lng;
+            }
+            maskCtx.closePath();
+          }
         }
       }
-      return markers;
-    }
+      maskCtx.fill();
+      // Antarctica encircles the south pole — antimeridian splitting leaves a gap there.
+      // Everything south of lat −81° is Antarctic ice at 110m resolution, so fill it solid.
+      maskCtx.fillStyle = 'white';
+      maskCtx.fillRect(0, Math.round((90 + 81) / 180 * H), W, H);
+      const maskData = maskCtx.getImageData(0, 0, W, H).data;
 
-    function hexToRgb(hex) {
-      const r = parseInt(hex.slice(1, 3), 16) / 255;
-      const g = parseInt(hex.slice(3, 5), 16) / 255;
-      const b = parseInt(hex.slice(5, 7), 16) / 255;
-      return [r, g, b];
-    }
-
-    // Great-circle midpoint via cartesian average — used to split long arcs above globe surface
-    function gcMidpoint(lat1, lng1, lat2, lng2) {
-      const r = Math.PI / 180;
-      const φ1 = lat1 * r, λ1 = lng1 * r;
-      const φ2 = lat2 * r, λ2 = lng2 * r;
-      const x1 = Math.cos(φ1) * Math.cos(λ1), y1 = Math.cos(φ1) * Math.sin(λ1), z1 = Math.sin(φ1);
-      const x2 = Math.cos(φ2) * Math.cos(λ2), y2 = Math.cos(φ2) * Math.sin(λ2), z2 = Math.sin(φ2);
-      const mx = x1 + x2, my = y1 + y2, mz = z1 + z2;
-      const len = Math.sqrt(mx * mx + my * my + mz * mz);
-      return [Math.asin(mz / len) / r, Math.atan2(my, mx) / r];
-    }
-
-    // Haversine angular distance in radians
-    function angularDistance(lat1, lng1, lat2, lng2) {
-      const r = Math.PI / 180;
-      const a = Math.sin((lat2 - lat1) * r / 2) ** 2 +
-        Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin((lng2 - lng1) * r / 2) ** 2;
-      return 2 * Math.asin(Math.sqrt(a));
-    }
-
-    const SPLIT_THRESHOLD = Math.PI / 1.75; // split arcs > 100° to prevent clipping through globe
-
-    function getArcs() {
-      const arcs = [];
-      for (const { cityA, cityB, color } of connections) {
-        const rgb = hexToRgb(color);
-        const dist = angularDistance(cityA.lat, cityA.lng, cityB.lat, cityB.lng);
-        if (dist <= SPLIT_THRESHOLD) {
-          arcs.push({ from: [cityA.lat, cityA.lng], to: [cityB.lat, cityB.lng], color: rgb });
-        } else {
-          const [midLat, midLng] = gcMidpoint(cityA.lat, cityA.lng, cityB.lat, cityB.lng);
-          arcs.push(
-            { from: [cityA.lat, cityA.lng], to: [midLat, midLng], color: rgb },
-            { from: [midLat, midLng], to: [cityB.lat, cityB.lng], color: rgb },
-          );
+      // Draw dot grid where land pixels are filled
+      const dotCanvas = document.createElement('canvas');
+      dotCanvas.width = W; dotCanvas.height = H;
+      const dotCtx = dotCanvas.getContext('2d');
+      dotCtx.fillStyle = '#0C0C0E'; // --bg
+      dotCtx.fillRect(0, 0, W, H);
+      dotCtx.fillStyle = '#9B9A97'; // --text-secondary
+      const spacing = 6, radius = 1.5;
+      for (let y = spacing / 2; y < H; y += spacing) {
+        for (let x = spacing / 2; x < W; x += spacing) {
+          const idx = (Math.round(y) * W + Math.round(x)) * 4;
+          if (maskData[idx] > 128) {
+            dotCtx.beginPath();
+            dotCtx.arc(x, y, radius, 0, Math.PI * 2);
+            dotCtx.fill();
+          }
         }
       }
-      return arcs;
+
+      return new Promise(resolve => dotCanvas.toBlob(blob => resolve(URL.createObjectURL(blob))));
     }
-
-    function initGlobe() {
-      const size = getSize();
-      canvas.width = size * devicePixelRatio;
-      canvas.height = size * devicePixelRatio;
-      canvas.style.width = size + 'px';
-      canvas.style.height = size + 'px';
-
-      globe = createGlobe(canvas, {
-        devicePixelRatio: devicePixelRatio,
-        width: size * devicePixelRatio,
-        height: size * devicePixelRatio,
-        phi,
-        theta,
-        dark: 1,
-        diffuse: 1.2,
-        mapSamples: 30000,
-        mapBrightness: 1.2,
-        baseColor: [1, 1, 1],
-        markerColor: [0.24, 0.66, 0.6],
-        glowColor: [0.12, 0.12, 0.2],
-        markers: [],
-        arcs: [],
-      });
-
-      if (rafId) cancelAnimationFrame(rafId);
-      loop();
-    }
-
-    function loop() {
-      if (!isDragging) {
-        phi += 0.003;
-        phi += vx;
-        theta = clampTheta(theta + vy);
-        vx *= 0.92;
-        vy *= 0.92;
-      }
-      globe.update({ phi, theta });
-      rafId = requestAnimationFrame(loop);
-    }
-
-    function clampTheta(t) {
-      return Math.max(-Math.PI / 2, Math.min(Math.PI / 2, t));
-    }
-
-    // --- DRAG ---
-    canvas.addEventListener('pointerdown', (e) => {
-      isDragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      vx = 0;
-      vy = 0;
-      canvas.setPointerCapture(e.pointerId);
-    });
-
-    canvas.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      vx = dx * 0.005;
-      vy = dy * 0.005;
-      phi += vx;
-      theta = clampTheta(theta + vy);
-      lastX = e.clientX;
-      lastY = e.clientY;
-    });
-
-    canvas.addEventListener('pointerup', () => {
-      isDragging = false;
-    });
-
-    canvas.addEventListener('pointercancel', () => {
-      isDragging = false;
-    });
 
     // --- RESIZE ---
     let resizeTimer;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        if (globe) globe.destroy();
-        initGlobe();
-        if (connections.length) {
-          globe.update({ markers: getMarkers(), arcs: getArcs() });
-        }
+        if (!globe) return;
+        const s = getSize();
+        globe.width(s).height(s);
       }, 200);
+    });
+
+    buildDotTexture().then(textureUrl => {
+      globe = Globe()
+        .width(getSize())
+        .height(getSize())
+        .backgroundColor('rgba(0,0,0,0)')
+        .globeImageUrl(textureUrl)
+        .atmosphereColor('#3DA899')
+        .atmosphereAltitude(0.15)
+        .arcsData([])
+        .arcStartLat(d => d.cityA.lat)
+        .arcStartLng(d => d.cityA.lng)
+        .arcEndLat(d => d.cityB.lat)
+        .arcEndLng(d => d.cityB.lng)
+        .arcColor(d => d.color)
+        .arcAltitudeAutoScale(0.4)
+        .arcStroke(0.5)
+        .arcDashLength(0.6)
+        .arcDashGap(0.4)
+        .arcDashAnimateTime(2000)
+        .pointsData([])
+        .pointLat(d => d.lat)
+        .pointLng(d => d.lng)
+        .pointColor(() => '#3DA899')
+        .pointAltitude(0.005)
+        .pointRadius(0.3)
+        .htmlElementsData([])
+        .htmlLat(d => d.lat)
+        .htmlLng(d => d.lng)
+        .htmlAltitude(0.01)
+        .htmlElement(d => {
+          const el = document.createElement('div');
+          el.style.cssText = [
+            "font-family:'JetBrains Mono',monospace",
+            'font-size:0.58rem',
+            `color:${d.labelColor || PRESETS[0]}`,
+            'letter-spacing:0.12em',
+            'text-transform:uppercase',
+            'pointer-events:none',
+            'white-space:nowrap',
+            'padding:2px 0 0 7px',
+            'opacity:0.85',
+          ].join(';');
+          el.textContent = d.name;
+          return el;
+        })
+        (globeViz);
+
+      globe.controls().autoRotate = true;
+      globe.controls().autoRotateSpeed = 1;
+      globe.controls().enableZoom = false;
     });
 
     // --- UI ---
@@ -524,42 +563,68 @@
     const connectionList = document.getElementById('connectionList');
 
     connectionList.addEventListener('click', (e) => {
-      const btn = e.target.closest('.connection-remove');
-      if (!btn) return;
-      const idx = parseInt(btn.dataset.index, 10);
-      connections.splice(idx, 1);
-      renderConnections();
-      globe.update({ markers: getMarkers(), arcs: getArcs() });
-      populateSelect(cityASelect, cityBSelect.value);
-      populateSelect(cityBSelect, cityASelect.value);
+      // Remove connection
+      const removeBtn = e.target.closest('.connection-remove');
+      if (removeBtn) {
+        const idx = parseInt(removeBtn.dataset.index, 10);
+        connections.splice(idx, 1);
+        if (activeColorPicker === idx) activeColorPicker = null;
+        else if (activeColorPicker > idx) activeColorPicker--;
+        renderConnections();
+        updateGlobe();
+        populateSelect(cityASelect, cityBSelect.value);
+        populateSelect(cityBSelect, cityASelect.value);
+        return;
+      }
+
+      // Toggle colour picker
+      const dotBtn = e.target.closest('.connection-dot-btn');
+      if (dotBtn) {
+        const idx = parseInt(dotBtn.dataset.index, 10);
+        activeColorPicker = activeColorPicker === idx ? null : idx;
+        renderConnections();
+        return;
+      }
+
+      // Apply colour swatch
+      const swatch = e.target.closest('.color-swatch');
+      if (swatch) {
+        const idx = parseInt(swatch.dataset.index, 10);
+        connections[idx].color = swatch.dataset.color;
+        activeColorPicker = null;
+        renderConnections();
+        updateGlobe();
+        return;
+      }
     });
 
     document.getElementById('clear-all-connections').addEventListener('click', () => {
       connections.length = 0;
       renderConnections();
-      globe.update({ markers: getMarkers(), arcs: getArcs() });
+      updateGlobe();
       const clearBtn = document.getElementById('clear-all-connections');
       clearBtn.style.display = 'none';
       populateSelect(cityASelect, cityBSelect.value);
       populateSelect(cityBSelect, cityASelect.value);
     });
 
-
-    function getConnectedNames(cityIdx) {
+    // For a given origin, return its already-used destinations (blocks re-using same route)
+    // For a given destination, return its already-used origins (same logic, other direction)
+    function getUsedPairs(cityIdx, asOrigin) {
       if (cityIdx === '' || cityIdx == null) return new Set();
       const city = cities[parseInt(cityIdx, 10)];
       if (!city) return new Set();
-      const names = new Set();
-      for (const c of connections) {
-        if (c.cityA.name === city.name) names.add(c.cityB.name);
-        if (c.cityB.name === city.name) names.add(c.cityA.name);
-      }
-      return names;
+      return new Set(
+        connections
+          .filter(c => asOrigin ? c.cityA.name === city.name : c.cityB.name === city.name)
+          .map(c => asOrigin ? c.cityB.name : c.cityA.name)
+      );
     }
 
     function populateSelect(sel, excludeIdx) {
       const current = sel.value;
-      const alreadyConnected = getConnectedNames(excludeIdx);
+      const isDestination = sel === cityBSelect;
+      const alreadyConnected = getUsedPairs(excludeIdx, isDestination);
       sel.innerHTML = '<option value="">Select a city…</option>';
       cities.forEach((city, i) => {
         if (String(i) === String(excludeIdx)) return;
@@ -596,24 +661,68 @@
       }
       connectionList.innerHTML = '';
       connections.forEach(({ cityA, cityB, color }, i) => {
-        const row = document.createElement('div');
-        row.className = 'connection-row';
-        row.innerHTML = `
-        <span class="connection-dot" style="background:${color}"></span>
-        <span class="connection-label">${cityA.name} ↔ ${cityB.name}</span>
-        <button class="connection-remove" data-index="${i}" aria-label="Remove connection">×</button>
+        const pickerOpen = activeColorPicker === i;
+        const item = document.createElement('div');
+        item.className = 'connection-item';
+        item.innerHTML = `
+          <div class="connection-row">
+            <button class="connection-dot-btn${pickerOpen ? ' picker-open' : ''}" data-index="${i}" style="background:${color}" aria-label="Change arc colour"></button>
+            <span class="connection-label">${cityA.name} → ${cityB.name}</span>
+            <button class="connection-remove" data-index="${i}" aria-label="Remove connection">×</button>
+          </div>
+          ${pickerOpen ? `<div class="color-picker-row">${PRESETS.map(p => `<button class="color-swatch${p === color ? ' active' : ''}" data-index="${i}" data-color="${p}" style="background:${p}" aria-label="Set colour ${p}"></button>`).join('')}</div>` : ''}
         `;
-        connectionList.appendChild(row);
+        connectionList.appendChild(item);
       });
-      
+
       const clearBtn = document.getElementById('clear-all-connections');
-      if (connections.length >= 2) {
-        clearBtn.style.display = 'block';
-      } else {
-        clearBtn.style.display = 'none';
-      }
+      clearBtn.style.display = connections.length >= 2 ? 'block' : 'none';
     }
-    
+
+    function renderCityLabels() {
+      const section = document.getElementById('cityLabelsSection');
+      const list = document.getElementById('cityLabelsList');
+      const pts = getPoints();
+      if (pts.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = '';
+      list.innerHTML = '';
+      pts.forEach(city => {
+        const color = cityColors.get(city.name) || PRESETS[0];
+        const pickerOpen = activeCityColorPicker === city.name;
+        const item = document.createElement('div');
+        item.className = 'connection-item';
+        item.innerHTML = `
+          <div class="connection-row">
+            <button class="connection-dot-btn${pickerOpen ? ' picker-open' : ''}" data-city="${city.name}" style="background:${color}" aria-label="Change label colour"></button>
+            <span class="connection-label">${city.name}</span>
+          </div>
+          ${pickerOpen ? `<div class="color-picker-row">${PRESETS.map(p => `<button class="color-swatch${p === color ? ' active' : ''}" data-city="${city.name}" data-color="${p}" style="background:${p}" aria-label="Set label colour"></button>`).join('')}</div>` : ''}
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    document.getElementById('cityLabelsList').addEventListener('click', (e) => {
+      const dotBtn = e.target.closest('.connection-dot-btn');
+      if (dotBtn && dotBtn.dataset.city) {
+        const name = dotBtn.dataset.city;
+        activeCityColorPicker = activeCityColorPicker === name ? null : name;
+        renderCityLabels();
+        return;
+      }
+      const swatch = e.target.closest('.color-swatch');
+      if (swatch && swatch.dataset.city) {
+        cityColors.set(swatch.dataset.city, swatch.dataset.color);
+        activeCityColorPicker = null;
+        renderCityLabels();
+        updateGlobe();
+        return;
+      }
+    });
+
     addBtn.addEventListener('click', () => {
       const ai = cityASelect.value;
       const bi = cityBSelect.value;
@@ -631,23 +740,21 @@
       const cityB = cities[parseInt(bi, 10)];
 
       const isDuplicate = connections.some(c =>
-        (c.cityA.name === cityA.name && c.cityB.name === cityB.name) ||
-        (c.cityA.name === cityB.name && c.cityB.name === cityA.name)
+        c.cityA.name === cityA.name && c.cityB.name === cityB.name
       );
       if (isDuplicate) {
-        showError(`${cityA.name} ↔ ${cityB.name} already exists.`);
+        showError(`${cityA.name} → ${cityB.name} already exists.`);
         return;
       }
 
-      const usedColors = new Set(connections.map(c => c.color));
-      const color = PALETTE.find(c => !usedColors.has(c)) ?? PALETTE[connections.length % PALETTE.length];
+      const color = PRESETS[0];
 
       connections.push({ cityA, cityB, color });
       cityBSelect.value = '';
       populateSelect(cityASelect, cityBSelect.value);
       populateSelect(cityBSelect, cityASelect.value);
       renderConnections();
-      globe.update({ markers: getMarkers(), arcs: getArcs() });
+      updateGlobe();
     });
 
     // --- BOOT ---
@@ -659,15 +766,13 @@
       .then(data => {
         cities = data.sort((a, b) => a.name.localeCompare(b.name));
         populateSelects();
-        initGlobe();
       })
-      .catch(err => {
+      .catch(() => {
         cityASelect.innerHTML = '<option>Error loading cities</option>';
         cityBSelect.innerHTML = '<option>Error loading cities</option>';
         addBtn.textContent = 'Unavailable';
         addError.textContent = 'Could not load cities.json.';
         addError.classList.add('visible');
-        initGlobe();
       });
   </script>
 </body>

@@ -424,6 +424,42 @@
       color: var(--accent);
     }
 
+    /* --- SWAP DIRECTION --- */
+    .add-connection-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .add-connection-row .btn-primary {
+      flex: 1;
+      justify-content: center;
+    }
+
+    .swap-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 2.75rem;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: border-color 0.2s ease, color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .swap-btn:hover {
+      border-color: var(--text-secondary);
+      color: var(--text-secondary);
+    }
+
+    .swap-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
     /* --- RESPONSIVE --- */
     @media (max-width: 900px) {
       .globe-layout {
@@ -497,12 +533,12 @@
         <p class="controls-heading">Add connection</p>
 
         <div class="field-group">
-          <label class="field-label" for="cityA">Origin</label>
+          <label class="field-label" id="labelCityA" for="cityA">Origin</label>
           <select id="cityA"><option value="">Loading…</option></select>
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="cityB">Destination</label>
+          <label class="field-label" id="labelCityB" for="cityB">Destination</label>
           <select id="cityB"><option value="">Loading…</option></select>
         </div>
 
@@ -518,7 +554,10 @@
 
         <p class="globe-error" id="addError"></p>
 
-        <button class="btn-primary add-btn" id="addBtn" disabled>Loading…</button>
+        <div class="add-connection-row">
+          <button class="btn-primary" id="addBtn" disabled>Loading…</button>
+          <button class="swap-btn" id="swapBtn" type="button" aria-label="Swap direction" aria-pressed="false">⇄</button>
+        </div>
         
         <div class="connections-section">
           <div class="tab-bar">
@@ -582,6 +621,7 @@
     const pulsingCitiesOut = new Set();  // cities currently showing a pulse ring outwards
     const pulsingCitiesIn = new Set();  // cities that currently showing a pulse ring inwards
     let autoRotateResumeTimer = null; // pending autoRotate resume
+    let swapped = false;              // swap origin/destination direction
 
     // --- GLOBE ---
     const globeViz = document.getElementById('globeViz');
@@ -784,6 +824,21 @@
     const customCityInput = document.getElementById('customCityInput');
     const customCityLookupBtn = document.getElementById('customCityLookupBtn');
     const lookupResults = document.getElementById('lookupResults');
+    const labelCityA = document.getElementById('labelCityA');
+    const labelCityB = document.getElementById('labelCityB');
+    const swapBtn = document.getElementById('swapBtn');
+
+    function updateSwapState() {
+      labelCityA.textContent = swapped ? 'Destination' : 'Origin';
+      labelCityB.textContent = swapped ? 'Origin' : 'Destination';
+      swapBtn.classList.toggle('active', swapped);
+      swapBtn.setAttribute('aria-pressed', String(swapped));
+    }
+
+    swapBtn.addEventListener('click', () => {
+      swapped = !swapped;
+      updateSwapState();
+    });
 
     // --- TABS ---
     const tabConnections = document.getElementById('tabConnections');
@@ -972,6 +1027,11 @@
       cities.sort((a, b) => a.name.localeCompare(b.name));
       saveCustomCities();
       populateSelects();
+      const newIdx = cities.findIndex(c => c.name === stored.name);
+      if (newIdx !== -1) {
+        cityASelect.value = String(newIdx);
+        populateSelect(cityBSelect, cityASelect.value);
+      }
       customCityForm.classList.remove('open');
       customCityToggle.textContent = '+ Add a custom city';
       customCityInput.value = '';
@@ -1028,6 +1088,7 @@
       tabConnections.textContent = connections.length > 0
         ? `Active connections (${connections.length})`
         : 'Active connections';
+      document.getElementById('clear-all-connections').style.display = connections.length >= 2 ? 'block' : 'none';
       if (connections.length === 0) {
         connectionList.innerHTML = '<p class="connection-empty">No connections yet.</p>';
         return;
@@ -1047,9 +1108,6 @@
         `;
         connectionList.appendChild(item);
       });
-
-      const clearBtn = document.getElementById('clear-all-connections');
-      clearBtn.style.display = connections.length >= 2 ? 'block' : 'none';
     }
 
     function renderCityLabels() {
@@ -1126,8 +1184,9 @@
         return;
       }
 
-      const cityA = cities[parseInt(ai, 10)];
-      const cityB = cities[parseInt(bi, 10)];
+      const selA = cities[parseInt(ai, 10)];
+      const selB = cities[parseInt(bi, 10)];
+      const [cityA, cityB] = swapped ? [selB, selA] : [selA, selB];
 
       const isDuplicate = connections.some(c =>
         c.cityA.name === cityA.name && c.cityB.name === cityB.name

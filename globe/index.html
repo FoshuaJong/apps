@@ -695,7 +695,7 @@
     }
 
     async function buildDotTexture() {
-      const W = 2048, H = 1024;
+      const W = 2048*3, H = 1024*3;
 
       const topo = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json').then(r => r.json());
       const landFeature = topojson.feature(topo, topo.objects.land);
@@ -734,9 +734,9 @@
       }
       maskCtx.fill();
       // Antarctica encircles the south pole — antimeridian splitting leaves a gap there.
-      // Everything south of lat −81° is Antarctic ice at 110m resolution, so fill it solid.
+      // Everything south of lat −84.5° is Antarctic ice at 110m resolution, so fill it solid.
       maskCtx.fillStyle = 'white';
-      maskCtx.fillRect(0, Math.round((90 + 81) / 180 * H), W, H);
+      maskCtx.fillRect(0, Math.round((90 + 84.5) / 180 * H), W, H);
       const maskData = maskCtx.getImageData(0, 0, W, H).data;
 
       // Draw dot grid where land pixels are filled

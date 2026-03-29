@@ -138,6 +138,11 @@
       margin-bottom: 1rem;
     }
 
+    #connectionList {
+      max-height: 40vh;
+      overflow-y: auto;
+    }
+
     .connection-empty {
       font-size: 0.8rem;
       color: var(--text-muted);
@@ -525,6 +530,8 @@
       connections.splice(idx, 1);
       renderConnections();
       globe.update({ markers: getMarkers(), arcs: getArcs() });
+      populateSelect(cityASelect, cityBSelect.value);
+      populateSelect(cityBSelect, cityASelect.value);
     });
 
     document.getElementById('clear-all-connections').addEventListener('click', () => {
@@ -533,14 +540,30 @@
       globe.update({ markers: getMarkers(), arcs: getArcs() });
       const clearBtn = document.getElementById('clear-all-connections');
       clearBtn.style.display = 'none';
+      populateSelect(cityASelect, cityBSelect.value);
+      populateSelect(cityBSelect, cityASelect.value);
     });
 
 
+    function getConnectedNames(cityIdx) {
+      if (cityIdx === '' || cityIdx == null) return new Set();
+      const city = cities[parseInt(cityIdx, 10)];
+      if (!city) return new Set();
+      const names = new Set();
+      for (const c of connections) {
+        if (c.cityA.name === city.name) names.add(c.cityB.name);
+        if (c.cityB.name === city.name) names.add(c.cityA.name);
+      }
+      return names;
+    }
+
     function populateSelect(sel, excludeIdx) {
       const current = sel.value;
+      const alreadyConnected = getConnectedNames(excludeIdx);
       sel.innerHTML = '<option value="">Select a city…</option>';
       cities.forEach((city, i) => {
         if (String(i) === String(excludeIdx)) return;
+        if (alreadyConnected.has(city.name)) return;
         const opt = document.createElement('option');
         opt.value = i;
         opt.textContent = city.country ? `${city.name}, ${city.country}` : city.name;
@@ -621,7 +644,8 @@
 
       connections.push({ cityA, cityB, color });
       cityBSelect.value = '';
-      populateSelect(cityASelect, '');
+      populateSelect(cityASelect, cityBSelect.value);
+      populateSelect(cityBSelect, cityASelect.value);
       renderConnections();
       globe.update({ markers: getMarkers(), arcs: getArcs() });
     });

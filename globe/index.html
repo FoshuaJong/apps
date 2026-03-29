@@ -39,7 +39,7 @@
     /* --- LAYOUT --- */
     .globe-layout {
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 340px 1fr;
       gap: 3rem;
       align-items: start;
       padding-bottom: 6rem;
@@ -548,13 +548,8 @@
   <!-- MAIN -->
   <div class="container">
     <div class="globe-layout">
-            
-      <!-- GLOBE -->
-      <div class="globe-wrapper">
-        <div id="globeViz"></div>
-      </div>
       
-            <!-- CONTROLS -->
+      <!-- CONTROLS -->
       <div class="globe-controls">
         <p class="controls-heading">Add connection</p>
         
@@ -614,6 +609,12 @@
           <button class="btn-secondary add-btn" id="clear-all-connections" style="display:none; margin-top: 1rem;">Remove all connections</button>
         </div>
       </div>
+      
+      <!-- GLOBE -->
+      <div class="globe-wrapper">
+        <div id="globeViz"></div>
+      </div>
+      
     </div>
   </div>
   

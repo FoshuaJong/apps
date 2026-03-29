@@ -452,14 +452,14 @@
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
   <script>
-    // --- PRESETS (5 colours with strong contrast on dark bg) ---
+    // --- PRESETS (colours with strong contrast on dark bg) ---
     const PRESETS = [
-      '#BBD7F0', // baby blue - default
-      '#3DA899', // teal
-      '#E87A5D', // coral
-      '#7B8CDE', // periwinkle
-      '#F5C842', // amber
-      '#F472B6', // pink
+      '#2DD4BF', // Brighter UI Teal (The "home" color)
+      '#60A5FA', // Sky Blue (For a nice cool-side contrast)
+      '#F472B6', // Hot Pink (Stays consistent with your original, good for alerts)
+      '#F5C842', // Amber (Warm, high visibility for important data)
+      '#A855F7', // Deep Violet (Adds a "mysterious" high-contrast option)
+      '#FB923C', // Burnt Orange (More sophisticated than bright red)
     ];
 
     // --- STATE ---
@@ -595,6 +595,7 @@
         .width(getSize())
         .height(getSize())
         .backgroundColor('rgba(0,0,0,0)')
+        .atmosphereColor('#1F2937')
         .globeImageUrl(textureUrl)
         .arcsData([])
         .arcStartLat(d => d.cityA.lat)

@@ -324,6 +324,106 @@
       display: block;
     }
 
+    /* --- CUSTOM CITY --- */
+    .custom-city-toggle {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 0.5rem 0 0.25rem;
+      transition: opacity 0.2s ease;
+      display: block;
+    }
+
+    .custom-city-toggle:hover {
+      opacity: 0.7;
+    }
+
+    .custom-city-form {
+      display: none;
+      margin-top: 0.5rem;
+      padding: 0.85rem;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+
+    .custom-city-form.open {
+      display: block;
+    }
+
+    .custom-city-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .custom-city-form input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 0.6rem 0.9rem;
+      outline: none;
+      transition: border-color 0.25s ease;
+    }
+
+    .custom-city-form input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    .custom-city-form input[type="text"]::placeholder {
+      color: var(--text-muted);
+      opacity: 1;
+    }
+
+    .custom-city-form .btn-secondary {
+      padding: 0.6rem 1rem;
+      font-size: 0.7rem;
+      margin-top: 0;
+      white-space: nowrap;
+    }
+
+    .lookup-results {
+      margin-top: 0.5rem;
+    }
+
+    .lookup-result-btn {
+      display: block;
+      width: 100%;
+      background: none;
+      border: 1px solid var(--border);
+      margin-top: -1px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+      letter-spacing: 0.02em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .lookup-result-btn:hover {
+      border-color: var(--accent-border-hover);
+      color: var(--text-primary);
+      background: var(--accent-surface);
+      position: relative;
+      z-index: 1;
+    }
+
+    .globe-error.success {
+      color: var(--accent);
+    }
+
     /* --- RESPONSIVE --- */
     @media (max-width: 900px) {
       .globe-layout {
@@ -404,6 +504,16 @@
         <div class="field-group">
           <label class="field-label" for="cityB">Destination</label>
           <select id="cityB"><option value="">Loading…</option></select>
+        </div>
+
+        <button class="custom-city-toggle" id="customCityToggle" type="button">+ Add a custom city</button>
+        <div class="custom-city-form" id="customCityForm">
+          <label class="field-label" for="customCityInput">City or place name</label>
+          <div class="custom-city-row">
+            <input type="text" id="customCityInput" placeholder="e.g. Reykjavik" autocomplete="off" spellcheck="false">
+            <button class="btn-secondary" id="customCityLookupBtn" type="button">Look up</button>
+          </div>
+          <div id="lookupResults"></div>
         </div>
 
         <p class="globe-error" id="addError"></p>
@@ -510,7 +620,8 @@
         .pointsData(pts)
         .htmlElementsData(labelPts);
       renderCityLabels();
-    } 
+      saveState();
+    }
 
     async function buildDotTexture() {
       const W = 2048, H = 1024;
@@ -596,6 +707,7 @@
         .height(getSize())
         .backgroundColor('rgba(0,0,0,0)')
         .atmosphereColor('#1F2937')
+        .showAtmosphere(0)
         .globeImageUrl(textureUrl)
         .arcsData([])
         .arcStartLat(d => d.cityA.lat)
@@ -658,6 +770,7 @@
       globe.pointOfView({
         altitude: 2
       });
+      updateGlobe();
     });
 
     // --- UI ---
@@ -666,6 +779,11 @@
     const addBtn = document.getElementById('addBtn');
     const addError = document.getElementById('addError');
     const connectionList = document.getElementById('connectionList');
+    const customCityToggle = document.getElementById('customCityToggle');
+    const customCityForm = document.getElementById('customCityForm');
+    const customCityInput = document.getElementById('customCityInput');
+    const customCityLookupBtn = document.getElementById('customCityLookupBtn');
+    const lookupResults = document.getElementById('lookupResults');
 
     // --- TABS ---
     const tabConnections = document.getElementById('tabConnections');
@@ -772,9 +890,139 @@
     function showError(msg) {
       clearTimeout(errorTimer);
       addError.textContent = msg;
+      addError.classList.remove('success');
       addError.classList.add('visible');
       errorTimer = setTimeout(() => addError.classList.remove('visible'), 2500);
     }
+
+    function showSuccess(msg) {
+      clearTimeout(errorTimer);
+      addError.textContent = msg;
+      addError.classList.add('visible', 'success');
+      errorTimer = setTimeout(() => addError.classList.remove('visible', 'success'), 2500);
+    }
+
+    // --- CUSTOM CITIES ---
+    let customCities = [];
+
+    function saveCustomCities() {
+      localStorage.setItem('globe-custom-cities', JSON.stringify(customCities));
+    }
+
+    function loadCustomCities() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('globe-custom-cities') || '[]');
+        if (Array.isArray(saved)) {
+          customCities = saved;
+          cities.push(...customCities);
+          cities.sort((a, b) => a.name.localeCompare(b.name));
+        }
+      } catch (e) { /* corrupt storage — ignore */ }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('globe-state', JSON.stringify({
+          connections,
+          cityColors: Object.fromEntries(cityColors),
+        }));
+      } catch (e) { /* storage full or unavailable — ignore */ }
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('globe-state') || 'null');
+        if (!saved) return;
+        if (Array.isArray(saved.connections)) connections = saved.connections;
+        if (saved.cityColors && typeof saved.cityColors === 'object') {
+          for (const [k, v] of Object.entries(saved.cityColors)) cityColors.set(k, v);
+        }
+      } catch (e) { /* corrupt storage — ignore */ }
+    }
+
+    async function geocodeCity(query) {
+      const url = new URL('https://nominatim.openstreetmap.org/search');
+      url.searchParams.set('q', query);
+      url.searchParams.set('format', 'json');
+      url.searchParams.set('limit', '3');
+      url.searchParams.set('addressdetails', '1');
+      url.searchParams.set('accept-language', 'en');
+      const res = await fetch(url, { headers: { 'User-Agent': 'apps.fong.nz/globe' } });
+      if (!res.ok) throw new Error('Network error');
+      return res.json();
+    }
+
+    function parseNominatimResult(result) {
+      const addr = result.address || {};
+      const name = addr.city || addr.town || addr.village || addr.municipality || result.display_name.split(',')[0].trim();
+      const region = addr.state || addr.region || '';
+      const country = addr.country || '';
+      const _label = [name, region, country].filter(Boolean).join(', ');
+      return { name, country, lat: parseFloat(result.lat), lng: parseFloat(result.lon), custom: true, _label };
+    }
+
+    function addCustomCity(city) {
+      if (cities.some(c => c.name.toLowerCase() === city.name.toLowerCase())) {
+        lookupResults.innerHTML = `<p class="connection-empty" style="padding-top:0.4rem;color:var(--color-error)">"${city.name}" is already in the list.</p>`;
+        return;
+      }
+      const { _label, ...stored } = city;
+      customCities.push(stored);
+      cities.push(stored);
+      cities.sort((a, b) => a.name.localeCompare(b.name));
+      saveCustomCities();
+      populateSelects();
+      customCityForm.classList.remove('open');
+      customCityToggle.textContent = '+ Add a custom city';
+      customCityInput.value = '';
+      lookupResults.innerHTML = '';
+      showSuccess(`✓ ${city.name} added`);
+    }
+
+    // --- CUSTOM CITY EVENTS ---
+    customCityToggle.addEventListener('click', () => {
+      const isOpen = customCityForm.classList.toggle('open');
+      customCityToggle.textContent = isOpen ? '− Add a custom city' : '+ Add a custom city';
+      if (isOpen) {
+        customCityInput.focus();
+      } else {
+        customCityInput.value = '';
+        lookupResults.innerHTML = '';
+      }
+    });
+
+    customCityInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') customCityLookupBtn.click();
+    });
+
+    customCityLookupBtn.addEventListener('click', async () => {
+      const query = customCityInput.value.trim();
+      if (!query) return;
+      customCityLookupBtn.textContent = 'Searching…';
+      customCityLookupBtn.disabled = true;
+      lookupResults.innerHTML = '';
+      try {
+        const results = await geocodeCity(query);
+        if (results.length === 0) {
+          lookupResults.innerHTML = '<p class="connection-empty" style="padding-top:0.4rem">No places found.</p>';
+        } else {
+          results.forEach(result => {
+            const city = parseNominatimResult(result);
+            const btn = document.createElement('button');
+            btn.className = 'lookup-result-btn';
+            btn.type = 'button';
+            btn.textContent = city._label;
+            btn.addEventListener('click', () => addCustomCity(city));
+            lookupResults.appendChild(btn);
+          });
+        }
+      } catch (e) {
+        lookupResults.innerHTML = '<p class="connection-empty" style="padding-top:0.4rem;color:var(--color-error)">Lookup failed — check your connection.</p>';
+      } finally {
+        customCityLookupBtn.textContent = 'Look up';
+        customCityLookupBtn.disabled = false;
+      }
+    });
 
     function renderConnections() {
       tabConnections.textContent = connections.length > 0
@@ -922,7 +1170,11 @@
       })
       .then(data => {
         cities = data.sort((a, b) => a.name.localeCompare(b.name));
+        loadCustomCities();
+        loadState();
         populateSelects();
+        renderConnections();
+        updateGlobe();
       })
       .catch(() => {
         cityASelect.innerHTML = '<option>Error loading cities</option>';

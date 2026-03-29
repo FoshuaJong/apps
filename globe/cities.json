@@ -20,11 +20,5 @@
   { "name": "Tokyo", "lat": 35.6762, "lng": 139.6503, "country": "Japan" },
   { "name": "Sydney", "lat": -33.8688, "lng": 151.2093, "country": "Australia" },
   { "name": "Auckland", "lat": -36.8485, "lng": 174.7633, "country": "New Zealand" },
-  { "name": "Seoul", "lat": 37.5665, "lng": 126.9780, "country": "South Korea" },
-  { "name": "Christchurch", "lat": -43.5321, "lng": 172.6362, "country": "New Zealand" },
-  { "name": "San Francisco", "lat": 37.7749, "lng": -122.4194, "country": "United States" },
-  { "name": "Tauranga", "lat": -37.6878, "lng": 176.1651, "country": "New Zealand" },
-  { "name": "Wellington", "lat": -41.2866, "lng": 174.7756, "country": "New Zealand" },
-  { "name": "Melbourne", "lat": -37.8136, "lng": 144.9631, "country": "Australia" },
-  { "name": "Adelaide", "lat": -34.9285, "lng": 138.6007, "country": "Australia" }
+  { "name": "Seoul", "lat": 37.5665, "lng": 126.9780, "country": "South Korea" }
 ]

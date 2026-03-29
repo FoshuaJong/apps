@@ -21,5 +21,7 @@
   { "name": "Sydney", "lat": -33.8688, "lng": 151.2093, "country": "Australia" },
   { "name": "Auckland", "lat": -36.8485, "lng": 174.7633, "country": "New Zealand" },
   { "name": "Seoul", "lat": 37.5665, "lng": 126.9780, "country": "South Korea" },
-  { "name": "Christchurch", "lat": -43.5321, "lng": 172.6362, "country": "New Zealand" }
+  { "name": "Christchurch", "lat": -43.5321, "lng": 172.6362, "country": "New Zealand" },
+  { "name": "San Francisco", "lat": 37.7749, "lng": -122.4194, "country": "United States" },
+  { "name": "Tauranga", "lat": -37.6878, "lng": 176.1651, "country": "New Zealand" }
 ]

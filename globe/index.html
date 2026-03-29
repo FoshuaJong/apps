@@ -353,7 +353,7 @@
       font-size: 0.65rem;
       letter-spacing: 0.12em;
       cursor: pointer;
-      padding: 0.5rem 0 0.25rem;
+      padding: 0 0 0.5rem;
       transition: opacity 0.2s ease;
       display: block;
     }
@@ -562,6 +562,16 @@
           <div class="color-picker-row" id="pickerCityA" style="display: none; padding-left: 0; margin-bottom: 0.5rem;"></div>
         </div>
         
+        <button class="custom-city-toggle" id="customCityToggle" type="button">+ Add a custom city</button>
+        <div class="custom-city-form" id="customCityForm">
+          <label class="field-label" for="customCityInput">City or place name</label>
+          <div class="custom-city-row">
+            <input type="text" id="customCityInput" placeholder="e.g. Reykjavik" autocomplete="off" spellcheck="false">
+            <button class="btn-secondary" id="customCityLookupBtn" type="button">Look up</button>
+          </div>
+          <div id="lookupResults"></div>
+        </div>
+        
         <div class="field-group">
           <label class="field-label" id="labelCityB" for="cityB">Destination</label>
           <select id="cityB"><option value="">Loading…</option></select>
@@ -572,16 +582,6 @@
           <div class="color-picker-row" id="pickerCityB" style="display: none; padding-left: 0; margin-bottom: 0.5rem;"></div>
         </div>
         
-        
-        <button class="custom-city-toggle" id="customCityToggle" type="button">+ Add a custom city</button>
-        <div class="custom-city-form" id="customCityForm">
-          <label class="field-label" for="customCityInput">City or place name</label>
-          <div class="custom-city-row">
-            <input type="text" id="customCityInput" placeholder="e.g. Reykjavik" autocomplete="off" spellcheck="false">
-            <button class="btn-secondary" id="customCityLookupBtn" type="button">Look up</button>
-          </div>
-          <div id="lookupResults"></div>
-        </div>
         
         <p class="globe-error" id="addError"></p>
         <div class="add-connection-row">

@@ -50,6 +50,8 @@
       position: sticky;
       top: calc(var(--nav-offset) + 1rem);
       opacity: 0.8;
+      background: radial-gradient(circle at 50% 50%, var(--bg) 46%, transparent 52%);
+      z-index: 9999;
     }
 
     #globeViz {
@@ -72,11 +74,11 @@
       color: var(--accent);
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      margin-bottom: 1.25rem;
+      margin-bottom: 0.75rem;
     }
 
     .field-group {
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
     }
 
     .field-label {
@@ -86,7 +88,7 @@
       color: var(--text-muted);
       letter-spacing: 0.15em;
       text-transform: uppercase;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
     }
 
     select {
@@ -98,7 +100,7 @@
       color: var(--text-primary);
       font-family: var(--font-mono);
       font-size: 0.78rem;
-      padding: 0.75rem 2.25rem 0.75rem 0.9rem;
+      padding: 0.75rem 2.25rem 0.75rem .9rem;
       cursor: pointer;
       transition: border-color 0.25s ease;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235C5B59'/%3E%3C/svg%3E");
@@ -117,29 +119,64 @@
 
     .add-btn {
       width: 100%;
-      margin-top: 1rem;
+      margin-top: 0.5rem;
       justify-content: center;
     }
 
-    /* --- CONNECTION LIST --- */
+    /* --- TABS --- */
     .connections-section {
-      margin-top: 2rem;
+      margin-top: 1rem;
       border-top: 1px solid var(--border);
-      padding-top: 1.5rem;
+      padding-top: 1.25rem;
     }
 
-    .connections-heading {
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+      gap: 0;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      padding: 0.4rem 0.9rem 0.55rem;
       font-family: var(--font-mono);
-      font-size: 0.62rem;
+      font-size: 0.6rem;
       color: var(--text-muted);
-      letter-spacing: 0.2em;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
-      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease;
+      white-space: nowrap;
     }
 
-    #connectionList {
-      max-height: 40vh;
+    .tab-btn:hover:not(:disabled) {
+      color: var(--text-secondary);
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .tab-panel {
+      display: none;
+      max-height: 30vh;
       overflow-y: auto;
+      padding-top: 0.85rem;
+      padding-left: 3px;
+    }
+
+    .tab-panel.active {
+      display: block;
     }
 
     .connection-empty {
@@ -336,16 +373,20 @@
         <button class="btn-primary add-btn" id="addBtn" disabled>Loading…</button>
         
         <div class="connections-section">
-          <p class="connections-heading">Active connections</p>
-          <div id="connectionList">
-            <p class="connection-empty">No connections yet.</p>
+          <div class="tab-bar">
+            <button class="tab-btn active" id="tabConnections">Active connections</button>
+            <button class="tab-btn" id="tabCityLabels" disabled>City labels</button>
           </div>
+          <div class="tab-panel active" id="panelConnections">
+            <div id="connectionList">
+              <p class="connection-empty">No connections yet.</p>
+            </div>
+          </div>
+          <div class="tab-panel" id="panelCityLabels">
+            <div id="cityLabelsList"></div>
+          </div>
+          <button class="btn-secondary add-btn" id="clear-all-connections" style="display:none; margin-top: 1rem;">Remove all connections</button>
         </div>
-        <div class="connections-section" id="cityLabelsSection" style="display:none">
-          <p class="connections-heading">City labels</p>
-          <div id="cityLabelsList"></div>
-        </div>
-        <button class="btn-secondary add-btn" id="clear-all-connections">Remove all connections</button>
       </div>
 
     </div>
@@ -474,7 +515,7 @@
       const dotCanvas = document.createElement('canvas');
       dotCanvas.width = W; dotCanvas.height = H;
       const dotCtx = dotCanvas.getContext('2d');
-      dotCtx.fillStyle = '#0C0C0E'; // --bg
+      dotCtx.fillStyle = '#151517'; // --bg
       dotCtx.fillRect(0, 0, W, H);
       dotCtx.fillStyle = '#9B9A97'; // --text-secondary
       const spacing = 6, radius = 1.5;
@@ -553,6 +594,10 @@
       globe.controls().autoRotate = true;
       globe.controls().autoRotateSpeed = 1;
       globe.controls().enableZoom = false;
+
+      globe.pointOfView({
+        altitude: 2
+      });
     });
 
     // --- UI ---
@@ -561,6 +606,23 @@
     const addBtn = document.getElementById('addBtn');
     const addError = document.getElementById('addError');
     const connectionList = document.getElementById('connectionList');
+
+    // --- TABS ---
+    const tabConnections = document.getElementById('tabConnections');
+    const tabCityLabels = document.getElementById('tabCityLabels');
+    const panelConnections = document.getElementById('panelConnections');
+    const panelCityLabels = document.getElementById('panelCityLabels');
+
+    function switchTab(tab) {
+      const isConnections = tab === 'connections';
+      tabConnections.classList.toggle('active', isConnections);
+      tabCityLabels.classList.toggle('active', !isConnections);
+      panelConnections.classList.toggle('active', isConnections);
+      panelCityLabels.classList.toggle('active', !isConnections);
+    }
+
+    tabConnections.addEventListener('click', () => switchTab('connections'));
+    tabCityLabels.addEventListener('click', () => { if (!tabCityLabels.disabled) switchTab('cityLabels'); });
 
     connectionList.addEventListener('click', (e) => {
       // Remove connection
@@ -655,6 +717,9 @@
     }
 
     function renderConnections() {
+      tabConnections.textContent = connections.length > 0
+        ? `Active connections (${connections.length})`
+        : 'Active connections';
       if (connections.length === 0) {
         connectionList.innerHTML = '<p class="connection-empty">No connections yet.</p>';
         return;
@@ -680,14 +745,18 @@
     }
 
     function renderCityLabels() {
-      const section = document.getElementById('cityLabelsSection');
       const list = document.getElementById('cityLabelsList');
       const pts = getPoints();
+      tabCityLabels.textContent = pts.length > 0
+        ? `City labels (${pts.length})`
+        : 'City labels';
       if (pts.length === 0) {
-        section.style.display = 'none';
+        tabCityLabels.disabled = true;
+        if (!tabConnections.classList.contains('active')) switchTab('connections');
+        list.innerHTML = '';
         return;
       }
-      section.style.display = '';
+      tabCityLabels.disabled = false;
       list.innerHTML = '';
       pts.forEach(city => {
         const color = cityColors.get(city.name) || PRESETS[0];
@@ -698,6 +767,7 @@
           <div class="connection-row">
             <button class="connection-dot-btn${pickerOpen ? ' picker-open' : ''}" data-city="${city.name}" style="background:${color}" aria-label="Change label colour"></button>
             <span class="connection-label">${city.name}</span>
+            <button class="connection-remove" data-remove-city="${city.name}" aria-label="Remove city">×</button>
           </div>
           ${pickerOpen ? `<div class="color-picker-row">${PRESETS.map(p => `<button class="color-swatch${p === color ? ' active' : ''}" data-city="${city.name}" data-color="${p}" style="background:${p}" aria-label="Set label colour"></button>`).join('')}</div>` : ''}
         `;
@@ -706,6 +776,18 @@
     }
 
     document.getElementById('cityLabelsList').addEventListener('click', (e) => {
+      const removeBtn = e.target.closest('[data-remove-city]');
+      if (removeBtn) {
+        const name = removeBtn.dataset.removeCity;
+        connections = connections.filter(c => c.cityA.name !== name && c.cityB.name !== name);
+        if (activeCityColorPicker === name) activeCityColorPicker = null;
+        cityColors.delete(name);
+        renderConnections();
+        updateGlobe();
+        populateSelect(cityASelect, cityBSelect.value);
+        populateSelect(cityBSelect, cityASelect.value);
+        return;
+      }
       const dotBtn = e.target.closest('.connection-dot-btn');
       if (dotBtn && dotBtn.dataset.city) {
         const name = dotBtn.dataset.city;

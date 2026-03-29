@@ -39,7 +39,7 @@
     /* --- LAYOUT --- */
     .globe-layout {
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: 340px 1fr;
       gap: 3rem;
       align-items: start;
       padding-bottom: 6rem;
@@ -74,15 +74,13 @@
       font-family: var(--font-mono), 'Courier New', monospace;
       font-size: 0.5rem;
       letter-spacing: 0.12em;
-      text-transform: uppercase;
       color: #ffffff;
-      text-shadow: 0 0 4px rgba(45, 212, 191, 0.6); /* Soft teal glow */
+      /* text-shadow: 0 0 4px rgba(45, 212, 191, 0.6); Soft teal glow */
 
       /* The "Backplate" Visuals */
       background: rgba(10, 15, 20, 0.6);
-      backdrop-filter: blur(2px);
+      /* backdrop-filter: blur(2px); */
       border: 1px solid rgba(45, 212, 191, 0.3);
-      border-radius: 4px;
       padding: 4px 8px;
       
       /* Final Polish */
@@ -100,7 +98,6 @@
       font-size: 0.62rem;
       color: var(--accent);
       letter-spacing: 0.2em;
-      text-transform: uppercase;
       margin-bottom: 0.75rem;
     }
 
@@ -114,7 +111,6 @@
       font-size: 0.6rem;
       color: var(--text-muted);
       letter-spacing: 0.15em;
-      text-transform: uppercase;
       margin-bottom: 0.25rem;
     }
 
@@ -174,7 +170,6 @@
       font-size: 0.6rem;
       color: var(--text-muted);
       letter-spacing: 0.15em;
-      text-transform: uppercase;
       cursor: pointer;
       transition: color 0.2s ease, border-color 0.2s ease;
       white-space: nowrap;
@@ -359,7 +354,6 @@
       font-family: var(--font-mono);
       font-size: 0.65rem;
       letter-spacing: 0.12em;
-      text-transform: uppercase;
       cursor: pointer;
       padding: 0.5rem 0 0.25rem;
       transition: opacity 0.2s ease;
@@ -536,7 +530,7 @@
       </button>
     </div>
   </nav>
-
+  
   <!-- HEADER -->
   <section class="globe-header">
     <div class="container">
@@ -545,30 +539,35 @@
       <p>Connect cities across the world. Drag to rotate, add arcs between city pairs.</p>
     </div>
   </section>
-
+  
   <!-- MAIN -->
   <div class="container">
     <div class="globe-layout">
-
-      <!-- GLOBE -->
-      <div class="globe-wrapper">
-        <div id="globeViz"></div>
-      </div>
-
+      
       <!-- CONTROLS -->
       <div class="globe-controls">
         <p class="controls-heading">Add connection</p>
-
+        
         <div class="field-group">
           <label class="field-label" id="labelCityA" for="cityA">Origin</label>
           <select id="cityA"><option value="">Loading…</option></select>
         </div>
-
+        <div class="field-group">
+          <!-- <label class="field-label" id="labelColorA">Origin Color</label> -->
+          <div class="color-picker-row" id="pickerCityA" style="padding-left: 0; margin-bottom: 0.5rem;"></div>
+        </div>
+        
         <div class="field-group">
           <label class="field-label" id="labelCityB" for="cityB">Destination</label>
           <select id="cityB"><option value="">Loading…</option></select>
         </div>
-
+        
+        <div class="field-group">
+          <!-- <label class="field-label" id="labelColorB">Destination Color</label> -->
+          <div class="color-picker-row" id="pickerCityB" style="padding-left: 0; margin-bottom: 0.5rem;"></div>
+        </div>
+        
+        
         <button class="custom-city-toggle" id="customCityToggle" type="button">+ Add a custom city</button>
         <div class="custom-city-form" id="customCityForm">
           <label class="field-label" for="customCityInput">City or place name</label>
@@ -578,12 +577,15 @@
           </div>
           <div id="lookupResults"></div>
         </div>
-
+        
         <p class="globe-error" id="addError"></p>
-
         <div class="add-connection-row">
           <button class="btn-primary" id="addBtn" disabled>Loading…</button>
           <button class="swap-btn" id="swapBtn" type="button" aria-label="Swap direction" aria-pressed="false">⇄</button>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Arc Color</label>
+          <div class="color-picker-row" id="pickerArc" style="padding-left: 0; margin-bottom: 1rem;"></div>
         </div>
         
         <div class="connections-section">
@@ -602,10 +604,15 @@
           <button class="btn-secondary add-btn" id="clear-all-connections" style="display:none; margin-top: 1rem;">Remove all connections</button>
         </div>
       </div>
-
+      
+      <!-- GLOBE -->
+      <div class="globe-wrapper">
+        <div id="globeViz"></div>
+      </div>
+      
     </div>
   </div>
-
+  
   <!-- FOOTER -->
   <footer>
     <div class="container">
@@ -629,7 +636,7 @@
   <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
   <script>
     // --- PRESETS (colours with strong contrast on dark bg) ---
-    const PRESETS = [
+    const PRESETS_OLD = [
       '#2DD4BF', // Teal (Existing)
       '#60A5FA', // Sky Blue (Existing)
       '#22C55E', // Emerald Green (New - High Visibility)
@@ -640,6 +647,14 @@
       '#818CF8', // Indigo (New - Balanced)
       '#FB923C', // Burnt Orange (Existing)
       '#06B6D4', // Cyan (New - Tech focus)
+    ];
+
+    // Example for the Technical Teal direction
+    const PRESETS = [
+      '#FFFFFF', // Pure White (Active/Primary)
+      '#9B9A97', // Muted Gray (Secondary/Inactive)
+      '#2DD4BF', // The Sharp Accent (Functional Signal)
+      '#4B5563', // Deep Slate (Subtle Borders/Guides)
     ];
 
     // --- STATE ---
@@ -653,6 +668,11 @@
     const pulsingCitiesIn = new Set();  // cities that currently showing a pulse ring inwards
     let autoRotateResumeTimer = null; // pending autoRotate resume
     let swapped = false;              // swap origin/destination direction
+
+    // New state for the "Add Connection" pickers
+    let selectedColorA = PRESETS[0];
+    let selectedColorB = PRESETS[1]; // Default to a different color for variety
+    let selectedColorArc = PRESETS[0];
 
     // --- GLOBE ---
     const globeViz = document.getElementById('globeViz');
@@ -692,6 +712,33 @@
         .htmlElementsData(labelPts);
       renderCityLabels();
       saveState();
+    }
+
+    function renderCreationPickers() {
+      const containers = [
+        { id: 'pickerCityA', current: selectedColorA, setter: (val) => selectedColorA = val },
+        { id: 'pickerCityB', current: selectedColorB, setter: (val) => selectedColorB = val },
+        { id: 'pickerArc',   current: selectedColorArc, setter: (val) => selectedColorArc = val }
+      ];
+
+      containers.forEach(({ id, current, setter }) => {
+        const el = document.getElementById(id);
+        el.innerHTML = PRESETS.map(color => `
+          <button 
+            class="color-swatch ${color === current ? 'active' : ''}" 
+            style="background:${color}" 
+            data-color="${color}"
+          ></button>
+        `).join('');
+
+        // Add click listeners to swatches
+        el.querySelectorAll('.color-swatch').forEach(swatch => {
+          swatch.addEventListener('click', () => {
+            setter(swatch.dataset.color);
+            renderCreationPickers(); // Re-render to update the .active class
+          });
+        });
+      });
     }
 
     async function buildDotTexture() {
@@ -865,6 +912,11 @@
     function updateSwapState() {
       labelCityA.textContent = swapped ? 'Destination' : 'Origin';
       labelCityB.textContent = swapped ? 'Origin' : 'Destination';
+      
+      // Add these lines to sync the color picker labels
+      document.getElementById('labelColorA').textContent = swapped ? 'Destination Color' : 'Origin Color';
+      document.getElementById('labelColorB').textContent = swapped ? 'Origin Color' : 'Destination Color';
+
       swapBtn.classList.toggle('active', swapped);
       swapBtn.setAttribute('aria-pressed', String(swapped));
     }
@@ -1218,8 +1270,14 @@
         return;
       }
 
-      const selA = cities[parseInt(ai, 10)];
-      const selB = cities[parseInt(bi, 10)];
+      const selA = cities[parseInt(ai, 10)]; // Top City
+      const selB = cities[parseInt(bi, 10)]; // Bottom City
+
+      // 1. Assign colors based on PHYSICAL POSITION (Picker A -> Select A, Picker B -> Select B)
+      // This feels most intuitive to the user regardless of the "Swap" state.
+      cityColors.set(selA.name, selectedColorA);
+      cityColors.set(selB.name, selectedColorB);
+
       const [cityA, cityB] = swapped ? [selB, selA] : [selA, selB];
 
       const isDuplicate = connections.some(c =>
@@ -1230,9 +1288,7 @@
         return;
       }
 
-      const color = PRESETS[0];
-
-      connections.push({ cityA, cityB, color });
+      connections.push({ cityA, cityB, color: selectedColorArc });
       cityBSelect.value = '';
       populateSelect(cityASelect, cityBSelect.value);
       populateSelect(cityBSelect, cityASelect.value);
@@ -1267,6 +1323,7 @@
         loadState();
         populateSelects();
         renderConnections();
+        renderCreationPickers(); // <--- Add this
         updateGlobe();
       })
       .catch(() => {

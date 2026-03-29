@@ -61,7 +61,7 @@
   </nav>
 
   <div class="nothing-stage" id="stage">
-    <span id="fleeing-text">there's <a href="/nothing/something/" style="color: var(--accent); text-decoration: none; pointer-events: auto;">nothing</a> here</span>
+    <span id="fleeing-text">there's <a href="/nothing/" style="color: var(--accent); text-decoration: none; pointer-events: auto;">nothing</a> here</span>
   </div>
 
   <footer>
@@ -139,19 +139,6 @@
     document.addEventListener('mousemove', e => { mx = e.pageX; my = e.pageY; });
     document.addEventListener('mouseleave', () => { mx = -9999; my = -9999; });
 
-    // Click: place anchor near cursor, between it and the current anchor
-    document.addEventListener('click', e => {
-      const cx = e.pageX, cy = e.pageY;
-      const dx = anchorX - cx, dy = anchorY - cy;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      const gap  = dist > CLICK_GAP ? CLICK_GAP : Math.max(12, dist * 0.5);
-      const nx   = dist > 0 ? dx / dist : 1;
-      const ny   = dist > 0 ? dy / dist : 0;
-      const c    = clampAnchor(cx + nx * gap, cy + ny * gap);
-      anchorX = c.x; anchorY = c.y;
-      relocateCooldown = RELOCATE_COOL;
-    });
-
     function nearSegment(px, py, x1, y1, x2, y2, r) {
       const ax = x2-x1, ay = y2-y1, len2 = ax*ax+ay*ay;
       const t  = len2 > 0 ? Math.max(0, Math.min(1, ((px-x1)*ax+(py-y1)*ay)/len2)) : 0;
@@ -166,7 +153,17 @@
     }
 
     // ── Main loop ──────────────────────────────────────────────────
-    function tick() {
+    let startTime = null; // 1. Track when the animation starts
+
+    function tick(currentTime) {
+      // 2. Initialize the start time on the very first frame
+      if (!startTime) {
+        startTime = currentTime;
+      }
+
+      // 3. Calculate how much time has passed
+      const elapsed = currentTime - startTime;
+
       const centerX = stageX + stageW * 0.5;
       const centerY = stageY + stageH * 0.5;
 
@@ -206,7 +203,7 @@
       if (relocateCooldown > 0) {
         relocateCooldown--;
       } else if (dispMag > RELOCATE_DISP &&
-                 nearSegment(mx, my, elX, elY, anchorX, anchorY, PATH_RADIUS)) {
+                nearSegment(mx, my, elX, elY, anchorX, anchorY, PATH_RADIUS)) {
         const dh = dispX/dispMag, dv = dispY/dispMag;
         const c1 = clampAnchor(elX + (-dv)*ANCHOR_DIST, elY +   dh *ANCHOR_DIST);
         const c2 = clampAnchor(elX +   dv *ANCHOR_DIST, elY + (-dh)*ANCHOR_DIST);
@@ -231,9 +228,13 @@
         ` skew(${skewX}deg, ${skewY}deg)` +
         ` scaleX(${scaleX}) scaleY(${scaleY})`;
 
-      requestAnimationFrame(tick);
+      // 4. Only request a new frame if under the 10000ms (10 seconds) limit
+      if (elapsed < 10000) {
+        requestAnimationFrame(tick);
+      }
     }
 
+    // Start the loop
     requestAnimationFrame(tick);
   </script>
 

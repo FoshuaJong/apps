@@ -495,8 +495,7 @@
     function updateGlobe() {
       if (!globe) return;
       const pts = getPoints();
-
-      // 1. Sync cityColors (Keep your original logic)
+      // Sync cityColors: seed new cities, prune removed ones
       const activeNames = new Set(pts.map(p => p.name));
       for (const name of cityColors.keys()) {
         if (!activeNames.has(name)) cityColors.delete(name);
@@ -505,22 +504,13 @@
         if (!cityColors.has(p.name)) cityColors.set(p.name, PRESETS[0]);
       }
 
-      // 2. Map the data so BOTH pts and labelPts have the color
-      const dataWithColors = pts.map(p => ({ 
-        ...p, 
-        labelColor: cityColors.get(p.name) || PRESETS[0] 
-      }));
-
-      // 3. Update the globe (The critical fix is .pointColor)
+      const labelPts = pts.map(p => ({ ...p, labelColor: cityColors.get(p.name) || PRESETS[0] }));
       globe
         .arcsData([...connections])
-        .pointsData(dataWithColors) 
-        .pointColor(d => d.labelColor) // This links the 3D dot to your color map
-        .htmlElementsData(dataWithColors);
-
-      // 4. Call your original render function
+        .pointsData(pts)
+        .htmlElementsData(labelPts);
       renderCityLabels();
-    }
+    } 
 
     async function buildDotTexture() {
       const W = 2048, H = 1024;

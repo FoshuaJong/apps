@@ -273,6 +273,43 @@
       display: none;
     }
 
+    /* --- CITY PULSE --- */
+    @keyframes city-pulse {
+      0% { 
+        transform: translate(-50%, -50%) scale(0.4); 
+        opacity: 1; 
+      }
+      100% { 
+        transform: translate(-50%, -50%) scale(4); 
+        opacity: 0; 
+      }
+    }
+
+    .city-pulse-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 6px solid;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* Outgoing pulse (0s to 1.5s) */
+    .ring-send {
+      animation: city-pulse 1.2s ease-out forwards;
+    }
+
+    /* Incoming pulse (Starts at 1.5s, ends at 3s) */
+    .ring-receive {
+      /* It waits 1.5s to start, and the total loop is now 3s */
+      animation: city-pulse 1.2s reverse ease-in forwards;
+      animation-delay: 0.8s; 
+      opacity: 0; /* Keeps it hidden during the first 1.5s */
+    }
+
     /* --- ERROR STATE --- */
     .globe-error {
       font-family: var(--font-mono);
@@ -422,6 +459,7 @@
       '#7B8CDE', // periwinkle
       '#F5C842', // amber
       '#F472B6', // pink
+      '#BBD7FO', // blue
     ];
 
     // --- STATE ---
@@ -431,6 +469,9 @@
     let activeColorPicker = null;     // arc connection index with picker open, or null
     let activeCityColorPicker = null; // city name with label picker open, or null
     const cityColors = new Map();     // city name → hex color
+    const pulsingCitiesOut = new Set();  // cities currently showing a pulse ring outwards
+    const pulsingCitiesIn = new Set();  // cities that currently showing a pulse ring inwards
+    let autoRotateResumeTimer = null; // pending autoRotate resume
 
     // --- GLOBE ---
     const globeViz = document.getElementById('globeViz');
@@ -575,8 +616,22 @@
         .htmlLng(d => d.lng)
         .htmlAltitude(0.01)
         .htmlElement(d => {
-          const el = document.createElement('div');
-          el.style.cssText = [
+          const wrapper = document.createElement('div');
+          wrapper.style.cssText = 'position:relative;pointer-events:none;position: relative;pointer-events: none;transform: translate(-50%, -50%);';
+          if (pulsingCitiesOut.has(d.name)) {
+            const ring = document.createElement('div');
+            ring.classList.add('city-pulse-ring', 'ring-send');
+            ring.style.borderColor = d.labelColor || PRESETS[0];
+            wrapper.appendChild(ring);
+          }
+          if (pulsingCitiesIn.has(d.name)) {
+            const ring = document.createElement('div');
+            ring.classList.add('city-pulse-ring', 'ring-receive');
+            ring.style.borderColor = d.labelColor || PRESETS[0];
+            wrapper.appendChild(ring);
+          }
+          const label = document.createElement('div');
+          label.style.cssText = [
             "font-family:'JetBrains Mono',monospace",
             'font-size:0.58rem',
             `color:${d.labelColor || PRESETS[0]}`,
@@ -587,8 +642,9 @@
             'padding:2px 0 0 7px',
             'opacity:0.85',
           ].join(';');
-          el.textContent = d.name;
-          return el;
+          label.textContent = d.name;
+          wrapper.appendChild(label);
+          return wrapper;
         })
         (globeViz);
 
@@ -838,6 +894,21 @@
       populateSelect(cityBSelect, cityASelect.value);
       renderConnections();
       updateGlobe();
+      if (globe) {
+        globe.pointOfView({ lat: cityA.lat, lng: cityA.lng, altitude: 2 }, 1200);
+
+        // Pulse the origin city once the fly-to lands
+        setTimeout(() => {
+          pulsingCitiesOut.add(cityA.name);
+          pulsingCitiesIn.add(cityB.name);
+          updateGlobe();
+          setTimeout(() => {
+            pulsingCitiesOut.delete(cityA.name);
+            pulsingCitiesIn.delete(cityB.name);
+            updateGlobe();
+          }, 2000);
+        }, 1200);
+      }
     });
 
     // --- BOOT ---

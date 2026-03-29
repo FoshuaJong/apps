@@ -190,11 +190,13 @@
       const gravX = (centerX - anchorX) * GRAVITY;
       const gravY = (centerY - anchorY) * GRAVITY;
 
-      // Target: anchor displaced by all forces; lerp toward it
+      // Target: anchor displaced by all forces; lerp toward it, tires out linearly
+      const TIMEOUT = 10000
+      const currentLerp = Math.max(0.005, (-LERP / TIMEOUT) * elapsed + LERP);
       const targetX = anchorX + pushX + gravX;
       const targetY = anchorY + pushY + gravY;
-      elX += (targetX - elX) * LERP;
-      elY += (targetY - elY) * LERP;
+      elX += (targetX - elX) * currentLerp;
+      elY += (targetY - elY) * currentLerp;
 
       // Anchor relocation
       const dispX = elX - anchorX, dispY = elY - anchorY;
@@ -228,10 +230,8 @@
         ` skew(${skewX}deg, ${skewY}deg)` +
         ` scaleX(${scaleX}) scaleY(${scaleY})`;
 
-      // 4. Only request a new frame if under the 10000ms (10 seconds) limit
-      if (elapsed < 10000) {
-        requestAnimationFrame(tick);
-      }
+      requestAnimationFrame(tick);
+
     }
 
     // Start the loop

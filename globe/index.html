@@ -75,11 +75,9 @@
       font-size: 0.5rem;
       letter-spacing: 0.12em;
       color: #ffffff;
-      /* text-shadow: 0 0 4px rgba(45, 212, 191, 0.6); Soft teal glow */
 
       /* The "Backplate" Visuals */
-      background: rgba(10, 15, 20, 0.6);
-      /* backdrop-filter: blur(2px); */
+      background: rgba(10, 15, 20, 1);
       border: 1px solid rgba(45, 212, 191, 0.3);
       padding: 4px 8px;
       
@@ -191,7 +189,7 @@
 
     .tab-panel {
       display: none;
-      max-height: 15vh;
+      max-height: 25vh;
       overflow-y: auto;
       padding-top: 0.85rem;
       padding-left: 3px;
@@ -452,9 +450,16 @@
       margin-top: 0.5rem;
     }
 
-    .add-connection-row .btn-primary {
+    .add-connection-row .btn-secondary {
       flex: 1;
       justify-content: center;
+      border: 1px solid var(--accent);
+    }
+
+    .btn-secondary:hover {
+      background: #2d8a7d;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px var(--accent-border-hover);
     }
 
     .swap-btn {
@@ -536,7 +541,7 @@
     <div class="container">
       <p class="section-label">Interactive</p>
       <h1>Globe</h1>
-      <p>Connect cities across the world. Drag to rotate, add arcs between city pairs.</p>
+      <!-- <p>Connect cities across the world. Drag to rotate, add arcs between city pairs.</p> -->
     </div>
   </section>
   
@@ -580,13 +585,13 @@
         
         <p class="globe-error" id="addError"></p>
         <div class="add-connection-row">
-          <button class="btn-primary" id="addBtn" disabled>Loading…</button>
+          <button class="btn-secondary" id="addBtn" disabled>Loading…</button>
           <button class="swap-btn" id="swapBtn" type="button" aria-label="Swap direction" aria-pressed="false">⇄</button>
         </div>
-        <div class="field-group">
+        <!-- <div class="field-group">
           <label class="field-label">Arc Color</label>
           <div class="color-picker-row" id="pickerArc" style="padding-left: 0; margin-bottom: 1rem;"></div>
-        </div>
+        </div> -->
         
         <div class="connections-section">
           <div class="tab-bar">
@@ -671,8 +676,8 @@
 
     // New state for the "Add Connection" pickers
     let selectedColorA = PRESETS[0];
-    let selectedColorB = PRESETS[1]; // Default to a different color for variety
-    let selectedColorArc = PRESETS[0];
+    let selectedColorB = PRESETS[0]; // Default to a different color for variety
+    let selectedColorArc = PRESETS[2];
 
     // --- GLOBE ---
     const globeViz = document.getElementById('globeViz');
@@ -718,7 +723,7 @@
       const containers = [
         { id: 'pickerCityA', current: selectedColorA, setter: (val) => selectedColorA = val },
         { id: 'pickerCityB', current: selectedColorB, setter: (val) => selectedColorB = val },
-        { id: 'pickerArc',   current: selectedColorArc, setter: (val) => selectedColorArc = val }
+        // { id: 'pickerArc',   current: selectedColorArc, setter: (val) => selectedColorArc = val }
       ];
 
       containers.forEach(({ id, current, setter }) => {
@@ -872,11 +877,7 @@
           label.className = 'city-label-container';
           
           // Apply the dynamic color to the text, text-shadow (60% opacity), and border (30% opacity)
-          label.style.color = '#ffffff'; // Keeps text white for contrast, change to `color` if you want colored text
-          label.style.textShadow = `0 0 4px ${color}99`; 
           label.style.borderColor = color; // Solid border (no transparency)
-          label.style.backgroundColor = `${color}26`; // 15% opacity tint
-          label.style.textShadow = `0 0 6px ${color}`; // Stronger glow
           
           label.textContent = d.name;
           wrapper.appendChild(label);
@@ -1022,7 +1023,7 @@
       populateSelect(cityASelect, cityBSelect.value);
       populateSelect(cityBSelect, cityASelect.value);
       addBtn.disabled = false;
-      addBtn.textContent = 'Add connection';
+      addBtn.textContent = 'Connect';
     }
 
     cityASelect.addEventListener('change', () => populateSelect(cityBSelect, cityASelect.value));

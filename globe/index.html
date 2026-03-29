@@ -399,7 +399,7 @@
       return 2 * Math.asin(Math.sqrt(a));
     }
 
-    const SPLIT_THRESHOLD = Math.PI / 2; // split arcs > 90° to prevent clipping through globe
+    const SPLIT_THRESHOLD = Math.PI / 1.75; // split arcs > 100° to prevent clipping through globe
 
     function getArcs() {
       const arcs = [];
@@ -434,7 +434,7 @@
         theta,
         dark: 1,
         diffuse: 1.2,
-        mapSamples: 16000,
+        mapSamples: 30000,
         mapBrightness: 1.2,
         baseColor: [1, 1, 1],
         markerColor: [0.24, 0.66, 0.6],

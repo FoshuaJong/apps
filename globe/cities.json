@@ -23,5 +23,6 @@
   { "name": "Seoul", "lat": 37.5665, "lng": 126.9780, "country": "South Korea" },
   { "name": "Christchurch", "lat": -43.5321, "lng": 172.6362, "country": "New Zealand" },
   { "name": "San Francisco", "lat": 37.7749, "lng": -122.4194, "country": "United States" },
-  { "name": "Tauranga", "lat": -37.6878, "lng": 176.1651, "country": "New Zealand" }
+  { "name": "Tauranga", "lat": -37.6878, "lng": 176.1651, "country": "New Zealand" },
+  { "name": "Wellington", "lat": -41.2866, "lng": 174.7756, "country": "New Zealand" }
 ]

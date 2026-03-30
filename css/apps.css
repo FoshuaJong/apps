@@ -3,6 +3,18 @@
   --nav-offset: 5rem;
 }
 
+nav::before {
+  content: "";
+  position: absolute;
+  /* Pull the 'cap' up into the status bar area */
+  top: calc(-1 * env(safe-area-inset-top)); 
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: rgba(12, 12, 14, 0.8); /* Match your terminal background */
+  z-index: -1;
+}
+
 nav {
   position: fixed;
   top: 0; left: 0; right: 0;

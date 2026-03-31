@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Joshua Fong — CPSAT schedule</title>
+  <meta name="description" content="Constraint programming schedule solver demo.">
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/apps.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/">Apps</a></li>
+      <li class="nav-sep"></li>
+      <li><a href="/cpsat/" aria-current="page">CPSAT</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <!-- <p class="section-label hero-label">Constraint solver</p> -->
+      <p class="section-label hero-label">Under construction</p>
+      <h1 class="hero-title">Schedule demo</h1>
+      <p class="hero-sub">A hard-coded 3-asset, 14-day problem sent to the stub solver. Click Solve to see the schedule rendered as a timeline.</p>
+      <button class="btn-primary" id="solveBtn">Solve</button>
+      <p id="status"></p>
+    </div>
+  </section>
+
+  <section class="timeline-section" id="result" hidden>
+    <div class="container">
+      <p class="section-label">Solution</p>
+      <div class="timeline-wrap">
+        <div id="timeline"></div>
+      </div>
+      <ul class="legend" id="legend"></ul>
+      <div class="relationships" id="relationships"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Joshua Fong</p>
+    <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+  </div>
+</footer>
+
+<script>
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => navLinks.classList.remove('open'));
+  });
+</script>
+<script src="app.js"></script>
+</body>
+</html>

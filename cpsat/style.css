@@ -1,0 +1,136 @@
+/* CPSAT demo — app-specific styles */
+
+.hero {
+  padding: calc(var(--nav-offset) + 3rem) 0 3rem;
+}
+
+.hero-label {
+  margin-bottom: 1.25rem;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  line-height: 1.1;
+}
+
+.hero-sub {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 300;
+  line-height: 1.8;
+  max-width: 480px;
+  margin-bottom: 2.5rem;
+}
+
+/* Timeline section */
+.timeline-section {
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+}
+
+.timeline-section .section-label {
+  margin-bottom: 1.25rem;
+}
+
+.timeline-wrap {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  padding: 1rem 1.5rem 1.5rem;
+  overflow-x: auto;
+}
+
+#timeline {
+  position: relative;
+  min-height: 80px;
+  min-width: 540px;
+}
+
+.tl-item {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #fff;
+  letter-spacing: 0.05em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tl-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  border-left: 1px solid var(--border);
+  padding-left: 4px;
+  padding-top: 4px;
+  pointer-events: none;
+}
+
+/* Legend */
+.legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+  margin-top: 1.5rem;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* Status line */
+#status {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  min-height: 1.2em;
+  margin-top: 0.75rem;
+}
+
+#status.error {
+  color: var(--color-error);
+}
+
+/* Relationship badges */
+.relationships {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rel-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-surface);
+  border: 1px solid var(--accent-border-hover);
+  padding: 0.25rem 0.6rem;
+}

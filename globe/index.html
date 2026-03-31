@@ -514,6 +514,34 @@
         max-width: 100%;
       }
     }
+
+    /* --- SHARE / EXPORT --- */
+    .share-section {
+      border-top: 1px solid var(--border);
+      padding-top: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .share-btn-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .share-btn-row .btn-secondary {
+      flex: 1;
+      padding: 0.6rem 0.5rem;
+      font-size: 0.8rem;
+      justify-content: center;
+    }
+
+    .share-status {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      margin-top: 0.6rem;
+      min-height: 1.1rem;
+      letter-spacing: 0.05em;
+    }
   </style>
 </head>
 <body>
@@ -608,6 +636,17 @@
           </div>
           <button class="btn-secondary add-btn" id="clear-all-connections" style="display:none; margin-top: 1rem;">Remove all connections</button>
         </div>
+
+        <div class="share-section">
+          <p class="field-label">Share &amp; export</p>
+          <div class="share-btn-row">
+            <button class="btn-secondary" onclick="shareGlobe()">Copy link</button>
+            <button class="btn-secondary" onclick="exportGlobe()">Export</button>
+            <button class="btn-secondary" onclick="importGlobe()">Import</button>
+          </div>
+          <p class="share-status" id="shareStatus"></p>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none">
       </div>
       
       <!-- GLOBE -->
@@ -638,7 +677,7 @@
 
   <!-- GLOBE APP -->
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/globe.gl"></script>
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.45.1"></script>
   <script>
     // --- PRESETS (colours with strong contrast on dark bg) ---
     const PRESETS_OLD = [
@@ -1082,6 +1121,90 @@
       } catch (e) { /* corrupt storage — ignore */ }
     }
 
+    // --- SHARE / EXPORT / IMPORT ---
+    let shareStatusTimer;
+
+    function showShareStatus(msg, isError = false) {
+      const el = document.getElementById('shareStatus');
+      el.textContent = msg;
+      el.style.color = isError ? 'var(--text-muted)' : 'var(--accent)';
+      clearTimeout(shareStatusTimer);
+      shareStatusTimer = setTimeout(() => { el.textContent = ''; }, 3000);
+    }
+
+    function getShareState() {
+      return {
+        version: 1,
+        connections,
+        customCities,
+        cityColors: Object.fromEntries(cityColors),
+      };
+    }
+
+    function loadShareState(state) {
+      // Replace custom cities: strip old ones from cities[], inject new ones
+      cities = cities.filter(c => !c.custom);
+      customCities = Array.isArray(state.customCities) ? state.customCities : [];
+      cities.push(...customCities);
+      cities.sort((a, b) => a.name.localeCompare(b.name));
+      saveCustomCities();
+
+      // Replace connections and city colors
+      connections = Array.isArray(state.connections) ? state.connections : [];
+      cityColors.clear();
+      if (state.cityColors && typeof state.cityColors === 'object') {
+        for (const [k, v] of Object.entries(state.cityColors)) cityColors.set(k, v);
+      }
+      saveState();
+    }
+
+    function shareGlobe() {
+      const encoded = btoa(JSON.stringify(getShareState()));
+      history.replaceState(null, '', '#v1=' + encoded);
+      navigator.clipboard.writeText(location.href)
+        .then(() => showShareStatus('Link copied to clipboard'))
+        .catch(() => showShareStatus('Copy failed — check browser permissions', true));
+    }
+
+    function exportGlobe() {
+      const data = JSON.stringify(getShareState(), null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `globe-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importGlobe() {
+      document.getElementById('importFile').click();
+    }
+
+    document.getElementById('importFile').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const confirmed = connections.length === 0 ||
+        confirm('This will replace your current globe. Continue?');
+      if (!confirmed) { e.target.value = ''; return; }
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          const state = JSON.parse(ev.target.result);
+          loadShareState(state);
+          history.replaceState(null, '', location.pathname);
+          populateSelects();
+          renderConnections();
+          renderCreationPickers();
+          updateGlobe();
+          showShareStatus('Globe imported');
+        } catch {
+          showShareStatus('Invalid file', true);
+        }
+        e.target.value = '';
+      };
+      reader.readAsText(file);
+    });
+
     async function geocodeCity(query) {
       const url = new URL('https://nominatim.openstreetmap.org/search');
       url.searchParams.set('q', query);
@@ -1322,6 +1445,17 @@
         cities = data.sort((a, b) => a.name.localeCompare(b.name));
         loadCustomCities();
         loadState();
+        // Load state from share link if present
+        const hash = location.hash;
+        if (hash.startsWith('#v1=')) {
+          try {
+            const state = JSON.parse(atob(hash.slice(4)));
+            loadShareState(state);
+            history.replaceState(null, '', location.pathname);
+            // showShareStatus deferred until after DOM render completes
+            setTimeout(() => showShareStatus('Globe loaded from shared link'), 50);
+          } catch { /* malformed hash — ignore */ }
+        }
         populateSelects();
         renderConnections();
         renderCreationPickers(); // <--- Add this

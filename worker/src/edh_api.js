@@ -138,7 +138,7 @@ export class EDHClock {
       case 'START_GAME': {
         if (gs.phase !== 'lobby' || gs.players.length < 2) break;
         const att = ws.deserializeAttachment();
-        if (att?.playerId !== gs.hostId) break; // only host can start
+        if (att?.playerId !== gs.players[0]?.id) break; // only first-in-turn-order can start
         gs.phase = 'game';
         gs.currentTurn = 0;
         gs.paused = false;

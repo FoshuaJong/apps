@@ -907,11 +907,12 @@
     }
 
     function renderLobby(gs) {
-      const isHost = gs.hostId === playerId;
+      const isHost        = gs.hostId === playerId;           // can reorder
+      const isFirstInOrder = gs.players[0]?.id === playerId;  // can start
 
-      // Host sees Start button; guests see "waiting" text
-      elBtnStart.style.display  = isHost ? '' : 'none';
-      elHostWaiting.style.display = isHost ? 'none' : 'block';
+      // First-in-turn-order sees Start button; others see "waiting" text
+      elBtnStart.style.display    = isFirstInOrder ? '' : 'none';
+      elHostWaiting.style.display = isFirstInOrder ? 'none' : 'block';
       elBtnStart.disabled = gs.players.length < 2;
 
       // Sync time input with server (unless the user is actively editing it)

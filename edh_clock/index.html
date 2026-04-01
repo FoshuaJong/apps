@@ -509,12 +509,9 @@
 
     /* ── Responsive ───────────────────────────────────────────────────── */
     @media (max-width: 640px) {
+      .connect-inner,
       .lobby-inner {
         padding: 2rem 1.25rem 6rem;
-      }
-
-      .setup-row {
-        flex-direction: column;
       }
 
       #timers-area {
@@ -544,6 +541,34 @@
     </div>
   </nav>
 
+  <!-- ── Connect (pre-join) ───────────────────────────────────────────────── -->
+  <div id="view-connect">
+    <div class="connect-inner">
+      <p class="section-label">EDH Clock</p>
+      <p class="connect-desc">A shared chess clock for Commander.</p>
+
+      <div class="connect-field">
+        <input type="text" id="input-name" placeholder="Your name" maxlength="24" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="connect-actions">
+        <button class="btn-primary" id="btn-new-game">New game</button>
+      </div>
+
+      <div class="connect-divider"><span>or join a room</span></div>
+
+      <div class="connect-field">
+        <input type="text" id="input-code" placeholder="Room code (e.g. AB3K7)" maxlength="5" autocomplete="off" spellcheck="false" style="text-transform:uppercase">
+      </div>
+
+      <div class="connect-actions">
+        <button class="btn-secondary" id="btn-join-code">Join room</button>
+      </div>
+
+      <p id="connect-error"></p>
+    </div>
+  </div>
+
   <!-- ── Lobby ─────────────────────────────────────────────────────────────── -->
   <div id="view-lobby">
     <div class="lobby-inner">
@@ -552,16 +577,12 @@
       <div class="code-block">
         <div class="code-label">Room code</div>
         <div class="code-row">
-          <span id="game-code">——————</span>
+          <span id="game-code">…</span>
           <button id="btn-copy">Copy link</button>
         </div>
       </div>
 
       <div id="qr-container"></div>
-
-      <div class="setup-row">
-        <input type="text" id="input-name" placeholder="Your name" maxlength="24" autocomplete="off" spellcheck="false">
-      </div>
 
       <div class="time-row">
         <label for="input-time">Time per player</label>
@@ -569,10 +590,7 @@
         <span>min</span>
       </div>
 
-      <div class="lobby-actions">
-        <button class="btn-primary" id="btn-join">Join</button>
-        <button class="btn-secondary" id="btn-start" disabled>Start game</button>
-      </div>
+      <button class="btn-primary" id="btn-start" disabled>Start game</button>
 
       <div class="roster-label">Players</div>
       <ul id="player-list"></ul>
@@ -616,12 +634,12 @@
     // ── State ─────────────────────────────────────────────────────────────────
     let ws          = null;
     let gameState   = {};
-    let clockOffset = 0;     // Date.now() - serverNow at last message receipt
+    let clockOffset = 0;   // Date.now() - serverNow at last message receipt
     let currentCode = null;
     let playerName  = localStorage.getItem('edhPlayerName') || '';
-    let hasJoined   = false; // true once JOIN ack'd
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
+    const viewConnect  = document.getElementById('view-connect');
     const viewLobby    = document.getElementById('view-lobby');
     const viewGame     = document.getElementById('view-game');
     const elCode       = document.getElementById('game-code');
@@ -629,64 +647,81 @@
     const elPlayerList = document.getElementById('player-list');
     const elTimers     = document.getElementById('timers');
     const elBtnCopy    = document.getElementById('btn-copy');
-    const elBtnJoin    = document.getElementById('btn-join');
+    const elBtnNewGame = document.getElementById('btn-new-game');
+    const elBtnJoin    = document.getElementById('btn-join-code');
     const elBtnStart   = document.getElementById('btn-start');
     const elBtnPass    = document.getElementById('btn-pass');
     const elBtnPause   = document.getElementById('btn-pause');
     const elInputName  = document.getElementById('input-name');
+    const elInputCode  = document.getElementById('input-code');
     const elInputTime  = document.getElementById('input-time');
     const elStatusTurn = document.getElementById('status-turn');
     const elStatusWs   = document.getElementById('status-ws');
     const elPassName   = document.getElementById('pass-name');
+    const elError      = document.getElementById('connect-error');
 
     // ── Init ──────────────────────────────────────────────────────────────────
     if (playerName) elInputName.value = playerName;
 
-    const params = new URLSearchParams(location.search);
+    // Pre-fill code if arriving via QR / shared link
+    const params   = new URLSearchParams(location.search);
     const joinCode = params.get('join') || params.get('code');
+    if (joinCode) elInputCode.value = joinCode.toUpperCase();
 
-    if (joinCode) {
-      // Joining an existing room
-      currentCode = joinCode.toUpperCase();
-      showLobby();
-      renderCode(currentCode);
-      connectWs(currentCode);
-    } else {
-      // Creating a new room
-      createRoom();
-    }
+    showConnect();
 
-    // ── Room creation ─────────────────────────────────────────────────────────
-    async function createRoom() {
-      // Show lobby immediately so the page is never blank
-      showLobby();
-      elCode.textContent = '…';
+    // ── Connect-screen actions ────────────────────────────────────────────────
+    elBtnNewGame.addEventListener('click', async () => {
+      const name = elInputName.value.trim();
+      if (!name) { elInputName.focus(); return; }
+
+      setConnectBusy(true);
       try {
-        const res = await fetch(`/edh/new`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const res = await fetch('/edh/new');
+        if (!res.ok) throw new Error(`Server error ${res.status}`);
         const { code } = await res.json();
-        currentCode = code;
-        renderCode(code);
-        connectWs(code);
+        startSession(code, name);
       } catch (err) {
-        console.error('Failed to create room', err);
-        elCode.textContent = 'offline';
-        elStatusWs.textContent = 'no server';
+        setConnectBusy(false);
+        elError.textContent = 'Could not reach server — are you online?';
       }
+    });
+
+    elBtnJoin.addEventListener('click', () => {
+      const name = elInputName.value.trim();
+      const code = elInputCode.value.trim().toUpperCase();
+      if (!name) { elInputName.focus(); return; }
+      if (code.length !== 5) { elInputCode.focus(); return; }
+      startSession(code, name);
+    });
+
+    // Enter key on code input triggers join
+    elInputCode.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') elBtnJoin.click();
+    });
+
+    // ── Session start (WS connect + JOIN) ─────────────────────────────────────
+    function startSession(code, name) {
+      playerName = name;
+      localStorage.setItem('edhPlayerName', name);
+      currentCode = code;
+      connectWs(code, name);
+      showLobby();
+      renderCode(code);
     }
 
     // ── WebSocket ─────────────────────────────────────────────────────────────
-    function connectWs(code) {
+    // nameOverride: sent in onopen for the initial JOIN; on auto-reconnect
+    // we reuse the module-level playerName (already set by startSession).
+    function connectWs(code, nameOverride) {
       if (ws) { ws.onclose = null; ws.close(); }
       elStatusWs.textContent = 'connecting…';
       ws = new WebSocket(`${WS_PROTO}://${WORKER_HOST}/edh/game/${code}`);
 
       ws.onopen = () => {
         elStatusWs.textContent = 'connected';
-        if (hasJoined && playerName) {
-          // Rejoin with stored identity
-          send({ type: 'JOIN', playerId, name: playerName });
-        }
+        const name = nameOverride || playerName;
+        if (name) send({ type: 'JOIN', playerId, name });
       };
 
       ws.onmessage = (event) => {
@@ -696,9 +731,7 @@
         render();
       };
 
-      ws.onerror = () => {
-        elStatusWs.textContent = 'error';
-      };
+      ws.onerror = () => { elStatusWs.textContent = 'error'; };
 
       ws.onclose = () => {
         elStatusWs.textContent = 'reconnecting…';
@@ -714,7 +747,7 @@
 
     // ── Visibility / reconnect ────────────────────────────────────────────────
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) return;
+      if (document.hidden || !currentCode) return;
       if (!ws || ws.readyState !== WebSocket.OPEN) {
         connectWs(currentCode);
       } else {
@@ -742,7 +775,6 @@
       const myIndex  = (gs.players || []).findIndex(p => p.id === playerId);
       const isMyTurn = gs.phase === 'game' && gs.currentTurn === myIndex;
 
-      // View switching
       if (gs.phase === 'lobby') {
         showLobby();
         renderLobby(gs);
@@ -751,12 +783,10 @@
         renderGame(gs, isMyTurn);
       }
 
-      // Software dimming — dims screen for off-turn players
       document.body.classList.toggle('inactive', gs.phase === 'game' && !isMyTurn);
     }
 
     function renderLobby(gs) {
-      // Player roster
       elPlayerList.innerHTML = '';
       for (const p of gs.players) {
         const li = document.createElement('li');
@@ -764,12 +794,10 @@
         elPlayerList.appendChild(li);
       }
 
-      // Time input (sync with server default)
       if (!document.activeElement || document.activeElement !== elInputTime) {
         elInputTime.value = Math.round(gs.defaultMs / 60000);
       }
 
-      // Enable Start only with 2+ players
       elBtnStart.disabled = gs.players.length < 2;
     }
 
@@ -777,31 +805,23 @@
       const cp = gs.players[gs.currentTurn];
       viewGame.classList.toggle('paused', gs.paused);
 
-      // Pause button label
       elBtnPause.textContent = gs.paused ? 'Resume' : 'Pause';
-
-      // Pass button
       elBtnPass.disabled = gs.paused || !isMyTurn;
       elPassName.textContent = isMyTurn ? 'Pass turn' : (cp ? cp.name : '');
 
-      // Status line
       elStatusTurn.textContent = gs.paused
         ? 'paused'
         : cp ? `${cp.name}'s turn` : '';
 
-      // Timers — static banked times for non-active; active updated by rAF
       elTimers.innerHTML = '';
       for (let i = 0; i < gs.players.length; i++) {
-        const p   = gs.players[i];
-        const li  = document.createElement('li');
+        const p  = gs.players[i];
+        const li = document.createElement('li');
         li.dataset.idx = i;
         li.classList.toggle('active-turn', i === gs.currentTurn);
 
-        const displayMs = i === gs.currentTurn && !gs.paused
-          ? liveMs(gs)
-          : p.bankedMs;
-        const low = displayMs < 5 * 60 * 1000 && displayMs > 0;
-        li.classList.toggle('low-time', low);
+        const displayMs = i === gs.currentTurn && !gs.paused ? liveMs(gs) : p.bankedMs;
+        li.classList.toggle('low-time', displayMs < 5 * 60 * 1000 && displayMs > 0);
 
         li.innerHTML = `
           <span class="player-name">${escHtml(p.name)}</span>
@@ -811,7 +831,7 @@
       }
     }
 
-    // ── rAF tick — only updates the active player's timer display ─────────────
+    // ── rAF tick ──────────────────────────────────────────────────────────────
     function tick() {
       const gs = gameState;
       if (gs.phase === 'game' && !gs.paused && gs.turnStartTime) {
@@ -819,8 +839,6 @@
         if (el) {
           const ms = liveMs(gs);
           el.textContent = fmtMs(ms);
-
-          // Low-time class update
           const li = el.closest('li');
           if (li) li.classList.toggle('low-time', ms < 5 * 60 * 1000 && ms > 0);
         }
@@ -829,7 +847,6 @@
     }
     requestAnimationFrame(tick);
 
-    // Display time formula from CLAUDE.md:
     // Display Time = Banked Time - (Date.now() - turnStartTime - clockOffset)
     function liveMs(gs) {
       const elapsed = Date.now() - gs.turnStartTime - clockOffset;
@@ -837,25 +854,9 @@
     }
 
     // ── Lobby actions ─────────────────────────────────────────────────────────
-    elBtnJoin.addEventListener('click', () => {
-      const name = elInputName.value.trim();
-      if (!name) { elInputName.focus(); return; }
-      playerName = name;
-      localStorage.setItem('edhPlayerName', name);
-      hasJoined = true;
-      send({ type: 'JOIN', playerId, name });
-
-      const mins = parseInt(elInputTime.value, 10);
-      if (mins >= 1 && mins <= 999) {
-        send({ type: 'SET_TIME', minutes: mins });
-      }
-    });
-
     elInputTime.addEventListener('change', () => {
       const mins = parseInt(elInputTime.value, 10);
-      if (mins >= 1 && mins <= 999) {
-        send({ type: 'SET_TIME', minutes: mins });
-      }
+      if (mins >= 1 && mins <= 999) send({ type: 'SET_TIME', minutes: mins });
     });
 
     elBtnStart.addEventListener('click', () => {
@@ -872,15 +873,13 @@
     });
 
     elBtnCopy.addEventListener('click', async () => {
-      const url = buildJoinUrl(currentCode);
       try {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(buildJoinUrl(currentCode));
         elBtnCopy.textContent = 'Copied!';
-        setTimeout(() => { elBtnCopy.textContent = 'Copy link'; }, 2000);
       } catch {
         elBtnCopy.textContent = 'Copy failed';
-        setTimeout(() => { elBtnCopy.textContent = 'Copy link'; }, 2000);
       }
+      setTimeout(() => { elBtnCopy.textContent = 'Copy link'; }, 2000);
     });
 
     // ── Nav toggle ────────────────────────────────────────────────────────────
@@ -888,37 +887,48 @@
       document.getElementById('nav-links').classList.toggle('open');
     });
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── View helpers ──────────────────────────────────────────────────────────
+    function showConnect() {
+      viewConnect.classList.add('active');
+      viewLobby.classList.remove('active');
+      viewGame.classList.remove('active');
+      setConnectBusy(false);
+    }
+
     function showLobby() {
       viewLobby.classList.add('active');
+      viewConnect.classList.remove('active');
       viewGame.classList.remove('active');
     }
 
     function showGame() {
       viewGame.classList.add('active');
+      viewConnect.classList.remove('active');
       viewLobby.classList.remove('active');
     }
 
+    function setConnectBusy(busy) {
+      elBtnNewGame.disabled = busy;
+      elBtnJoin.disabled    = busy;
+      elBtnNewGame.textContent = busy ? 'Creating…' : 'New game';
+      elError.textContent = '';
+    }
+
+    // ── Misc helpers ──────────────────────────────────────────────────────────
     function renderCode(code) {
       elCode.textContent = code;
-
-      // QR code pointing to the join URL
       const url = buildJoinUrl(code);
       elQr.innerHTML = '';
       const canvas = document.createElement('canvas');
       elQr.appendChild(canvas);
       QRCode.toCanvas(canvas, url, {
-        width: 128,
-        margin: 0,
+        width: 128, margin: 0,
         color: { dark: '#E8E6E3', light: '#000000' },
-      }, (err) => {
-        if (err) elQr.textContent = '';
-      });
+      }, (err) => { if (err) elQr.innerHTML = ''; });
     }
 
     function buildJoinUrl(code) {
-      const base = `${location.origin}/edh_clock/`;
-      return `${base}?join=${code}`;
+      return `${location.origin}/edh_clock/?join=${code}`;
     }
 
     function fmtMs(ms) {
@@ -932,10 +942,8 @@
 
     function escHtml(str) {
       return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
   })();
   </script>

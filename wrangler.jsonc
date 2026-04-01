@@ -1,17 +1,24 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "apps",
-  "compatibility_date": "2025-09-27",
-  "observability": {
-    "enabled": true
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
-  "main": "worker/src/index.js",
-  "assets": {
-    "directory": ".",
-    "not_found_handling": "404-page",
-    "binding": "ASSETS"
-  }
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "apps",
+	"compatibility_date": "2025-09-27",
+	"observability": {
+		"enabled": true
+	},
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"main": "worker/src/index.js",
+	"assets": {
+		"directory": ".",
+		"not_found_handling": "404-page",
+		"binding": "ASSETS"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "GLOBE_LINKS",
+			"id": "d5b6ef3c82084c6c8f6bd5e82538cfaf",
+			"remote": true
+		}
+	]
 }

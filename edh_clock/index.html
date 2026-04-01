@@ -14,6 +14,9 @@
   <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 
   <style>
+    /* Reinforce the HTML hidden attribute against flex/grid overrides */
+    [hidden] { display: none !important; }
+
     /* ── OLED overrides ───────────────────────────────────────────────── */
     :root {
       --bg: #000000;

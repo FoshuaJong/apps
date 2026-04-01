@@ -1247,9 +1247,7 @@
     // only reads primitive name/coord fields, so render state never leaks into output.
     function encodeGlobeState() {
       const c = connections.map(({ cityA, cityB, color }) =>
-        color === PRESETS[2]
-          ? [cityA.name, cityB.name]
-          : [cityA.name, cityB.name, color]
+          [cityA.name, cityB.name, color]
       );
       const state = { c };
       const usedNames = new Set(connections.flatMap(({ cityA, cityB }) => [cityA.name, cityB.name]));
@@ -1328,12 +1326,13 @@
     let shareStatusTimer;
     let shareBtnTimer;
 
+    // TODO: long links horizontally overwhelm the controls div (like when a KV value pair cannot be made so fallback to #v2 happens)
     function showShareStatus(msg, isError = false) {
       const el = document.getElementById('shareStatus');
       el.textContent = msg;
       el.style.color = isError ? 'var(--text-muted)' : 'var(--accent)';
       clearTimeout(shareStatusTimer);
-      shareStatusTimer = setTimeout(() => { el.textContent = ''; }, 3000);
+      shareStatusTimer = setTimeout(() => { el.textContent = ''; }, 500);
     }
 
     function setShareBtnState(s, url = '') {

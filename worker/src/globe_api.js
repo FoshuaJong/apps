@@ -19,6 +19,10 @@ function normalize(state) {
     out.x = state.x.slice().sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
   }
 
+  if (Array.isArray(state.l)) {
+    out.l = state.l.slice().sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
+  }
+
   if (Array.isArray(state.cc)) {
     out.cc = state.cc; // color index references in `c` are positional — do not reorder
   }

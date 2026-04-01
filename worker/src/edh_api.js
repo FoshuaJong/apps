@@ -98,6 +98,8 @@ export class EDHClock {
         if (!existing) {
           if (gs.phase !== 'lobby') break; // no late joins mid-game
           gs.players.push({ id: playerId, name: String(name).slice(0, 24), bankedMs: gs.defaultMs });
+          // First player to join becomes the host
+          if (!gs.hostId) gs.hostId = playerId;
         } else {
           existing.name = String(name).slice(0, 24); // allow name refresh on reconnect
         }
@@ -118,8 +120,25 @@ export class EDHClock {
         break;
       }
 
+      case 'REORDER': {
+        if (gs.phase !== 'lobby') break;
+        const att = ws.deserializeAttachment();
+        if (att?.playerId !== gs.hostId) break; // only host can reorder
+        const { order } = msg; // array of playerIds in desired order
+        if (!Array.isArray(order)) break;
+        const byId = Object.fromEntries(gs.players.map(p => [p.id, p]));
+        const reordered = order.map(id => byId[id]).filter(Boolean);
+        if (reordered.length !== gs.players.length) break; // sanity — no drops
+        gs.players = reordered;
+        await this._saveState(gs);
+        this._broadcast(gs);
+        break;
+      }
+
       case 'START_GAME': {
         if (gs.phase !== 'lobby' || gs.players.length < 2) break;
+        const att = ws.deserializeAttachment();
+        if (att?.playerId !== gs.hostId) break; // only host can start
         gs.phase = 'game';
         gs.currentTurn = 0;
         gs.paused = false;
@@ -199,6 +218,7 @@ export class EDHClock {
     return {
       phase: 'lobby',
       players: [],
+      hostId: null,
       currentTurn: 0,
       paused: false,
       turnStartTime: null,

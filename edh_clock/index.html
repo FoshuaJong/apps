@@ -507,6 +507,106 @@
       background: var(--bg);
     }
 
+    /* ── Player reorder controls (host only) ─────────────────────────── */
+    #player-list li {
+      gap: 0;
+    }
+
+    .player-name-text {
+      flex: 1;
+      padding-left: 0.75rem;
+    }
+
+    .reorder-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-left: 0.5rem;
+    }
+
+    .reorder-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      line-height: 1;
+      padding: 0.15rem 0.35rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    .reorder-btn:hover { color: var(--text-primary); }
+    .reorder-btn:disabled { opacity: 0.2; cursor: default; }
+
+    /* ── Waiting-for-host note ────────────────────────────────────────── */
+    #host-waiting {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      margin-bottom: 2.5rem;
+      display: none;
+    }
+
+    /* ── Ready modal ──────────────────────────────────────────────────── */
+    #modal-ready {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    #modal-ready[hidden] { display: none; }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+    }
+
+    .modal-box {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      width: min(380px, 90vw);
+    }
+
+    .modal-eyebrow {
+      margin-bottom: 0.6rem;
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 400;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-body {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 300;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .modal-actions button {
+      width: 100%;
+      justify-content: center;
+    }
+
     /* ── Responsive ───────────────────────────────────────────────────── */
     @media (max-width: 640px) {
       .connect-inner,
@@ -591,9 +691,24 @@
       </div>
 
       <button class="btn-primary" id="btn-start" disabled>Start game</button>
+      <p id="host-waiting">Waiting for host to start…</p>
 
       <div class="roster-label">Players</div>
       <ul id="player-list"></ul>
+    </div>
+  </div>
+
+  <!-- ── Ready modal ───────────────────────────────────────────────────────── -->
+  <div id="modal-ready" hidden>
+    <div class="modal-backdrop" id="modal-backdrop"></div>
+    <div class="modal-box">
+      <p class="modal-eyebrow section-label">Commander</p>
+      <h2 class="modal-title">Is everyone ready?</h2>
+      <p class="modal-body">Turn order is set. The clock starts for the first player immediately.</p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btn-confirm-start">Start the clock</button>
+        <button class="btn-secondary" id="btn-cancel-start">Not yet</button>
+      </div>
     </div>
   </div>
 
@@ -646,19 +761,24 @@
     const elQr         = document.getElementById('qr-container');
     const elPlayerList = document.getElementById('player-list');
     const elTimers     = document.getElementById('timers');
-    const elBtnCopy    = document.getElementById('btn-copy');
-    const elBtnNewGame = document.getElementById('btn-new-game');
-    const elBtnJoin    = document.getElementById('btn-join-code');
-    const elBtnStart   = document.getElementById('btn-start');
-    const elBtnPass    = document.getElementById('btn-pass');
-    const elBtnPause   = document.getElementById('btn-pause');
-    const elInputName  = document.getElementById('input-name');
-    const elInputCode  = document.getElementById('input-code');
-    const elInputTime  = document.getElementById('input-time');
-    const elStatusTurn = document.getElementById('status-turn');
-    const elStatusWs   = document.getElementById('status-ws');
-    const elPassName   = document.getElementById('pass-name');
-    const elError      = document.getElementById('connect-error');
+    const elBtnCopy          = document.getElementById('btn-copy');
+    const elBtnNewGame       = document.getElementById('btn-new-game');
+    const elBtnJoin          = document.getElementById('btn-join-code');
+    const elBtnStart         = document.getElementById('btn-start');
+    const elBtnPass          = document.getElementById('btn-pass');
+    const elBtnPause         = document.getElementById('btn-pause');
+    const elInputName        = document.getElementById('input-name');
+    const elInputCode        = document.getElementById('input-code');
+    const elInputTime        = document.getElementById('input-time');
+    const elStatusTurn       = document.getElementById('status-turn');
+    const elStatusWs         = document.getElementById('status-ws');
+    const elPassName         = document.getElementById('pass-name');
+    const elError            = document.getElementById('connect-error');
+    const elHostWaiting      = document.getElementById('host-waiting');
+    const elModalReady       = document.getElementById('modal-ready');
+    const elBtnConfirmStart  = document.getElementById('btn-confirm-start');
+    const elBtnCancelStart   = document.getElementById('btn-cancel-start');
+    const elModalBackdrop    = document.getElementById('modal-backdrop');
 
     // ── Init ──────────────────────────────────────────────────────────────────
     if (playerName) elInputName.value = playerName;
@@ -787,18 +907,52 @@
     }
 
     function renderLobby(gs) {
-      elPlayerList.innerHTML = '';
-      for (const p of gs.players) {
-        const li = document.createElement('li');
-        li.innerHTML = `<span class="pip"></span><span>${escHtml(p.name)}</span>`;
-        elPlayerList.appendChild(li);
-      }
+      const isHost = gs.hostId === playerId;
 
-      if (!document.activeElement || document.activeElement !== elInputTime) {
+      // Host sees Start button; guests see "waiting" text
+      elBtnStart.style.display  = isHost ? '' : 'none';
+      elHostWaiting.style.display = isHost ? 'none' : 'block';
+      elBtnStart.disabled = gs.players.length < 2;
+
+      // Sync time input with server (unless the user is actively editing it)
+      if (document.activeElement !== elInputTime) {
         elInputTime.value = Math.round(gs.defaultMs / 60000);
       }
 
-      elBtnStart.disabled = gs.players.length < 2;
+      // Player roster with reorder controls (↑/↓, host-only)
+      elPlayerList.innerHTML = '';
+      gs.players.forEach((p, i) => {
+        const li = document.createElement('li');
+
+        const pip  = `<span class="pip"></span>`;
+        const name = `<span class="player-name-text">${escHtml(p.name)}</span>`;
+        const you  = p.id === playerId ? ' <span style="color:var(--accent);font-size:0.65rem">(you)</span>' : '';
+
+        let reorderHtml = '';
+        if (isHost) {
+          reorderHtml = `
+            <span class="reorder-btns">
+              <button class="reorder-btn" data-dir="up" data-idx="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
+              <button class="reorder-btn" data-dir="down" data-idx="${i}" ${i === gs.players.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button>
+            </span>`;
+        }
+
+        li.innerHTML = pip + name + you + reorderHtml;
+        elPlayerList.appendChild(li);
+      });
+
+      // Reorder button handlers (delegated — rebuilt each render)
+      elPlayerList.querySelectorAll('.reorder-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx, 10);
+          const dir = btn.dataset.dir;
+          const order = gs.players.map(p => p.id);
+          const swap  = dir === 'up' ? idx - 1 : idx + 1;
+          if (swap < 0 || swap >= order.length) return;
+          [order[idx], order[swap]] = [order[swap], order[idx]];
+          send({ type: 'REORDER', order });
+        });
+      });
     }
 
     function renderGame(gs, isMyTurn) {
@@ -859,10 +1013,22 @@
       if (mins >= 1 && mins <= 999) send({ type: 'SET_TIME', minutes: mins });
     });
 
+    // Start button → open confirmation modal
     elBtnStart.addEventListener('click', () => {
+      elModalReady.hidden = false;
+    });
+
+    // Modal: confirm → actually start
+    elBtnConfirmStart.addEventListener('click', () => {
+      elModalReady.hidden = true;
       send({ type: 'START_GAME' });
       requestWakeLock();
     });
+
+    // Modal: cancel / backdrop click → dismiss
+    function closeModal() { elModalReady.hidden = true; }
+    elBtnCancelStart.addEventListener('click', closeModal);
+    elModalBackdrop.addEventListener('click', closeModal);
 
     elBtnPass.addEventListener('click', () => {
       send({ type: 'PASS_TURN', playerId });

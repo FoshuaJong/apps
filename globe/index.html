@@ -1086,6 +1086,25 @@
     // --- CUSTOM CITIES ---
     let customCities = [];
 
+    // Reduce a connection to portable minimal data (city names + color only).
+    // This prevents Three.js render objects (__threeObj*) from leaking into
+    // serialized state, which bloats URLs and localStorage significantly.
+    function minifyConnection(c) {
+      return { cityA: c.cityA.name, cityB: c.cityB.name, color: c.color };
+    }
+
+    // Reconstruct a full connection from minimal data. Supports both the new
+    // format (city names as strings) and the old format (full city objects) for
+    // backward compatibility with existing localStorage data and shared links.
+    function hydrateConnection(c) {
+      const nameA = typeof c.cityA === 'string' ? c.cityA : c.cityA?.name;
+      const nameB = typeof c.cityB === 'string' ? c.cityB : c.cityB?.name;
+      const cityA = cities.find(x => x.name === nameA);
+      const cityB = cities.find(x => x.name === nameB);
+      if (!cityA || !cityB) return null;
+      return { cityA, cityB, color: c.color };
+    }
+
     function saveCustomCities() {
       localStorage.setItem('globe-custom-cities', JSON.stringify(customCities));
     }
@@ -1104,7 +1123,7 @@
     function saveState() {
       try {
         localStorage.setItem('globe-state', JSON.stringify({
-          connections,
+          connections: connections.map(minifyConnection),
           cityColors: Object.fromEntries(cityColors),
         }));
       } catch (e) { /* storage full or unavailable — ignore */ }
@@ -1114,7 +1133,9 @@
       try {
         const saved = JSON.parse(localStorage.getItem('globe-state') || 'null');
         if (!saved) return;
-        if (Array.isArray(saved.connections)) connections = saved.connections;
+        if (Array.isArray(saved.connections)) {
+          connections = saved.connections.map(hydrateConnection).filter(Boolean);
+        }
         if (saved.cityColors && typeof saved.cityColors === 'object') {
           for (const [k, v] of Object.entries(saved.cityColors)) cityColors.set(k, v);
         }
@@ -1135,7 +1156,7 @@
     function getShareState() {
       return {
         version: 1,
-        connections,
+        connections: connections.map(minifyConnection),
         customCities,
         cityColors: Object.fromEntries(cityColors),
       };
@@ -1150,7 +1171,9 @@
       saveCustomCities();
 
       // Replace connections and city colors
-      connections = Array.isArray(state.connections) ? state.connections : [];
+      connections = Array.isArray(state.connections)
+        ? state.connections.map(hydrateConnection).filter(Boolean)
+        : [];
       cityColors.clear();
       if (state.cityColors && typeof state.cityColors === 'object') {
         for (const [k, v] of Object.entries(state.cityColors)) cityColors.set(k, v);

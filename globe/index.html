@@ -305,10 +305,6 @@
       color: var(--text-primary);
     }
 
-    #clear-all-connections {
-      display: none;
-    }
-
     /* --- CITY PULSE --- */
     @keyframes city-pulse {
       0% { 
@@ -704,7 +700,7 @@
     <div class="globe-page-left">
       <div class="globe-header">
         <h1>Globe</h1>
-        <p>Visualise city‑to‑city connections as great‑circle routes.</p>
+        <p>Share visualised city‑to‑city connections as great‑circle routes.</p>
       </div>
 
       <!-- CONTROLS -->
@@ -757,7 +753,6 @@
           <div class="tab-panel" id="panelCityLabels">
             <div id="cityLabelsList"></div>
           </div>
-          <button id="clear-all-connections" style="display:none;" aria-hidden="true"></button>
         </div>
 
         <!-- TODO: exports, imports, and shares should encode and decode the globe.autorotate and 
@@ -851,7 +846,6 @@
     const cityColors = new Map();     // city name → hex color
     const pulsingCitiesOut = new Set();  // cities currently showing a pulse ring outwards
     const pulsingCitiesIn = new Set();  // cities that currently showing a pulse ring inwards
-    let autoRotateResumeTimer = null; // pending autoRotate resume
     let swapped = false;              // swap origin/destination direction
 
     // New state for the "Add Connection" pickers
@@ -1153,8 +1147,6 @@
       connections.length = 0;
       renderConnections();
       updateGlobe();
-      const clearBtn = document.getElementById('clear-all-connections');
-      clearBtn.style.display = 'none';
       populateSelect(cityASelect, cityBSelect.value);
       populateSelect(cityBSelect, cityASelect.value);
     });

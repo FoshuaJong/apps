@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>EDH Clock</title>
+  <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/apps.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <style>
+    /* ── OLED overrides ───────────────────────────────────────────────── */
+    :root {
+      --bg: #000000;
+      --bg-elevated: #0a0a0a;
+      --bg-card: #111111;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden; /* game view is viewport-locked */
+    }
+
+    /* ── Software dimming overlay (off-turn players) ──────────────────── */
+    body.inactive::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      pointer-events: none; /* Pass Turn button still tappable through overlay */
+    }
+
+    /* ── Nav ──────────────────────────────────────────────────────────── */
+    nav {
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    nav::before {
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    /* ── Views ────────────────────────────────────────────────────────── */
+    #view-lobby,
+    #view-game {
+      display: none;
+    }
+
+    #view-lobby.active,
+    #view-game.active {
+      display: block;
+    }
+
+    /* ── Lobby ────────────────────────────────────────────────────────── */
+    #view-lobby {
+      padding-top: var(--nav-offset);
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .lobby-inner {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+
+    .lobby-heading {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+    }
+
+    /* Short code display */
+    .code-block {
+      margin-bottom: 2.5rem;
+    }
+
+    .code-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .code-row {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    #game-code {
+      font-family: var(--font-mono);
+      font-size: clamp(2.25rem, 8vw, 3rem);
+      font-weight: 500;
+      color: var(--text-primary);
+      letter-spacing: 0.35em;
+      line-height: 1;
+    }
+
+    #btn-copy {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    #btn-copy:hover {
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+    }
+
+    /* QR code */
+    #qr-container {
+      margin-bottom: 2.5rem;
+    }
+
+    #qr-container canvas {
+      display: block;
+      image-rendering: pixelated;
+    }
+
+    /* Name + time setup */
+    .setup-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .setup-row input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .setup-row input:focus {
+      border-color: var(--accent);
+    }
+
+    .setup-row input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .time-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .time-row label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .time-row input[type="number"] {
+      width: 5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+
+    .time-row input[type="number"]:focus {
+      border-color: var(--accent);
+    }
+
+    .time-row span {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* Join / Start buttons */
+    .lobby-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 2.5rem;
+    }
+
+    #btn-join {
+      flex: 1;
+    }
+
+    #btn-start {
+      flex: 1;
+    }
+
+    #btn-start:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* Player roster */
+    .roster-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    #player-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border-top: 1px solid var(--border);
+    }
+
+    #player-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    #player-list li .pip {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+
+    /* ── Game view ────────────────────────────────────────────────────── */
+    #view-game {
+      position: fixed;
+      inset: 0;
+      padding-top: var(--nav-offset);
+      background: var(--bg);
+    }
+
+    /* Upper half — timer list */
+    #timers-area {
+      position: absolute;
+      top: var(--nav-offset);
+      left: 0;
+      right: 0;
+      bottom: 50vh;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    #timers {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    #timers li {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      transition: opacity 0.25s;
+    }
+
+    #timers li.active-turn {
+      border-bottom-color: var(--accent);
+    }
+
+    #timers li .player-name {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: color 0.25s;
+    }
+
+    #timers li.active-turn .player-name {
+      color: var(--accent);
+    }
+
+    #timers li .player-time {
+      font-family: var(--font-mono);
+      font-size: clamp(1.4rem, 4vw, 1.75rem);
+      font-weight: 400;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-secondary);
+      letter-spacing: 0.05em;
+      transition: color 0.25s, font-size 0.25s;
+    }
+
+    #timers li.active-turn .player-time {
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      color: var(--text-primary);
+    }
+
+    #timers li.low-time .player-time {
+      color: var(--color-error);
+    }
+
+    /* Pass Turn button — fixed bottom 50% */
+    #btn-pass {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50vh;
+      background: var(--accent-surface);
+      border: none;
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      z-index: 10;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #btn-pass:active:not(:disabled) {
+      background: rgba(61, 168, 153, 0.14);
+    }
+
+    #btn-pass:disabled {
+      cursor: default;
+      opacity: 0.4;
+    }
+
+    #btn-pass .pass-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+
+    #btn-pass .pass-name {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 6vw, 2.5rem);
+      font-weight: 400;
+      color: var(--text-primary);
+    }
+
+    /* Pause button — top-right fixed */
+    #btn-pause {
+      position: fixed;
+      top: calc(var(--nav-offset) + 0.75rem);
+      right: 1.25rem;
+      z-index: 60;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.4rem 0.85rem;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    #btn-pause:hover {
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+    }
+
+    /* Paused banner */
+    #paused-banner {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+      z-index: 55;
+      pointer-events: none;
+    }
+
+    #view-game.paused #paused-banner {
+      display: block;
+    }
+
+    /* ── Status line ──────────────────────────────────────────────────── */
+    #status-line {
+      position: fixed;
+      bottom: 50vh;
+      left: 0;
+      right: 0;
+      padding: 0.35rem 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      z-index: 15;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    /* ── Responsive ───────────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .lobby-inner {
+        padding: 2rem 1.25rem 6rem;
+      }
+
+      .setup-row {
+        flex-direction: column;
+      }
+
+      #timers-area {
+        padding: 1rem 1rem 0.25rem;
+      }
+
+      #btn-pause {
+        top: calc(var(--nav-offset) + 0.5rem);
+        right: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Nav ───────────────────────────────────────────────────────────────── -->
+  <nav>
+    <div class="container">
+      <div class="nav-mark">
+        <a href="https://joshua.fong.nz"><span>JF</span></a> / apps
+      </div>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="https://joshua.fong.nz">Portfolio</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/">Apps</a></li>
+        <li><a href="/edh_clock/" aria-current="page">EDH Clock</a></li>
+      </ul>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ── Lobby ─────────────────────────────────────────────────────────────── -->
+  <div id="view-lobby">
+    <div class="lobby-inner">
+      <p class="lobby-heading section-label">EDH Clock</p>
+
+      <div class="code-block">
+        <div class="code-label">Room code</div>
+        <div class="code-row">
+          <span id="game-code">——————</span>
+          <button id="btn-copy">Copy link</button>
+        </div>
+      </div>
+
+      <div id="qr-container"></div>
+
+      <div class="setup-row">
+        <input type="text" id="input-name" placeholder="Your name" maxlength="24" autocomplete="off" spellcheck="false">
+      </div>
+
+      <div class="time-row">
+        <label for="input-time">Time per player</label>
+        <input type="number" id="input-time" value="60" min="1" max="999">
+        <span>min</span>
+      </div>
+
+      <div class="lobby-actions">
+        <button class="btn-primary" id="btn-join">Join</button>
+        <button class="btn-secondary" id="btn-start" disabled>Start game</button>
+      </div>
+
+      <div class="roster-label">Players</div>
+      <ul id="player-list"></ul>
+    </div>
+  </div>
+
+  <!-- ── Game ──────────────────────────────────────────────────────────────── -->
+  <div id="view-game">
+    <button id="btn-pause">Pause</button>
+    <div id="paused-banner">— Paused —</div>
+
+    <div id="timers-area">
+      <ul id="timers"></ul>
+    </div>
+
+    <div id="status-line">
+      <span id="status-turn"></span>
+      <span id="status-ws">connecting…</span>
+    </div>
+
+    <button id="btn-pass" disabled>
+      <span class="pass-label">Tap to pass turn</span>
+      <span class="pass-name" id="pass-name"></span>
+    </button>
+  </div>
+
+  <!-- ── Script ────────────────────────────────────────────────────────────── -->
+  <script>
+  (() => {
+    // ── Config ────────────────────────────────────────────────────────────────
+    const WORKER_HOST = 'apps.fong.nz'; // same origin — worker is colocated
+    const WS_PROTO    = location.protocol === 'https:' ? 'wss' : 'ws';
+
+    // ── Identity ──────────────────────────────────────────────────────────────
+    let playerId = localStorage.getItem('edhPlayerId');
+    if (!playerId) {
+      playerId = crypto.randomUUID();
+      localStorage.setItem('edhPlayerId', playerId);
+    }
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    let ws          = null;
+    let gameState   = {};
+    let clockOffset = 0;     // Date.now() - serverNow at last message receipt
+    let currentCode = null;
+    let playerName  = localStorage.getItem('edhPlayerName') || '';
+    let hasJoined   = false; // true once JOIN ack'd
+
+    // ── DOM refs ──────────────────────────────────────────────────────────────
+    const viewLobby    = document.getElementById('view-lobby');
+    const viewGame     = document.getElementById('view-game');
+    const elCode       = document.getElementById('game-code');
+    const elQr         = document.getElementById('qr-container');
+    const elPlayerList = document.getElementById('player-list');
+    const elTimers     = document.getElementById('timers');
+    const elBtnCopy    = document.getElementById('btn-copy');
+    const elBtnJoin    = document.getElementById('btn-join');
+    const elBtnStart   = document.getElementById('btn-start');
+    const elBtnPass    = document.getElementById('btn-pass');
+    const elBtnPause   = document.getElementById('btn-pause');
+    const elInputName  = document.getElementById('input-name');
+    const elInputTime  = document.getElementById('input-time');
+    const elStatusTurn = document.getElementById('status-turn');
+    const elStatusWs   = document.getElementById('status-ws');
+    const elPassName   = document.getElementById('pass-name');
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    if (playerName) elInputName.value = playerName;
+
+    const params = new URLSearchParams(location.search);
+    const joinCode = params.get('join') || params.get('code');
+
+    if (joinCode) {
+      // Joining an existing room
+      currentCode = joinCode.toUpperCase();
+      showLobby();
+      renderCode(currentCode);
+      connectWs(currentCode);
+    } else {
+      // Creating a new room
+      createRoom();
+    }
+
+    // ── Room creation ─────────────────────────────────────────────────────────
+    async function createRoom() {
+      // Show lobby immediately so the page is never blank
+      showLobby();
+      elCode.textContent = '…';
+      try {
+        const res = await fetch(`/edh/new`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const { code } = await res.json();
+        currentCode = code;
+        renderCode(code);
+        connectWs(code);
+      } catch (err) {
+        console.error('Failed to create room', err);
+        elCode.textContent = 'offline';
+        elStatusWs.textContent = 'no server';
+      }
+    }
+
+    // ── WebSocket ─────────────────────────────────────────────────────────────
+    function connectWs(code) {
+      if (ws) { ws.onclose = null; ws.close(); }
+      elStatusWs.textContent = 'connecting…';
+      ws = new WebSocket(`${WS_PROTO}://${WORKER_HOST}/edh/game/${code}`);
+
+      ws.onopen = () => {
+        elStatusWs.textContent = 'connected';
+        if (hasJoined && playerName) {
+          // Rejoin with stored identity
+          send({ type: 'JOIN', playerId, name: playerName });
+        }
+      };
+
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data);
+        if (msg.serverNow) clockOffset = Date.now() - msg.serverNow;
+        gameState = msg;
+        render();
+      };
+
+      ws.onerror = () => {
+        elStatusWs.textContent = 'error';
+      };
+
+      ws.onclose = () => {
+        elStatusWs.textContent = 'reconnecting…';
+        setTimeout(() => connectWs(code), 2000);
+      };
+    }
+
+    function send(obj) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(obj));
+      }
+    }
+
+    // ── Visibility / reconnect ────────────────────────────────────────────────
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        connectWs(currentCode);
+      } else {
+        send({ type: 'GET_STATE' });
+      }
+      requestWakeLock();
+    });
+
+    // ── Wake Lock ─────────────────────────────────────────────────────────────
+    let wakeLock = null;
+    async function requestWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        if (wakeLock) wakeLock.release();
+        wakeLock = await navigator.wakeLock.request('screen');
+      } catch (_) {}
+    }
+    requestWakeLock();
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    function render() {
+      const gs = gameState;
+      if (!gs.phase) return;
+
+      const myIndex  = (gs.players || []).findIndex(p => p.id === playerId);
+      const isMyTurn = gs.phase === 'game' && gs.currentTurn === myIndex;
+
+      // View switching
+      if (gs.phase === 'lobby') {
+        showLobby();
+        renderLobby(gs);
+      } else {
+        showGame();
+        renderGame(gs, isMyTurn);
+      }
+
+      // Software dimming — dims screen for off-turn players
+      document.body.classList.toggle('inactive', gs.phase === 'game' && !isMyTurn);
+    }
+
+    function renderLobby(gs) {
+      // Player roster
+      elPlayerList.innerHTML = '';
+      for (const p of gs.players) {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="pip"></span><span>${escHtml(p.name)}</span>`;
+        elPlayerList.appendChild(li);
+      }
+
+      // Time input (sync with server default)
+      if (!document.activeElement || document.activeElement !== elInputTime) {
+        elInputTime.value = Math.round(gs.defaultMs / 60000);
+      }
+
+      // Enable Start only with 2+ players
+      elBtnStart.disabled = gs.players.length < 2;
+    }
+
+    function renderGame(gs, isMyTurn) {
+      const cp = gs.players[gs.currentTurn];
+      viewGame.classList.toggle('paused', gs.paused);
+
+      // Pause button label
+      elBtnPause.textContent = gs.paused ? 'Resume' : 'Pause';
+
+      // Pass button
+      elBtnPass.disabled = gs.paused || !isMyTurn;
+      elPassName.textContent = isMyTurn ? 'Pass turn' : (cp ? cp.name : '');
+
+      // Status line
+      elStatusTurn.textContent = gs.paused
+        ? 'paused'
+        : cp ? `${cp.name}'s turn` : '';
+
+      // Timers — static banked times for non-active; active updated by rAF
+      elTimers.innerHTML = '';
+      for (let i = 0; i < gs.players.length; i++) {
+        const p   = gs.players[i];
+        const li  = document.createElement('li');
+        li.dataset.idx = i;
+        li.classList.toggle('active-turn', i === gs.currentTurn);
+
+        const displayMs = i === gs.currentTurn && !gs.paused
+          ? liveMs(gs)
+          : p.bankedMs;
+        const low = displayMs < 5 * 60 * 1000 && displayMs > 0;
+        li.classList.toggle('low-time', low);
+
+        li.innerHTML = `
+          <span class="player-name">${escHtml(p.name)}</span>
+          <span class="player-time" id="timer-${i}">${fmtMs(displayMs)}</span>
+        `;
+        elTimers.appendChild(li);
+      }
+    }
+
+    // ── rAF tick — only updates the active player's timer display ─────────────
+    function tick() {
+      const gs = gameState;
+      if (gs.phase === 'game' && !gs.paused && gs.turnStartTime) {
+        const el = document.getElementById(`timer-${gs.currentTurn}`);
+        if (el) {
+          const ms = liveMs(gs);
+          el.textContent = fmtMs(ms);
+
+          // Low-time class update
+          const li = el.closest('li');
+          if (li) li.classList.toggle('low-time', ms < 5 * 60 * 1000 && ms > 0);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // Display time formula from CLAUDE.md:
+    // Display Time = Banked Time - (Date.now() - turnStartTime - clockOffset)
+    function liveMs(gs) {
+      const elapsed = Date.now() - gs.turnStartTime - clockOffset;
+      return Math.max(0, gs.players[gs.currentTurn].bankedMs - elapsed);
+    }
+
+    // ── Lobby actions ─────────────────────────────────────────────────────────
+    elBtnJoin.addEventListener('click', () => {
+      const name = elInputName.value.trim();
+      if (!name) { elInputName.focus(); return; }
+      playerName = name;
+      localStorage.setItem('edhPlayerName', name);
+      hasJoined = true;
+      send({ type: 'JOIN', playerId, name });
+
+      const mins = parseInt(elInputTime.value, 10);
+      if (mins >= 1 && mins <= 999) {
+        send({ type: 'SET_TIME', minutes: mins });
+      }
+    });
+
+    elInputTime.addEventListener('change', () => {
+      const mins = parseInt(elInputTime.value, 10);
+      if (mins >= 1 && mins <= 999) {
+        send({ type: 'SET_TIME', minutes: mins });
+      }
+    });
+
+    elBtnStart.addEventListener('click', () => {
+      send({ type: 'START_GAME' });
+      requestWakeLock();
+    });
+
+    elBtnPass.addEventListener('click', () => {
+      send({ type: 'PASS_TURN', playerId });
+    });
+
+    elBtnPause.addEventListener('click', () => {
+      send({ type: gameState.paused ? 'RESUME' : 'PAUSE', playerId });
+    });
+
+    elBtnCopy.addEventListener('click', async () => {
+      const url = buildJoinUrl(currentCode);
+      try {
+        await navigator.clipboard.writeText(url);
+        elBtnCopy.textContent = 'Copied!';
+        setTimeout(() => { elBtnCopy.textContent = 'Copy link'; }, 2000);
+      } catch {
+        elBtnCopy.textContent = 'Copy failed';
+        setTimeout(() => { elBtnCopy.textContent = 'Copy link'; }, 2000);
+      }
+    });
+
+    // ── Nav toggle ────────────────────────────────────────────────────────────
+    document.getElementById('nav-toggle').addEventListener('click', () => {
+      document.getElementById('nav-links').classList.toggle('open');
+    });
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function showLobby() {
+      viewLobby.classList.add('active');
+      viewGame.classList.remove('active');
+    }
+
+    function showGame() {
+      viewGame.classList.add('active');
+      viewLobby.classList.remove('active');
+    }
+
+    function renderCode(code) {
+      elCode.textContent = code;
+
+      // QR code pointing to the join URL
+      const url = buildJoinUrl(code);
+      elQr.innerHTML = '';
+      const canvas = document.createElement('canvas');
+      elQr.appendChild(canvas);
+      QRCode.toCanvas(canvas, url, {
+        width: 128,
+        margin: 0,
+        color: { dark: '#E8E6E3', light: '#000000' },
+      }, (err) => {
+        if (err) elQr.textContent = '';
+      });
+    }
+
+    function buildJoinUrl(code) {
+      const base = `${location.origin}/edh_clock/`;
+      return `${base}?join=${code}`;
+    }
+
+    function fmtMs(ms) {
+      if (ms <= 0) return '0:00:00';
+      const s   = Math.ceil(ms / 1000);
+      const hrs = Math.floor(s / 3600);
+      const min = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${hrs}:${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  })();
+  </script>
+</body>
+</html>

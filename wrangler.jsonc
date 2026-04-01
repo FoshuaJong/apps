@@ -20,5 +20,19 @@
 			"id": "d5b6ef3c82084c6c8f6bd5e82538cfaf",
 			"remote": true
 		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "EDH_CLOCK",
+				"class_name": "EDHClock"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["EDHClock"]
+		}
 	]
 }

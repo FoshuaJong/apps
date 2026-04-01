@@ -15,8 +15,22 @@
   <link rel="stylesheet" href="../css/apps.css">
 
   <style>
+    /* --- LAYOUT --- */
+    .globe-page {
+      display: grid;
+      grid-template-columns: 1fr 58vw;
+      align-items: start;
+    }
+
+    .globe-page-left {
+      padding-top: var(--nav-offset);
+      padding-bottom: 6rem;
+      padding-left: max(2rem, calc((100vw - 1400px) / 2 + 2rem));
+      padding-right: 3rem;
+    }
+
     .globe-header {
-      padding: var(--nav-offset) 0 2.5rem;
+      padding-bottom: 2.5rem;
     }
 
     .globe-header h1 {
@@ -34,19 +48,6 @@
       font-weight: 300;
       line-height: 1.8;
       max-width: 420px;
-    }
-
-    /* --- LAYOUT --- */
-    .globe-layout {
-      display: grid;
-      grid-template-columns: calc(42vw - 2rem) 58vw;
-      align-items: start;
-      padding-bottom: 6rem;
-    }
-
-    .globe-controls {
-      /* left-align with .container content; right padding gives breathing room from globe */
-      padding-left: max(2rem, calc((100vw - 1080px) / 2 + 2rem));
     }
 
     /* --- GLOBE --- */
@@ -92,17 +93,6 @@
     }
 
     /* --- CONTROLS --- */
-    .globe-controls {
-      padding-top: 0.5rem;
-    }
-
-    .controls-heading {
-      font-family: var(--font-mono);
-      font-size: 0.62rem;
-      color: var(--accent);
-      letter-spacing: 0.2em;
-      margin-bottom: 0.75rem;
-    }
 
     .field-group {
       margin-bottom: 0.5rem;
@@ -158,9 +148,32 @@
 
     .tab-bar {
       display: flex;
+      align-items: flex-end;
       border-bottom: 1px solid var(--border);
       margin-bottom: 0;
       gap: 0;
+    }
+
+    .tab-clear {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+      padding: 0.4rem 0 0.55rem;
+      margin-left: auto;
+      transition: color 0.2s ease;
+      display: none;
+    }
+
+    .tab-clear.visible {
+      display: block;
+    }
+
+    .tab-clear:hover {
+      color: var(--text-primary);
     }
 
     .tab-btn {
@@ -194,8 +207,6 @@
 
     .tab-panel {
       display: none;
-      max-height: 25vh;
-      overflow-y: auto;
       padding-top: 0.85rem;
       padding-left: 3px;
       padding-right: 5px;
@@ -350,21 +361,31 @@
     }
 
     /* --- CUSTOM CITY --- */
+    .field-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.25rem;
+    }
+
+    .field-label-row .field-label {
+      margin-bottom: 0;
+    }
+
     .custom-city-toggle {
       background: none;
       border: none;
-      color: var(--accent);
+      color: var(--text-muted);
       font-family: var(--font-mono);
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       letter-spacing: 0.12em;
       cursor: pointer;
-      padding: 0 0 0.5rem;
-      transition: opacity 0.2s ease;
-      display: block;
+      padding: 0;
+      transition: color 0.2s ease;
     }
 
     .custom-city-toggle:hover {
-      opacity: 0.7;
+      color: var(--accent);
     }
 
     .custom-city-form {
@@ -450,13 +471,11 @@
 
     /* --- SWAP DIRECTION --- */
     .add-connection-row {
-      display: flex;
-      gap: 0.5rem;
       margin-top: 0.5rem;
     }
 
     .add-connection-row .btn-secondary {
-      flex: 1;
+      width: 100%;
       justify-content: center;
       border: 1px solid var(--accent);
     }
@@ -467,29 +486,26 @@
       box-shadow: 0 4px 15px var(--accent-border-hover);
     }
 
+    .swap-row {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0.2rem 0 0.35rem;
+    }
+
     .swap-btn {
       background: none;
-      border: 1px solid var(--border);
+      border: none;
       color: var(--text-muted);
-      width: 2.75rem;
-      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
       cursor: pointer;
-      transition: border-color 0.2s ease, color 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
+      padding: 0.15rem 0;
+      transition: color 0.2s ease;
     }
 
-    .swap-btn:hover {
-      border-color: var(--text-secondary);
-      color: var(--text-secondary);
-    }
-
-    .swap-btn.active {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    .swap-btn:hover { color: var(--text-secondary); }
+    .swap-btn.active { color: var(--accent); }
 
     /* --- ROTATE PAUSE INDICATOR --- */
     #rotateHint {
@@ -513,11 +529,14 @@
 
     /* --- RESPONSIVE --- */
     @media (max-width: 900px) {
-      .globe-layout {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 2rem;
-        padding-bottom: 4rem;
+      .globe-page {
+        display: block;
+      }
+
+      .globe-page-left {
+        padding-left: 2rem;
+        padding-right: 2rem;
+        padding-bottom: 2rem;
       }
 
       .globe-wrapper {
@@ -529,16 +548,16 @@
         opacity: 0.8;
         background: radial-gradient(circle at 50% 50%, var(--bg) 46%, transparent 52%);
       }
-
-      #globeViz {
-        width: 100%;
-        height: auto;
-      }
     }
 
     @media (max-width: 640px) {
+      .globe-page-left {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+      }
+
       .globe-header {
-        padding: 5.5rem 0 1.5rem;
+        padding-bottom: 1.5rem;
       }
 
       .globe-wrapper {
@@ -592,6 +611,72 @@
       letter-spacing: 0.03em;
     }
     .share-url-ghost.visible { opacity: 1; }
+
+    /* --- CONFIRM MODAL --- */
+    .confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(10, 12, 14, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .confirm-backdrop.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .confirm-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      width: min(380px, calc(100vw - 3rem));
+    }
+
+    .confirm-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .confirm-message {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 300;
+      line-height: 1.7;
+      margin-bottom: 1.75rem;
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+    }
+
+    .confirm-actions .btn-secondary {
+      font-size: 0.75rem;
+      padding: 0.55rem 1.1rem;
+    }
+
+    .confirm-actions .btn-confirm {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .confirm-actions .btn-confirm:hover {
+      background: var(--accent-surface);
+    }
   </style>
 </head>
 <body>
@@ -614,27 +699,23 @@
     </div>
   </nav>
   
-  <!-- HEADER -->
-  <section class="globe-header">
-    <div class="container">
-      <!-- <p class="section-label">Interactive</p> -->
-      <h1>Globe</h1>
-      <p>Visualise city‑to‑city connections as great‑circle routes.</p>
-    </div>
-  </section>
-  
-  <!-- MAIN -->
-  <div class="globe-layout">
+  <!-- PAGE -->
+  <div class="globe-page">
+    <div class="globe-page-left">
+      <div class="globe-header">
+        <h1>Globe</h1>
+        <p>Visualise city‑to‑city connections as great‑circle routes.</p>
+      </div>
 
       <!-- CONTROLS -->
       <div class="globe-controls">
-        <p class="controls-heading">Add connection</p>
-        
         <div class="field-group">
-          <label class="field-label" id="labelCityA" for="cityA">Origin</label>
+          <div class="field-label-row">
+            <label class="field-label" id="labelCityA" for="cityA">Origin</label>
+            <button class="custom-city-toggle" id="customCityToggle" type="button">+ custom</button>
+          </div>
           <select id="cityA"><option value="">Loading…</option></select>
         </div>
-        <button class="custom-city-toggle" id="customCityToggle" type="button">+ Add a custom city</button>
         <div class="custom-city-form" id="customCityForm">
           <label class="field-label" for="customCityInput">City or place name</label>
           <div class="custom-city-row">
@@ -644,17 +725,18 @@
           <div id="lookupResults"></div>
         </div>
         
+        <div class="swap-row">
+          <button class="swap-btn" id="swapBtn" type="button" aria-label="Swap origin and destination" aria-pressed="false">Swap</button>
+        </div>
+
         <div class="field-group">
           <label class="field-label" id="labelCityB" for="cityB">Destination</label>
           <select id="cityB"><option value="">Loading…</option></select>
         </div>
-        
-        
-        
+
         <p class="globe-error" id="addError"></p>
         <div class="add-connection-row">
           <button class="btn-secondary" id="addBtn" disabled>Loading…</button>
-          <button class="swap-btn" id="swapBtn" type="button" aria-label="Swap direction" aria-pressed="false">⇄</button>
         </div>
         <!-- <div class="field-group">
           <label class="field-label">Arc Color</label>
@@ -663,8 +745,9 @@
         
         <div class="connections-section">
           <div class="tab-bar">
-            <button class="tab-btn active" id="tabConnections">Active connections</button>
-            <button class="tab-btn" id="tabCityLabels" disabled>City labels</button>
+            <button class="tab-btn active" id="tabConnections">Connections</button>
+            <button class="tab-btn" id="tabCityLabels" disabled>Cities</button>
+            <button class="tab-clear" id="tabClear">Clear all</button>
           </div>
           <div class="tab-panel active" id="panelConnections">
             <div id="connectionList">
@@ -674,28 +757,41 @@
           <div class="tab-panel" id="panelCityLabels">
             <div id="cityLabelsList"></div>
           </div>
-          <button class="btn-secondary add-btn" id="clear-all-connections" style="display:none; margin-top: 1rem;">Remove all connections</button>
+          <button id="clear-all-connections" style="display:none;" aria-hidden="true"></button>
         </div>
 
         <div class="share-section">
-          <p class="field-label">Share &amp; export</p>
           <div class="share-btn-row">
             <button class="btn-secondary" id="shareBtn" data-state="idle" onclick="shareGlobe()">Copy link</button>
-            <button class="btn-secondary" onclick="exportGlobe()">Export</button>
-            <button class="btn-secondary" onclick="importGlobe()">Import</button>
+            <button class="btn-secondary" id="exportBtn" onclick="exportGlobe()">Export</button>
+            <button class="btn-secondary" id="importBtn" onclick="importGlobe()">Import</button>
           </div>
           <div id="shareUrlGhost" class="share-url-ghost"></div>
           <p class="share-status" id="shareStatus"></p>
         </div>
         <input type="file" id="importFile" accept=".json" style="display:none">
-      </div>
-      
-      <!-- GLOBE -->
-      <div class="globe-wrapper">
-        <div id="globeViz"></div>
-      </div>
-      <div id="rotateHint">Paused</div>
+      </div><!-- end .globe-controls -->
 
+    </div><!-- end .globe-page-left -->
+
+    <!-- GLOBE -->
+    <div class="globe-wrapper">
+      <div id="globeViz"></div>
+    </div>
+    <div id="rotateHint">Paused</div>
+
+  </div><!-- end .globe-page -->
+
+  <!-- CONFIRM MODAL -->
+  <div class="confirm-backdrop" id="confirmBackdrop" role="dialog" aria-modal="true" aria-labelledby="confirmMessage">
+    <div class="confirm-box">
+      <p class="confirm-eyebrow">Confirm</p>
+      <p class="confirm-message" id="confirmMessage"></p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" id="confirmCancel">Cancel</button>
+        <button class="btn-secondary btn-confirm" id="confirmOk">Replace</button>
+      </div>
+    </div>
   </div>
 
   <!-- FOOTER -->
@@ -988,10 +1084,6 @@
       labelCityA.textContent = swapped ? 'Destination' : 'Origin';
       labelCityB.textContent = swapped ? 'Origin' : 'Destination';
       
-      // Add these lines to sync the color picker labels
-      document.getElementById('labelColorA').textContent = swapped ? 'Destination Color' : 'Origin Color';
-      document.getElementById('labelColorB').textContent = swapped ? 'Origin Color' : 'Destination Color';
-      
       swapBtn.setAttribute('aria-pressed', String(swapped));
     }
 
@@ -1054,7 +1146,7 @@
       }
     });
 
-    document.getElementById('clear-all-connections').addEventListener('click', () => {
+    document.getElementById('tabClear').addEventListener('click', () => {
       connections.length = 0;
       renderConnections();
       updateGlobe();
@@ -1315,6 +1407,7 @@
       }
     }
 
+    let exportBtnTimer;
     function exportGlobe() {
       const data = JSON.stringify(encodeGlobeState(), null, 2);
       const blob = new Blob([data], { type: 'application/json' });
@@ -1323,20 +1416,49 @@
       a.download = `globe-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(a.href);
+      const btn = document.getElementById('exportBtn');
+      btn.textContent = 'Exported';
+      clearTimeout(exportBtnTimer);
+      exportBtnTimer = setTimeout(() => { btn.textContent = 'Export'; }, 2000);
     }
 
     function importGlobe() {
       document.getElementById('importFile').click();
     }
 
-    document.getElementById('importFile').addEventListener('change', function(e) {
+    function showConfirm(message) {
+      return new Promise(resolve => {
+        const backdrop = document.getElementById('confirmBackdrop');
+        document.getElementById('confirmMessage').textContent = message;
+        backdrop.classList.add('visible');
+        const ok = document.getElementById('confirmOk');
+        const cancel = document.getElementById('confirmCancel');
+        function close(result) {
+          backdrop.classList.remove('visible');
+          ok.removeEventListener('click', onOk);
+          cancel.removeEventListener('click', onCancel);
+          document.removeEventListener('keydown', onKey);
+          resolve(result);
+        }
+        const onOk = () => close(true);
+        const onCancel = () => close(false);
+        const onKey = e => { if (e.key === 'Escape') close(false); };
+        ok.addEventListener('click', onOk);
+        cancel.addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKey);
+      });
+    }
+
+    let importBtnTimer;
+    document.getElementById('importFile').addEventListener('change', async function(e) {
       const file = e.target.files[0];
       if (!file) return;
       const confirmed = connections.length === 0 ||
-        confirm('This will replace your current globe. Continue?');
+        await showConfirm('This will replace your current globe. Continue?');
       if (!confirmed) { e.target.value = ''; return; }
       const reader = new FileReader();
       reader.onload = function(ev) {
+        const btn = document.getElementById('importBtn');
         try {
           const state = JSON.parse(ev.target.result);
           applyGlobeState(state);
@@ -1344,7 +1466,9 @@
           populateSelects();
           renderConnections();
           updateGlobe();
-          showShareStatus('Globe imported');
+          btn.textContent = 'Imported';
+          clearTimeout(importBtnTimer);
+          importBtnTimer = setTimeout(() => { btn.textContent = 'Import'; }, 2000);
         } catch {
           showShareStatus('Invalid file', true);
         }
@@ -1391,7 +1515,7 @@
         populateSelect(cityBSelect, cityASelect.value);
       }
       customCityForm.classList.remove('open');
-      customCityToggle.textContent = '+ Add a custom city';
+      customCityToggle.textContent = '+ custom';
       customCityInput.value = '';
       lookupResults.innerHTML = '';
       showSuccess(`✓ ${city.name} added`);
@@ -1400,7 +1524,7 @@
     // --- CUSTOM CITY EVENTS ---
     customCityToggle.addEventListener('click', () => {
       const isOpen = customCityForm.classList.toggle('open');
-      customCityToggle.textContent = isOpen ? '− Add a custom city' : '+ Add a custom city';
+      customCityToggle.textContent = isOpen ? '− custom' : '+ custom';
       if (isOpen) {
         customCityInput.focus();
       } else {
@@ -1444,9 +1568,9 @@
 
     function renderConnections() {
       tabConnections.textContent = connections.length > 0
-        ? `Active connections (${connections.length})`
-        : 'Active connections';
-      document.getElementById('clear-all-connections').style.display = connections.length >= 2 ? 'block' : 'none';
+        ? `Connections (${connections.length})`
+        : 'Connections';
+      document.getElementById('tabClear').classList.toggle('visible', connections.length >= 2);
       if (connections.length === 0) {
         connectionList.innerHTML = '<p class="connection-empty">No connections yet.</p>';
         return;
@@ -1472,8 +1596,8 @@
       const list = document.getElementById('cityLabelsList');
       const pts = getPoints();
       tabCityLabels.textContent = pts.length > 0
-        ? `City labels (${pts.length})`
-        : 'City labels';
+        ? `Cities (${pts.length})`
+        : 'Cities';
       if (pts.length === 0) {
         tabCityLabels.disabled = true;
         if (!tabConnections.classList.contains('active')) switchTab('connections');

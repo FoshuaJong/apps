@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="../css/variables.css">
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/apps.css">
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 
   <style>
     /* ── OLED overrides ───────────────────────────────────────────────── */
@@ -651,11 +651,11 @@
         <input type="text" id="input-name" placeholder="Your name" maxlength="24" autocomplete="off" spellcheck="false">
       </div>
 
-      <div class="connect-actions">
+      <div class="connect-actions" id="new-game-actions">
         <button class="btn-primary" id="btn-new-game">New game</button>
       </div>
 
-      <div class="connect-divider"><span>or join a room</span></div>
+      <div class="connect-divider" id="connect-divider"><span>or join a room</span></div>
 
       <div class="connect-field">
         <input type="text" id="input-code" placeholder="Room code (e.g. AB3K7)" maxlength="5" autocomplete="off" spellcheck="false" style="text-transform:uppercase">
@@ -686,12 +686,12 @@
 
       <div class="time-row">
         <label for="input-time">Time per player</label>
-        <input type="number" id="input-time" value="60" min="1" max="999">
+        <input type="number" id="input-time" value="20" min="1" max="999">
         <span>min</span>
       </div>
 
       <button class="btn-primary" id="btn-start" disabled>Start game</button>
-      <p id="host-waiting">Waiting for host to start…</p>
+      <p id="host-waiting">Waiting for first player to start…</p>
 
       <div class="roster-label">Players</div>
       <ul id="player-list"></ul>
@@ -786,7 +786,13 @@
     // Pre-fill code if arriving via QR / shared link
     const params   = new URLSearchParams(location.search);
     const joinCode = params.get('join') || params.get('code');
-    if (joinCode) elInputCode.value = joinCode.toUpperCase();
+    if (joinCode) {
+      elInputCode.value = joinCode.toUpperCase();
+      // Arriving via invite — hide new-game path, promote join to primary
+      document.getElementById('new-game-actions').hidden = true;
+      document.getElementById('connect-divider').hidden  = true;
+      elBtnJoin.className = 'btn-primary';
+    }
 
     showConnect();
 
@@ -1088,10 +1094,14 @@
       elQr.innerHTML = '';
       const canvas = document.createElement('canvas');
       elQr.appendChild(canvas);
-      QRCode.toCanvas(canvas, url, {
-        width: 128, margin: 0,
-        color: { dark: '#E8E6E3', light: '#000000' },
-      }, (err) => { if (err) elQr.innerHTML = ''; });
+      new QRious({
+        element:    canvas,
+        value:      url,
+        size:       128,
+        background: '#000000',
+        foreground: '#E8E6E3',
+        level:      'M',
+      });
     }
 
     function buildJoinUrl(code) {

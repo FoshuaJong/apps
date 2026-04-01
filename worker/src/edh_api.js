@@ -25,6 +25,17 @@ function generateCode() {
   return code;
 }
 
+// Returns the index of the next non-eliminated player after fromIndex,
+// wrapping around. Returns -1 if no alive players remain.
+function nextAlive(players, fromIndex) {
+  const n = players.length;
+  for (let i = 1; i < n; i++) {
+    const idx = (fromIndex + i) % n;
+    if (!players[idx].eliminated) return idx;
+  }
+  return -1;
+}
+
 // ─── Request router ────────────────────────────────────────────────────────────
 
 export async function handleEdhApiRequest(request, env) {
@@ -97,7 +108,7 @@ export class EDHClock {
         const existing = gs.players.find(p => p.id === playerId);
         if (!existing) {
           if (gs.phase !== 'lobby') break; // no late joins mid-game
-          gs.players.push({ id: playerId, name: String(name).slice(0, 24), bankedMs: gs.defaultMs });
+          gs.players.push({ id: playerId, name: String(name).slice(0, 24), bankedMs: gs.defaultMs, eliminated: false });
           // First player to join becomes the host
           if (!gs.hostId) gs.hostId = playerId;
         } else {
@@ -155,8 +166,37 @@ export class EDHClock {
         if (myIndex !== gs.currentTurn) break; // not your turn
         const elapsed = Date.now() - gs.turnStartTime;
         gs.players[gs.currentTurn].bankedMs = Math.max(0, gs.players[gs.currentTurn].bankedMs - elapsed);
-        gs.currentTurn = (gs.currentTurn + 1) % gs.players.length;
+        const next = nextAlive(gs.players, gs.currentTurn);
+        if (next === -1) break; // no alive players left — don't advance
+        gs.currentTurn = next;
         gs.turnStartTime = Date.now();
+        await this._saveState(gs);
+        this._broadcast(gs);
+        break;
+      }
+
+      case 'ELIMINATE': {
+        if (gs.phase !== 'game') break;
+        const att = ws.deserializeAttachment();
+        // Players may only eliminate themselves
+        const myIndex = gs.players.findIndex(p => p.id === att?.playerId);
+        if (myIndex === -1 || gs.players[myIndex].eliminated) break;
+
+        // Freeze their clock at current value if it's their turn
+        if (myIndex === gs.currentTurn) {
+          const elapsed = Date.now() - gs.turnStartTime;
+          gs.players[myIndex].bankedMs = Math.max(0, gs.players[myIndex].bankedMs - elapsed);
+        }
+        gs.players[myIndex].eliminated = true;
+
+        // If it was their turn, immediately advance to the next alive player
+        if (myIndex === gs.currentTurn) {
+          const next = nextAlive(gs.players, myIndex);
+          if (next !== -1) {
+            gs.currentTurn = next;
+            gs.turnStartTime = Date.now();
+          }
+        }
         await this._saveState(gs);
         this._broadcast(gs);
         break;
@@ -222,7 +262,7 @@ export class EDHClock {
       currentTurn: 0,
       paused: false,
       turnStartTime: null,
-      defaultMs: 60 * 60 * 1000, // 60 minutes
+      defaultMs: 20 * 60 * 1000, // 20 minutes
     };
   }
 

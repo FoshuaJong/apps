@@ -37,6 +37,13 @@
       background: rgba(0, 0, 0, 0.85);
       z-index: 50;
       pointer-events: none; /* Pass Turn button still tappable through overlay */
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+
+    /* Touch-to-wake: temporarily lift the dimming overlay */
+    body.inactive.wake::after {
+      opacity: 0;
     }
 
     /* ── Nav ──────────────────────────────────────────────────────────── */
@@ -448,6 +455,140 @@
       color: var(--text-primary);
     }
 
+    /* ── Elimination ──────────────────────────────────────────────────── */
+
+    /* Timer row for an eliminated player */
+    #timers li.eliminated .player-name {
+      text-decoration: line-through;
+      color: var(--text-muted);
+      opacity: 0.5;
+    }
+
+    #timers li.eliminated .player-time {
+      color: var(--text-muted);
+      opacity: 0.5;
+      font-size: 1rem;
+    }
+
+    /* Eliminated row never shows as active-turn */
+    #timers li.eliminated.active-turn .player-name { color: var(--text-muted); }
+    #timers li.eliminated.active-turn .player-time { color: var(--text-muted); font-size: 1rem; }
+    #timers li.eliminated { border-bottom-color: var(--border); }
+
+    /* Player meta wrapper (name + eliminate btn on self row) */
+    .player-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    /* Long-press eliminate button */
+    .btn-eliminate {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 0.2rem 0.45rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none; /* prevent scroll-cancel during long-press */
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    /* Fill sweeps left→right during hold to show progress */
+    .btn-eliminate::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--color-error);
+      opacity: 0.25;
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+
+    .btn-eliminate.holding::before {
+      transform: scaleX(1);
+      transition: transform 0.7s linear;
+    }
+
+    .btn-eliminate.holding {
+      color: var(--color-error);
+      border-color: var(--color-error);
+    }
+
+    /* You-died content inside #btn-pass — hidden by default */
+    .you-died-title,
+    .you-died-time {
+      display: none;
+    }
+
+    /* Self-eliminated state: repurpose the pass button area */
+    body.self-eliminated #btn-pass {
+      background: rgba(232, 122, 93, 0.05);
+      border-top-color: var(--color-error);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    body.self-eliminated .pass-label,
+    body.self-eliminated .pass-name {
+      display: none;
+    }
+
+    body.self-eliminated .you-died-title {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-error);
+      opacity: 0.7;
+    }
+
+    body.self-eliminated .you-died-time {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── In-game: hide nav, rebase all top-fixed elements ───────────── */
+    body.in-game nav { display: none; }
+
+    body.in-game #view-game { padding-top: 0; }
+
+    body.in-game #timers-area {
+      top: calc(env(safe-area-inset-top, 0px) + 3rem);
+    }
+
+    /* Room code — top-left of game view */
+    #game-room-code {
+      display: none;
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 0.8rem);
+      left: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      z-index: 60;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    body.in-game #game-room-code { display: block; }
+
     /* Pause button — top-right fixed */
     #btn-pause {
       position: fixed;
@@ -469,6 +610,10 @@
     #btn-pause:hover {
       color: var(--text-primary);
       border-color: var(--text-muted);
+    }
+
+    body.in-game #btn-pause {
+      top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
     }
 
     /* Paused banner */
@@ -621,9 +766,14 @@
         padding: 1rem 1rem 0.25rem;
       }
 
-      #btn-pause {
-        top: calc(var(--nav-offset) + 0.5rem);
+      body.in-game #btn-pause {
+        top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
         right: 0.75rem;
+      }
+
+      body.in-game #game-room-code {
+        left: 1rem;
+        top: calc(env(safe-area-inset-top, 0px) + 0.6rem);
       }
     }
   </style>
@@ -717,6 +867,7 @@
 
   <!-- ── Game ──────────────────────────────────────────────────────────────── -->
   <div id="view-game">
+    <span id="game-room-code"></span>
     <button id="btn-pause">Pause</button>
     <div id="paused-banner">— Paused —</div>
 
@@ -732,6 +883,8 @@
     <button id="btn-pass" disabled>
       <span class="pass-label">Tap to pass turn</span>
       <span class="pass-name" id="pass-name"></span>
+      <span class="you-died-title">You have been eliminated</span>
+      <span class="you-died-time" id="you-died-time"></span>
     </button>
   </div>
 
@@ -782,6 +935,7 @@
     const elBtnConfirmStart  = document.getElementById('btn-confirm-start');
     const elBtnCancelStart   = document.getElementById('btn-cancel-start');
     const elModalBackdrop    = document.getElementById('modal-backdrop');
+    const elGameRoomCode     = document.getElementById('game-room-code');
 
     // ── Init ──────────────────────────────────────────────────────────────────
     if (playerName) elInputName.value = playerName;
@@ -874,6 +1028,38 @@
       }
     }
 
+    // ── Long-press utility ────────────────────────────────────────────────────
+    // Calls callback after the pointer has been held for `ms` without releasing.
+    // Adds/removes the 'holding' class for CSS fill animation feedback.
+    function addLongPress(el, callback, ms = 700) {
+      let timer = null;
+      function start(e) {
+        e.preventDefault();
+        el.classList.add('holding');
+        timer = setTimeout(() => {
+          el.classList.remove('holding');
+          callback();
+        }, ms);
+      }
+      function cancel() {
+        clearTimeout(timer);
+        el.classList.remove('holding');
+      }
+      el.addEventListener('pointerdown', start);
+      el.addEventListener('pointerup',   cancel);
+      el.addEventListener('pointerleave', cancel);
+      el.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    // ── Touch-to-wake (inactive players) ─────────────────────────────────────
+    let wakeTimer = null;
+    document.addEventListener('pointerdown', () => {
+      if (!document.body.classList.contains('inactive')) return;
+      document.body.classList.add('wake');
+      clearTimeout(wakeTimer);
+      wakeTimer = setTimeout(() => document.body.classList.remove('wake'), 3000);
+    }, { passive: true });
+
     // ── Visibility / reconnect ────────────────────────────────────────────────
     document.addEventListener('visibilitychange', () => {
       if (document.hidden || !currentCode) return;
@@ -901,18 +1087,21 @@
       const gs = gameState;
       if (!gs.phase) return;
 
-      const myIndex  = (gs.players || []).findIndex(p => p.id === playerId);
-      const isMyTurn = gs.phase === 'game' && gs.currentTurn === myIndex;
+      const myIndex        = (gs.players || []).findIndex(p => p.id === playerId);
+      const isSelfEliminated = myIndex !== -1 && !!gs.players[myIndex]?.eliminated;
+      // Eliminated players are never considered on-turn (their clock is frozen)
+      const isMyTurn       = gs.phase === 'game' && gs.currentTurn === myIndex && !isSelfEliminated;
 
       if (gs.phase === 'lobby') {
         showLobby();
         renderLobby(gs);
       } else {
         showGame();
-        renderGame(gs, isMyTurn);
+        renderGame(gs, isMyTurn, isSelfEliminated, myIndex);
       }
 
-      document.body.classList.toggle('inactive', gs.phase === 'game' && !isMyTurn);
+      document.body.classList.toggle('inactive',       gs.phase === 'game' && !isMyTurn && !isSelfEliminated);
+      document.body.classList.toggle('self-eliminated', isSelfEliminated);
     }
 
     function renderLobby(gs) {
@@ -965,13 +1154,18 @@
       });
     }
 
-    function renderGame(gs, isMyTurn) {
+    function renderGame(gs, isMyTurn, isSelfEliminated, myIndex) {
       const cp = gs.players[gs.currentTurn];
       viewGame.classList.toggle('paused', gs.paused);
 
       elBtnPause.textContent = gs.paused ? 'Resume' : 'Pause';
-      elBtnPass.disabled = gs.paused || !isMyTurn;
+      elBtnPass.disabled = gs.paused || !isMyTurn || isSelfEliminated;
       elPassName.textContent = isMyTurn ? 'Pass turn' : (cp ? cp.name : '');
+
+      // You-died final time display
+      if (isSelfEliminated && myIndex !== -1) {
+        document.getElementById('you-died-time').textContent = fmtMs(gs.players[myIndex].bankedMs);
+      }
 
       elStatusTurn.textContent = gs.paused
         ? 'paused'
@@ -979,19 +1173,38 @@
 
       elTimers.innerHTML = '';
       for (let i = 0; i < gs.players.length; i++) {
-        const p  = gs.players[i];
-        const li = document.createElement('li');
+        const p      = gs.players[i];
+        const isSelf = p.id === playerId;
+        const li     = document.createElement('li');
         li.dataset.idx = i;
-        li.classList.toggle('active-turn', i === gs.currentTurn);
+        li.classList.toggle('active-turn', i === gs.currentTurn && !p.eliminated);
+        li.classList.toggle('eliminated',  p.eliminated);
 
-        const displayMs = i === gs.currentTurn && !gs.paused ? liveMs(gs) : p.bankedMs;
-        li.classList.toggle('low-time', displayMs < 5 * 60 * 1000 && displayMs > 0);
+        const displayMs = i === gs.currentTurn && !gs.paused && !p.eliminated
+          ? liveMs(gs)
+          : p.bankedMs;
+        li.classList.toggle('low-time', displayMs < 5 * 60 * 1000 && displayMs > 0 && !p.eliminated);
+
+        // Build row: [name meta group] [time]
+        // For self (if not yet eliminated), include the long-press eliminate button
+        const eliminateBtn = (isSelf && !p.eliminated)
+          ? `<button class="btn-eliminate" aria-label="Hold to eliminate yourself">hold to eliminate</button>`
+          : '';
 
         li.innerHTML = `
-          <span class="player-name">${escHtml(p.name)}</span>
+          <span class="player-meta">
+            <span class="player-name">${escHtml(p.name)}</span>
+            ${eliminateBtn}
+          </span>
           <span class="player-time" id="timer-${i}">${fmtMs(displayMs)}</span>
         `;
         elTimers.appendChild(li);
+
+        // Wire long-press on the eliminate button (only exists on self row)
+        if (isSelf && !p.eliminated) {
+          const btn = li.querySelector('.btn-eliminate');
+          addLongPress(btn, () => send({ type: 'ELIMINATE', playerId }));
+        }
       }
     }
 
@@ -1068,6 +1281,7 @@
       viewConnect.classList.add('active');
       viewLobby.classList.remove('active');
       viewGame.classList.remove('active');
+      document.body.classList.remove('in-game');
       setConnectBusy(false);
     }
 
@@ -1075,12 +1289,15 @@
       viewLobby.classList.add('active');
       viewConnect.classList.remove('active');
       viewGame.classList.remove('active');
+      document.body.classList.remove('in-game');
     }
 
     function showGame() {
       viewGame.classList.add('active');
       viewConnect.classList.remove('active');
       viewLobby.classList.remove('active');
+      document.body.classList.add('in-game');
+      elGameRoomCode.textContent = currentCode;
     }
 
     function setConnectBusy(busy) {

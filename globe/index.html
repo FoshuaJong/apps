@@ -760,6 +760,8 @@
           <button id="clear-all-connections" style="display:none;" aria-hidden="true"></button>
         </div>
 
+        <!-- TODO: exports, imports, and shares should encode and decode the globe.autorotate and 
+         globe.pointOfView settings so imported/linked globes render as they were shared -->
         <div class="share-section">
           <div class="share-btn-row">
             <button class="btn-secondary" id="shareBtn" data-state="idle" onclick="shareGlobe()">Copy link</button>
@@ -778,6 +780,7 @@
     <div class="globe-wrapper">
       <div id="globeViz"></div>
     </div>
+    <!-- TODO: add a similar playing ▶︎ hint for users to infer click-to-pause exists -->
     <div id="rotateHint">Paused</div>
 
   </div><!-- end .globe-page -->

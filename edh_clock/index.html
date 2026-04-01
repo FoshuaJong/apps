@@ -46,14 +46,113 @@
     }
 
     /* ── Views ────────────────────────────────────────────────────────── */
+    #view-connect,
     #view-lobby,
     #view-game {
       display: none;
     }
 
+    #view-connect.active,
     #view-lobby.active,
     #view-game.active {
       display: block;
+    }
+
+    /* ── Connect screen (pre-join) ────────────────────────────────────── */
+    #view-connect {
+      padding-top: var(--nav-offset);
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .connect-inner {
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+
+    .connect-inner .section-label {
+      margin-bottom: 0.5rem;
+    }
+
+    .connect-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      font-weight: 300;
+      margin-bottom: 2.5rem;
+    }
+
+    .connect-field {
+      margin-bottom: 1rem;
+    }
+
+    .connect-field input {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 0.85rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .connect-field input:focus {
+      border-color: var(--accent);
+    }
+
+    .connect-field input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .connect-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .connect-divider::before,
+    .connect-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .connect-divider span {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .connect-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .connect-actions button {
+      flex: 1;
+    }
+
+    .connect-actions button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    #connect-error {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--color-error);
+      margin-top: 1rem;
+      min-height: 1em;
+      letter-spacing: 0.05em;
     }
 
     /* ── Lobby ────────────────────────────────────────────────────────── */
@@ -136,33 +235,6 @@
       image-rendering: pixelated;
     }
 
-    /* Name + time setup */
-    .setup-row {
-      display: flex;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .setup-row input {
-      flex: 1;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-      padding: 0.75rem 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .setup-row input:focus {
-      border-color: var(--accent);
-    }
-
-    .setup-row input::placeholder {
-      color: var(--text-muted);
-    }
-
     .time-row {
       display: flex;
       align-items: center;
@@ -202,19 +274,10 @@
       color: var(--text-muted);
     }
 
-    /* Join / Start buttons */
-    .lobby-actions {
-      display: flex;
-      gap: 0.75rem;
-      margin-bottom: 2.5rem;
-    }
-
-    #btn-join {
-      flex: 1;
-    }
-
+    /* Start button */
     #btn-start {
-      flex: 1;
+      width: 100%;
+      margin-bottom: 2.5rem;
     }
 
     #btn-start:disabled {

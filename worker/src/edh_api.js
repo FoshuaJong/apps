@@ -37,10 +37,6 @@ export async function handleEdhApiRequest(request, env) {
   // GET /edh/new — create a new room
   if (request.method === 'GET' && url.pathname === '/edh/new') {
     const code = generateCode();
-    // Eagerly touch the DO so it initialises its state before the first WS join
-    const id = env.EDH_CLOCK.idFromName(code);
-    const stub = env.EDH_CLOCK.get(id);
-    await stub.fetch(new Request(`${url.origin}/edh/init`));
     return new Response(JSON.stringify({ code }), {
       headers: { 'Content-Type': 'application/json', ...CORS },
     });
@@ -69,14 +65,6 @@ export class EDHClock {
   // ── Fetch entry-point ───────────────────────────────────────────────────────
 
   async fetch(request) {
-    const url = new URL(request.url);
-
-    // Internal init ping — ensure state exists, return 204
-    if (url.pathname === '/edh/init') {
-      await this._loadState();
-      return new Response(null, { status: 204 });
-    }
-
     // WebSocket upgrade
     if (request.headers.get('Upgrade') === 'websocket') {
       const pair = new WebSocketPair();

@@ -1345,6 +1345,7 @@
     // ── State ─────────────────────────────────────────────────────────────────
     let ws          = null;
     let gameState   = {};
+    let prevPhase   = null;
     let clockOffset = 0;   // Date.now() - serverNow at last message receipt
     let currentCode = null;
     let playerName  = localStorage.getItem('edhPlayerName') || '';
@@ -1720,6 +1721,16 @@
     function render() {
       const gs = gameState;
       if (!gs.phase) return;
+
+      // Reset HP history when a new game starts
+      if (prevPhase === 'lobby' && gs.phase === 'game') {
+        Object.values(hpPending).forEach(e => clearTimeout(e.timer));
+        hpHistory.length = 0;
+        Object.keys(hpPending).forEach(k => delete hpPending[k]);
+        prevPlayers = [];
+        renderHistory();
+      }
+      prevPhase = gs.phase;
 
       const myIndex          = (gs.players || []).findIndex(p => p.id === playerId);
       const isSelfEliminated = myIndex !== -1 && !!gs.players[myIndex]?.eliminated;

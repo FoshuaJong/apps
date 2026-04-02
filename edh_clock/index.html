@@ -1213,9 +1213,10 @@
   <div id="view-lobby">
     <div class="lobby-inner">
       <p class="lobby-heading section-label">EDH Clock</p>
+      <p class="connect-desc">A multi-device chess clock for commander. Inactive player screens will dim.</p>
 
       <div class="code-block">
-        <div class="code-label">Room code</div>
+        <div class="code-label">Room Code</div>
         <div class="code-row">
           <span id="game-code">…</span>
           <button id="btn-copy">Copy link</button>
@@ -1884,7 +1885,7 @@
           const li = el.closest('li');
           if (li) li.classList.toggle('low-time', ms < 5 * 60 * 1000 && ms > 0);
           const currentPlayer = gs.players[gs.currentTurn];
-          if (ms === 0 && currentPlayer && currentPlayer.id === playerId && !currentPlayer.eliminated && !timeElimPending) {
+          if (ms <= 0 && currentPlayer && currentPlayer.id === playerId && !currentPlayer.eliminated && !timeElimPending) {
             timeElimPending = true;
             elModalTimeElim.hidden = false;
           }

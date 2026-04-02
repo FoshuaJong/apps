@@ -760,6 +760,62 @@
       justify-content: center;
     }
 
+    /* ── Delay badge ─────────────────────────────────────────────────── */
+    .delay-badge {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 0.1rem 0.35rem;
+      opacity: 0.85;
+      flex-shrink: 0;
+      transition: opacity 0.3s;
+    }
+
+    /* ── Victory overlay ─────────────────────────────────────────────── */
+    #victory-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 75;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #victory-overlay[hidden] { display: none; }
+
+    .victory-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .victory-eyebrow {
+      margin-bottom: 0.5rem;
+    }
+
+    .victory-name {
+      font-family: var(--font-display);
+      font-size: clamp(2.5rem, 12vw, 5rem);
+      font-weight: 400;
+      color: var(--text-primary);
+      line-height: 1.1;
+    }
+
+    .victory-sub {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
     /* ── Toast notifications ─────────────────────────────────────────── */
     #toast-container {
       position: fixed;
@@ -1030,6 +1086,16 @@
     </button>
   </div>
 
+  <!-- ── Victory overlay ───────────────────────────────────────────────────── -->
+  <div id="victory-overlay" hidden>
+    <div class="victory-inner">
+      <p class="victory-eyebrow section-label">Victory</p>
+      <h1 class="victory-name" id="victory-name"></h1>
+      <p class="victory-sub">wins the game</p>
+      <button class="btn-secondary" id="btn-return-lobby" hidden>Return to lobby</button>
+    </div>
+  </div>
+
   <!-- ── Toast container ───────────────────────────────────────────────────── -->
   <div id="toast-container"></div>
 
@@ -1102,6 +1168,9 @@
     const elGameRoomCode     = document.getElementById('game-room-code');
     const elToastContainer   = document.getElementById('toast-container');
     const elA2hsBanner       = document.getElementById('a2hs-banner');
+    const elVictoryOverlay   = document.getElementById('victory-overlay');
+    const elVictoryName      = document.getElementById('victory-name');
+    const elBtnReturnLobby   = document.getElementById('btn-return-lobby');
 
     // ── Toast ─────────────────────────────────────────────────────────────────
     function showToast(message, isError = true, duration = 3500) {
@@ -1324,21 +1393,31 @@
       const gs = gameState;
       if (!gs.phase) return;
 
-      const myIndex        = (gs.players || []).findIndex(p => p.id === playerId);
+      const myIndex          = (gs.players || []).findIndex(p => p.id === playerId);
       const isSelfEliminated = myIndex !== -1 && !!gs.players[myIndex]?.eliminated;
-      // Eliminated players are never considered on-turn (their clock is frozen)
-      const isMyTurn       = gs.phase === 'game' && gs.currentTurn === myIndex && !isSelfEliminated;
+      const isMyTurn         = gs.phase === 'game' && gs.currentTurn === myIndex && !isSelfEliminated;
+
+      elVictoryOverlay.hidden = gs.phase !== 'victory';
 
       if (gs.phase === 'lobby') {
         showLobby();
         renderLobby(gs);
+      } else if (gs.phase === 'victory') {
+        showGame();
+        renderVictory(gs);
       } else {
         showGame();
         renderGame(gs, isMyTurn, isSelfEliminated, myIndex);
       }
 
-      document.body.classList.toggle('inactive',       gs.phase === 'game' && !isMyTurn && !isSelfEliminated);
-      document.body.classList.toggle('self-eliminated', isSelfEliminated);
+      document.body.classList.toggle('inactive',        gs.phase === 'game' && !isMyTurn && !isSelfEliminated);
+      document.body.classList.toggle('self-eliminated',  gs.phase === 'game' && isSelfEliminated);
+    }
+
+    function renderVictory(gs) {
+      const winner = gs.players.find(p => p.id === gs.winnerId);
+      elVictoryName.textContent = winner ? winner.name : '???';
+      elBtnReturnLobby.hidden = gs.hostId !== playerId;
     }
 
     function renderLobby(gs) {
@@ -1428,9 +1507,16 @@
           ? `<button class="btn-eliminate" aria-label="Hold to eliminate yourself">hold to eliminate</button>`
           : '';
 
+        // Delay badge on the active-turn row — tick() drives its content/visibility
+        const isActive = i === gs.currentTurn && !p.eliminated;
+        const delayBadge = isActive
+          ? `<span class="delay-badge" id="delay-badge" hidden></span>`
+          : '';
+
         li.innerHTML = `
           <span class="player-meta">
             <span class="player-name">${escHtml(p.name)}</span>
+            ${delayBadge}
             ${eliminateBtn}
           </span>
           <span class="player-time" id="timer-${i}">${fmtMs(displayMs)}</span>
@@ -1456,15 +1542,29 @@
           const li = el.closest('li');
           if (li) li.classList.toggle('low-time', ms < 5 * 60 * 1000 && ms > 0);
         }
+        const badge = document.getElementById('delay-badge');
+        if (badge) {
+          const dr = delayRemainingMs(gs);
+          badge.hidden = dr === 0;
+          if (dr > 0) badge.textContent = `+${Math.ceil(dr / 1000)}s`;
+        }
       }
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
 
-    // Display Time = Banked Time - (Date.now() - turnStartTime - clockOffset)
+    // Display Time = Banked - max(0, elapsed - delayMs)
     function liveMs(gs) {
       const elapsed = Date.now() - gs.turnStartTime - clockOffset;
-      return Math.max(0, gs.players[gs.currentTurn].bankedMs - elapsed);
+      const mainElapsed = Math.max(0, elapsed - (gs.delayMs || 0));
+      return Math.max(0, gs.players[gs.currentTurn].bankedMs - mainElapsed);
+    }
+
+    // Milliseconds remaining in the current turn's delay buffer
+    function delayRemainingMs(gs) {
+      if (!gs.turnStartTime || gs.paused || !gs.delayMs) return 0;
+      const elapsed = Date.now() - gs.turnStartTime - clockOffset;
+      return Math.max(0, gs.delayMs - elapsed);
     }
 
     // ── Lobby actions ─────────────────────────────────────────────────────────
@@ -1496,6 +1596,10 @@
 
     elBtnPause.addEventListener('click', () => {
       send({ type: gameState.paused ? 'RESUME' : 'PAUSE', playerId });
+    });
+
+    elBtnReturnLobby.addEventListener('click', () => {
+      send({ type: 'RETURN_TO_LOBBY', playerId });
     });
 
     elBtnCopy.addEventListener('click', async () => {

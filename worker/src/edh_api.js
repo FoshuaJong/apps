@@ -165,7 +165,8 @@ export class EDHClock {
         const myIndex = gs.players.findIndex(p => p.id === att?.playerId);
         if (myIndex !== gs.currentTurn) break; // not your turn
         const elapsed = Date.now() - gs.turnStartTime;
-        gs.players[gs.currentTurn].bankedMs = Math.max(0, gs.players[gs.currentTurn].bankedMs - elapsed);
+        const mainElapsed = Math.max(0, elapsed - gs.delayMs);
+        gs.players[gs.currentTurn].bankedMs = Math.max(0, gs.players[gs.currentTurn].bankedMs - mainElapsed);
         const next = nextAlive(gs.players, gs.currentTurn);
         if (next === -1) break; // no alive players left — don't advance
         gs.currentTurn = next;
@@ -182,10 +183,11 @@ export class EDHClock {
         const myIndex = gs.players.findIndex(p => p.id === att?.playerId);
         if (myIndex === -1 || gs.players[myIndex].eliminated) break;
 
-        // Freeze their clock at current value if it's their turn
+        // Freeze their clock at current value if it's their turn (delay-adjusted)
         if (myIndex === gs.currentTurn) {
           const elapsed = Date.now() - gs.turnStartTime;
-          gs.players[myIndex].bankedMs = Math.max(0, gs.players[myIndex].bankedMs - elapsed);
+          const mainElapsed = Math.max(0, elapsed - gs.delayMs);
+          gs.players[myIndex].bankedMs = Math.max(0, gs.players[myIndex].bankedMs - mainElapsed);
         }
         gs.players[myIndex].eliminated = true;
 
@@ -197,6 +199,15 @@ export class EDHClock {
             gs.turnStartTime = Date.now();
           }
         }
+
+        // Victory: 1 alive player remaining
+        const alive = gs.players.filter(p => !p.eliminated);
+        if (alive.length === 1) {
+          gs.phase = 'victory';
+          gs.winnerId = alive[0].id;
+          gs.turnStartTime = null;
+        }
+
         await this._saveState(gs);
         this._broadcast(gs);
         break;
@@ -205,7 +216,8 @@ export class EDHClock {
       case 'PAUSE': {
         if (gs.phase !== 'game' || gs.paused) break;
         const elapsed = Date.now() - gs.turnStartTime;
-        gs.players[gs.currentTurn].bankedMs = Math.max(0, gs.players[gs.currentTurn].bankedMs - elapsed);
+        const mainElapsed = Math.max(0, elapsed - gs.delayMs);
+        gs.players[gs.currentTurn].bankedMs = Math.max(0, gs.players[gs.currentTurn].bankedMs - mainElapsed);
         gs.paused = true;
         gs.turnStartTime = null;
         await this._saveState(gs);
@@ -217,6 +229,23 @@ export class EDHClock {
         if (gs.phase !== 'game' || !gs.paused) break;
         gs.paused = false;
         gs.turnStartTime = Date.now();
+        await this._saveState(gs);
+        this._broadcast(gs);
+        break;
+      }
+
+      case 'RETURN_TO_LOBBY': {
+        const att = ws.deserializeAttachment();
+        if (att?.playerId !== gs.hostId) break; // host only
+        gs.phase = 'lobby';
+        gs.currentTurn = 0;
+        gs.paused = false;
+        gs.turnStartTime = null;
+        gs.winnerId = null;
+        for (const p of gs.players) {
+          p.eliminated = false;
+          p.bankedMs = gs.defaultMs;
+        }
         await this._saveState(gs);
         this._broadcast(gs);
         break;
@@ -263,6 +292,8 @@ export class EDHClock {
       paused: false,
       turnStartTime: null,
       defaultMs: 20 * 60 * 1000, // 20 minutes
+      delayMs: 3 * 1000,         // 3s simple delay per turn
+      winnerId: null,
     };
   }
 

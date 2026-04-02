@@ -1951,9 +1951,8 @@
 
     // Time elimination modal
     document.getElementById('btn-time-elim-confirm').addEventListener('click', () => {
-      send({ type: 'ELIMINATE', playerId });
-      timeElimPending = false;
       elModalTimeElim.hidden = true;
+      send({ type: 'ELIMINATE', playerId });
     });
 
     // HP elimination modal

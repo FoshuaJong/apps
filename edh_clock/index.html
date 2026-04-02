@@ -416,16 +416,51 @@
       color: var(--color-error);
     }
 
-    /* Pass Turn button — fixed bottom 50% */
+    /* ── HP area — fixed strip at top of pass zone (top 1/4 of 50vh) ─── */
+    #hp-area {
+      position: fixed;
+      bottom: 37.5vh;
+      left: 0;
+      right: 0;
+      height: 12.5vh;
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+      background: var(--bg);
+    }
+
+    #hp-area .hp-btn {
+      flex: 1;
+      height: 100%;
+      font-size: clamp(0.9rem, 3vw, 1.2rem);
+      border: none;
+      border-right: 1px solid var(--border);
+      padding: 0;
+    }
+
+    #hp-area .hp-btn:last-child {
+      border-right: none;
+    }
+
+    body.self-eliminated #hp-area {
+      display: none;
+    }
+
+    /* When HP area is hidden, pass button fills the full 50vh */
+    #hp-area[hidden] ~ #btn-pass,
+    body.self-eliminated #btn-pass {
+      height: 50vh;
+    }
+
+    /* Pass Turn button — fixed bottom 37.5% (lower 3/4 of pass zone) */
     #btn-pass {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 50vh;
+      height: 37.5vh;
       background: var(--accent-surface);
       border: none;
-      border-top: 1px solid var(--border);
       cursor: pointer;
       display: flex;
       flex-direction: column;
@@ -789,13 +824,7 @@
       color: var(--color-error);
     }
 
-    /* ── HP adjustment controls (self row only) ───────────────────────── */
-    .hp-controls {
-      flex-basis: 100%;
-      display: flex;
-      gap: 0.4rem;
-    }
-
+    /* ── HP button base styles (used in #hp-area) ────────────────────── */
     .hp-btn {
       font-family: var(--font-mono);
       font-size: 0.65rem;
@@ -821,8 +850,6 @@
     }
 
     .hp-btn.hp-plus:hover { opacity: 1; }
-
-    #timers li.eliminated .hp-controls { display: none; }
 
     /* ── HP floating text animations ─────────────────────────────────── */
     @keyframes hp-float {
@@ -1240,6 +1267,13 @@
       <span id="status-ws">connecting…</span>
     </div>
 
+    <div id="hp-area" hidden>
+      <button class="hp-btn" data-delta="-5">−5</button>
+      <button class="hp-btn" data-delta="-1">−1</button>
+      <button class="hp-btn hp-plus" data-delta="1">+1</button>
+      <button class="hp-btn hp-plus" data-delta="5">+5</button>
+    </div>
+
     <button id="btn-pass" disabled>
       <span class="pass-label">Tap to pass turn</span>
       <span class="pass-name" id="pass-name"></span>
@@ -1350,6 +1384,14 @@
     const elHistoryLog       = document.getElementById('history-log');
     const elModalHpElim      = document.getElementById('modal-hp-elim');
     const elHpElimTitle      = document.getElementById('hp-elim-title');
+    const elHpArea           = document.getElementById('hp-area');
+
+    // One-time event delegation for fixed HP area buttons
+    elHpArea.addEventListener('click', e => {
+      const btn = e.target.closest('.hp-btn');
+      if (!btn || !playerId) return;
+      send({ type: 'HP_CHANGE', playerId, delta: parseInt(btn.dataset.delta, 10) });
+    });
 
     // ── HP history state ──────────────────────────────────────────────────────
     const hpHistory = [];              // committed log entries [{text, delta}]
@@ -1801,15 +1843,6 @@
         const hpVal  = p.hp ?? gs.defaultHp ?? 40;
         const hpHtml = `<span class="hp-block"><span class="player-hp" id="hp-${i}">${hpVal}hp</span></span>`;
 
-        const hpControls = (isSelf && !p.eliminated)
-          ? `<div class="hp-controls">
-               <button class="hp-btn" data-delta="-5">−5</button>
-               <button class="hp-btn" data-delta="-1">−1</button>
-               <button class="hp-btn hp-plus" data-delta="1">+1</button>
-               <button class="hp-btn hp-plus" data-delta="5">+5</button>
-             </div>`
-          : '';
-
         li.classList.toggle('low-hp', hpVal <= 5 && !p.eliminated);
 
         li.innerHTML = `
@@ -1820,19 +1853,17 @@
           </span>
           ${hpHtml}
           <span class="player-time" id="timer-${i}">${fmtMs(displayMs)}</span>
-          ${hpControls}
         `;
         elTimers.appendChild(li);
 
         if (isSelf && !p.eliminated) {
           addLongPress(li.querySelector('.btn-eliminate'), () => send({ type: 'ELIMINATE', playerId }));
-          li.querySelectorAll('.hp-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-              send({ type: 'HP_CHANGE', playerId, delta: parseInt(btn.dataset.delta, 10) });
-            });
-          });
         }
       }
+
+      // Show HP area for self player only when not eliminated
+      const selfP = gs.players.find(p => p.id === playerId);
+      elHpArea.hidden = !selfP || selfP.eliminated;
     }
 
     // ── rAF tick ──────────────────────────────────────────────────────────────

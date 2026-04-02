@@ -472,6 +472,7 @@
 
     /* Pass Turn button — fixed bottom 37.5% (lower 3/4 of pass zone) */
     #btn-pass {
+      touch-action: manipulation;
       position: fixed;
       bottom: 0;
       left: 0;
@@ -611,6 +612,7 @@
 
     /* Pause button — top-right fixed */
     #btn-pause {
+      touch-action: manipulation;
       position: fixed;
       top: calc(var(--nav-offset) + 0.75rem);
       right: 1.25rem;
@@ -804,6 +806,7 @@
 
     /* ── HP button base styles (used in #hp-area) ────────────────────── */
     .hp-btn {
+      touch-action: manipulation;
       font-family: var(--font-mono);
       font-size: 0.65rem;
       letter-spacing: 0.06em;

@@ -372,6 +372,8 @@
       display: flex;
       align-items: baseline;
       justify-content: space-between;
+      flex-wrap: wrap;
+      row-gap: 0.35rem;
       padding: 0.6rem 0;
       border-bottom: 1px solid var(--border);
       transition: opacity 0.25s;
@@ -760,6 +762,161 @@
       justify-content: center;
     }
 
+    /* ── HP display ──────────────────────────────────────────────────── */
+    .hp-block {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .player-hp {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      transition: color 0.25s;
+    }
+
+    #timers li.active-turn .player-hp {
+      color: var(--text-secondary);
+    }
+
+    #timers li.eliminated .player-hp {
+      opacity: 0.5;
+    }
+
+    #timers li.low-hp .player-hp {
+      color: var(--color-error);
+    }
+
+    /* ── HP adjustment controls (self row only) ───────────────────────── */
+    .hp-controls {
+      flex-basis: 100%;
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .hp-btn {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      background: none;
+      border: 1px solid var(--border);
+      padding: 0.3rem 0;
+      flex: 1;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hp-btn:active {
+      background: var(--accent-surface);
+    }
+
+    .hp-btn.hp-plus {
+      color: var(--accent);
+      border-color: var(--accent);
+      opacity: 0.7;
+    }
+
+    .hp-btn.hp-plus:hover { opacity: 1; }
+
+    #timers li.eliminated .hp-controls { display: none; }
+
+    /* ── HP floating text animations ─────────────────────────────────── */
+    @keyframes hp-float {
+      0%   { opacity: 1;   transform: translateY(0);      }
+      100% { opacity: 0;   transform: translateY(-1.75rem); }
+    }
+
+    .hp-float {
+      position: absolute;
+      right: 0;
+      top: -0.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 500;
+      pointer-events: none;
+      white-space: nowrap;
+      animation: hp-float 1.1s ease-out forwards;
+    }
+
+    .hp-float.hp-gain { color: var(--accent); }
+    .hp-float.hp-loss { color: var(--color-error); }
+
+    /* ── Game tabs (Clock | History) ─────────────────────────────────── */
+    #game-tabs {
+      display: flex;
+      gap: 1.25rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .game-tab {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+
+    .game-tab.active { color: var(--accent); }
+
+    .game-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: calc(-0.5rem - 1px);
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+    }
+
+    /* ── History log ─────────────────────────────────────────────────── */
+    #history-log {
+      display: none;
+      flex-direction: column;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #history-log.visible { display: flex; }
+
+    #timers.tab-hidden { display: none; }
+
+    .history-entry {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: 0.04em;
+    }
+
+    .history-entry.pending { opacity: 0.55; }
+
+    .history-delta-pos { color: var(--accent); }
+    .history-delta-neg { color: var(--color-error); }
+
+    .history-empty {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0.5;
+      padding-top: 1rem;
+    }
+
     /* ── Delay badge ─────────────────────────────────────────────────── */
     .delay-badge {
       font-family: var(--font-mono);
@@ -1070,7 +1227,12 @@
     <div id="paused-banner">— Paused —</div>
 
     <div id="timers-area">
+      <div id="game-tabs">
+        <button class="game-tab active" id="tab-clock">Clock</button>
+        <button class="game-tab" id="tab-history">History</button>
+      </div>
       <ul id="timers"></ul>
+      <div id="history-log"></div>
     </div>
 
     <div id="status-line">
@@ -1084,6 +1246,20 @@
       <span class="you-died-title">You have been eliminated</span>
       <span class="you-died-time" id="you-died-time"></span>
     </button>
+  </div>
+
+  <!-- ── HP elimination modal ─────────────────────────────────────────────── -->
+  <div id="modal-hp-elim" hidden>
+    <div class="modal-backdrop" id="modal-hp-backdrop"></div>
+    <div class="modal-box">
+      <p class="modal-eyebrow section-label">HP Critical</p>
+      <h2 class="modal-title" id="hp-elim-title">You're at 0 HP</h2>
+      <p class="modal-body">Confirm elimination from the game, or stay in and fight for that healing.</p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btn-hp-elim-confirm">Eliminate me</button>
+        <button class="btn-secondary" id="btn-hp-elim-cancel">Stay in game</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── Victory overlay ───────────────────────────────────────────────────── -->
@@ -1171,6 +1347,116 @@
     const elVictoryOverlay   = document.getElementById('victory-overlay');
     const elVictoryName      = document.getElementById('victory-name');
     const elBtnReturnLobby   = document.getElementById('btn-return-lobby');
+    const elHistoryLog       = document.getElementById('history-log');
+    const elModalHpElim      = document.getElementById('modal-hp-elim');
+    const elHpElimTitle      = document.getElementById('hp-elim-title');
+
+    // ── HP history state ──────────────────────────────────────────────────────
+    const hpHistory = [];              // committed log entries [{text, delta}]
+    const hpPending = {};              // playerId → {delta, resultHp, name, wallTime, timer}
+    let   hpElimPending = false;       // hp-elimination modal open
+    let   prevPlayers   = [];          // for HP change detection
+
+    // ── HP history helpers ────────────────────────────────────────────────────
+    function detectHpChanges(gs) {
+      for (const p of gs.players) {
+        const prev = prevPlayers.find(x => x.id === p.id);
+        if (prev && p.hp !== undefined && prev.hp !== undefined && p.hp !== prev.hp) {
+          onHpChange(p, gs.players.indexOf(p), prev.hp, p.hp);
+        }
+      }
+      prevPlayers = gs.players.map(p => ({ ...p }));
+    }
+
+    function onHpChange(player, idx, oldHp, newHp) {
+      const delta = newHp - oldHp;
+      spawnHpFloat(idx, delta);
+      recordHpChange(player, oldHp, newHp, delta);
+      if (player.id === playerId && newHp <= 0 && !player.eliminated && !hpElimPending) {
+        hpElimPending = true;
+        elHpElimTitle.textContent = `You're at ${newHp} HP`;
+        elModalHpElim.hidden = false;
+      }
+    }
+
+    function spawnHpFloat(idx, delta) {
+      const hpEl = document.getElementById(`hp-${idx}`);
+      if (!hpEl) return;
+      const block = hpEl.parentElement;
+      const float = document.createElement('span');
+      float.className = 'hp-float ' + (delta > 0 ? 'hp-gain' : 'hp-loss');
+      float.textContent = (delta > 0 ? '+' : '') + delta;
+      block.appendChild(float);
+      float.addEventListener('animationend', () => float.remove(), { once: true });
+    }
+
+    function recordHpChange(player, oldHp, newHp, delta) {
+      if (hpPending[player.id]) {
+        clearTimeout(hpPending[player.id].timer);
+        hpPending[player.id].delta += delta;
+        hpPending[player.id].resultHp = newHp;
+      } else {
+        hpPending[player.id] = { delta, resultHp: newHp, name: player.name, wallTime: Date.now() };
+      }
+      hpPending[player.id].timer = setTimeout(() => commitHpLog(player.id), 10000);
+      renderHistory();
+    }
+
+    function commitHpLog(pid) {
+      const entry = hpPending[pid];
+      if (!entry) return;
+      delete hpPending[pid];
+      const sign = entry.delta > 0 ? '+' : '';
+      hpHistory.unshift({ text: `[${fmtWallTime(entry.wallTime)}] ${entry.name}: ${sign}${entry.delta} HP (Result: ${entry.resultHp})`, delta: entry.delta });
+      renderHistory();
+    }
+
+    function fmtWallTime(ts) {
+      const d = new Date(ts);
+      const h = d.getHours();
+      const m = String(d.getMinutes()).padStart(2, '0');
+      const s = String(d.getSeconds()).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    function renderHistory() {
+      elHistoryLog.innerHTML = '';
+      const pendingEntries = Object.values(hpPending);
+      if (pendingEntries.length === 0 && hpHistory.length === 0) {
+        elHistoryLog.innerHTML = '<div class="history-empty">No HP changes yet.</div>';
+        return;
+      }
+      for (const entry of pendingEntries) {
+        const sign = entry.delta > 0 ? '+' : '';
+        const cls  = entry.delta > 0 ? 'history-delta-pos' : 'history-delta-neg';
+        const el = document.createElement('div');
+        el.className = 'history-entry pending';
+        el.innerHTML = `<span class="${cls}">[${fmtWallTime(entry.wallTime)}] ${escHtml(entry.name)}: ${sign}${entry.delta} HP (Result: ${entry.resultHp})</span>`;
+        elHistoryLog.appendChild(el);
+      }
+      for (const entry of hpHistory) {
+        const cls = entry.delta > 0 ? 'history-delta-pos' : 'history-delta-neg';
+        const el  = document.createElement('div');
+        el.className = 'history-entry';
+        el.innerHTML = `<span class="${cls}">${escHtml(entry.text)}</span>`;
+        elHistoryLog.appendChild(el);
+      }
+    }
+
+    // ── Tab switching ─────────────────────────────────────────────────────────
+    let activeTab = 'clock';
+
+    function setTab(tab) {
+      activeTab = tab;
+      document.getElementById('tab-clock').classList.toggle('active',   tab === 'clock');
+      document.getElementById('tab-history').classList.toggle('active', tab === 'history');
+      document.getElementById('timers').classList.toggle('tab-hidden',  tab !== 'clock');
+      elHistoryLog.classList.toggle('visible', tab === 'history');
+      if (tab === 'history') renderHistory();
+    }
+
+    document.getElementById('tab-clock').addEventListener('click',   () => setTab('clock'));
+    document.getElementById('tab-history').addEventListener('click', () => setTab('history'));
 
     // ── Toast ─────────────────────────────────────────────────────────────────
     function showToast(message, isError = true, duration = 3500) {
@@ -1408,6 +1694,7 @@
       } else {
         showGame();
         renderGame(gs, isMyTurn, isSelfEliminated, myIndex);
+        detectHpChanges(gs);
       }
 
       document.body.classList.toggle('inactive',        gs.phase === 'game' && !isMyTurn && !isSelfEliminated);
@@ -1501,17 +1788,29 @@
           : p.bankedMs;
         li.classList.toggle('low-time', displayMs < 5 * 60 * 1000 && displayMs > 0 && !p.eliminated);
 
-        // Build row: [name meta group] [time]
-        // For self (if not yet eliminated), include the long-press eliminate button
+        // Delay badge on active-turn row — tick() drives content/visibility
+        const isActive   = i === gs.currentTurn && !p.eliminated;
+        const delayBadge = isActive
+          ? `<span class="delay-badge" id="delay-badge" hidden></span>`
+          : '';
+
         const eliminateBtn = (isSelf && !p.eliminated)
           ? `<button class="btn-eliminate" aria-label="Hold to eliminate yourself">hold to eliminate</button>`
           : '';
 
-        // Delay badge on the active-turn row — tick() drives its content/visibility
-        const isActive = i === gs.currentTurn && !p.eliminated;
-        const delayBadge = isActive
-          ? `<span class="delay-badge" id="delay-badge" hidden></span>`
+        const hpVal  = p.hp ?? gs.defaultHp ?? 40;
+        const hpHtml = `<span class="hp-block"><span class="player-hp" id="hp-${i}">${hpVal}hp</span></span>`;
+
+        const hpControls = (isSelf && !p.eliminated)
+          ? `<div class="hp-controls">
+               <button class="hp-btn" data-delta="-5">−5</button>
+               <button class="hp-btn" data-delta="-1">−1</button>
+               <button class="hp-btn hp-plus" data-delta="1">+1</button>
+               <button class="hp-btn hp-plus" data-delta="5">+5</button>
+             </div>`
           : '';
+
+        li.classList.toggle('low-hp', hpVal <= 5 && !p.eliminated);
 
         li.innerHTML = `
           <span class="player-meta">
@@ -1519,14 +1818,19 @@
             ${delayBadge}
             ${eliminateBtn}
           </span>
+          ${hpHtml}
           <span class="player-time" id="timer-${i}">${fmtMs(displayMs)}</span>
+          ${hpControls}
         `;
         elTimers.appendChild(li);
 
-        // Wire long-press on the eliminate button (only exists on self row)
         if (isSelf && !p.eliminated) {
-          const btn = li.querySelector('.btn-eliminate');
-          addLongPress(btn, () => send({ type: 'ELIMINATE', playerId }));
+          addLongPress(li.querySelector('.btn-eliminate'), () => send({ type: 'ELIMINATE', playerId }));
+          li.querySelectorAll('.hp-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              send({ type: 'HP_CHANGE', playerId, delta: parseInt(btn.dataset.delta, 10) });
+            });
+          });
         }
       }
     }
@@ -1602,6 +1906,20 @@
       send({ type: 'RETURN_TO_LOBBY', playerId });
     });
 
+    // HP elimination modal
+    document.getElementById('btn-hp-elim-confirm').addEventListener('click', () => {
+      elModalHpElim.hidden = true;
+      hpElimPending = false;
+      send({ type: 'ELIMINATE', playerId });
+    });
+
+    function dismissHpModal() {
+      elModalHpElim.hidden = true;
+      hpElimPending = false;
+    }
+    document.getElementById('btn-hp-elim-cancel').addEventListener('click', dismissHpModal);
+    document.getElementById('modal-hp-backdrop').addEventListener('click', dismissHpModal);
+
     elBtnCopy.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(buildJoinUrl(currentCode));
@@ -1631,6 +1949,10 @@
       viewConnect.classList.remove('active');
       viewGame.classList.remove('active');
       document.body.classList.remove('in-game');
+      // Reset HP modal and tab if returning from game
+      elModalHpElim.hidden = true;
+      hpElimPending = false;
+      setTab('clock');
     }
 
     function showGame() {

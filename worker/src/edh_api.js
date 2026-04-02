@@ -154,6 +154,20 @@ export class EDHClock {
         gs.currentTurn = 0;
         gs.paused = false;
         gs.turnStartTime = Date.now();
+        for (const p of gs.players) p.hp = gs.defaultHp;
+        await this._saveState(gs);
+        this._broadcast(gs);
+        break;
+      }
+
+      case 'HP_CHANGE': {
+        if (gs.phase !== 'game') break;
+        const att = ws.deserializeAttachment();
+        const myIndex = gs.players.findIndex(p => p.id === att?.playerId);
+        if (myIndex === -1 || gs.players[myIndex].eliminated) break;
+        const delta = Number(msg.delta);
+        if (![-5, -1, 1, 5].includes(delta)) break; // only valid step sizes
+        gs.players[myIndex].hp = (gs.players[myIndex].hp ?? gs.defaultHp) + delta;
         await this._saveState(gs);
         this._broadcast(gs);
         break;
@@ -245,6 +259,7 @@ export class EDHClock {
         for (const p of gs.players) {
           p.eliminated = false;
           p.bankedMs = gs.defaultMs;
+          p.hp = gs.defaultHp;
         }
         await this._saveState(gs);
         this._broadcast(gs);
@@ -293,6 +308,7 @@ export class EDHClock {
       turnStartTime: null,
       defaultMs: 20 * 60 * 1000, // 20 minutes
       delayMs: 3 * 1000,         // 3s simple delay per turn
+      defaultHp: 40,
       winnerId: null,
     };
   }

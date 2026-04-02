@@ -1691,7 +1691,7 @@
       if (!document.body.classList.contains('inactive')) return;
       document.body.classList.add('wake');
       clearTimeout(wakeTimer);
-      wakeTimer = setTimeout(() => document.body.classList.remove('wake'), 3000);
+      wakeTimer = setTimeout(() => document.body.classList.remove('wake'), 5000);
     }, { passive: true });
 
     // ── Visibility / reconnect ────────────────────────────────────────────────
@@ -1951,9 +1951,9 @@
 
     // Time elimination modal
     document.getElementById('btn-time-elim-confirm').addEventListener('click', () => {
-      elModalTimeElim.hidden = true;
-      timeElimPending = false;
       send({ type: 'ELIMINATE', playerId });
+      timeElimPending = false;
+      elModalTimeElim.hidden = true;
     });
 
     // HP elimination modal

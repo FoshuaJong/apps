@@ -731,6 +731,18 @@
 
     #modal-ready[hidden]    { display: none; }
 
+    /* ── Time elimination modal ───────────────────────────────────────── */
+    #modal-time-elim {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 210; /* above HP modal */
+    }
+
+    #modal-time-elim[hidden] { display: none; }
+
     /* ── HP elimination modal ─────────────────────────────────────────── */
     #modal-hp-elim {
       position: fixed;
@@ -1232,7 +1244,7 @@
     <div class="modal-box">
       <p class="modal-eyebrow section-label">Commander</p>
       <h2 class="modal-title">Is everyone ready?</h2>
-      <p class="modal-body">Turn order is set. The clock starts for the first player immediately.</p>
+      <p class="modal-body">Turn order is set. The clock starts immediately.</p>
       <div class="modal-actions">
         <button class="btn-primary" id="btn-confirm-start">Start the clock</button>
         <button class="btn-secondary" id="btn-cancel-start">Not yet</button>
@@ -1274,6 +1286,18 @@
       <span class="you-died-title">You have been eliminated</span>
       <span class="you-died-time" id="you-died-time"></span>
     </button>
+  </div>
+
+  <!-- ── Time elimination modal ───────────────────────────────────────────── -->
+  <div id="modal-time-elim" hidden>
+    <div class="modal-box">
+      <p class="modal-eyebrow section-label">Time's up</p>
+      <h2 class="modal-title">Eliminated.</h2>
+      <p class="modal-body">You ran out of time.</p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btn-time-elim-confirm">OK</button>
+      </div>
+    </div>
   </div>
 
   <!-- ── HP elimination modal ─────────────────────────────────────────────── -->
@@ -1379,6 +1403,7 @@
     const elHistoryLog       = document.getElementById('history-log');
     const elModalHpElim      = document.getElementById('modal-hp-elim');
     const elHpElimTitle      = document.getElementById('hp-elim-title');
+    const elModalTimeElim    = document.getElementById('modal-time-elim');
     const elHpArea           = document.getElementById('hp-area');
 
     // One-time event delegation for fixed HP area buttons
@@ -1391,7 +1416,8 @@
     // ── HP history state ──────────────────────────────────────────────────────
     const hpHistory = [];              // committed log entries [{text, delta}]
     const hpPending = {};              // playerId → {delta, resultHp, name, wallTime, timer}
-    let   hpElimPending = false;       // hp-elimination modal open
+    let   hpElimPending   = false;     // hp-elimination modal open
+    let   timeElimPending = false;     // time-out elimination modal open
     let   prevPlayers   = [];          // for HP change detection
 
     // ── HP history helpers ────────────────────────────────────────────────────
@@ -1857,6 +1883,11 @@
           el.textContent = fmtMs(ms);
           const li = el.closest('li');
           if (li) li.classList.toggle('low-time', ms < 5 * 60 * 1000 && ms > 0);
+          const currentPlayer = gs.players[gs.currentTurn];
+          if (ms === 0 && currentPlayer && currentPlayer.id === playerId && !currentPlayer.eliminated && !timeElimPending) {
+            timeElimPending = true;
+            elModalTimeElim.hidden = false;
+          }
         }
         const badge = document.getElementById('delay-badge');
         if (badge) {
@@ -1918,6 +1949,13 @@
       send({ type: 'RETURN_TO_LOBBY', playerId });
     });
 
+    // Time elimination modal
+    document.getElementById('btn-time-elim-confirm').addEventListener('click', () => {
+      elModalTimeElim.hidden = true;
+      timeElimPending = false;
+      send({ type: 'ELIMINATE', playerId });
+    });
+
     // HP elimination modal
     document.getElementById('btn-hp-elim-confirm').addEventListener('click', () => {
       elModalHpElim.hidden = true;
@@ -1964,6 +2002,8 @@
       // Reset HP modal and tab if returning from game
       elModalHpElim.hidden = true;
       hpElimPending = false;
+      elModalTimeElim.hidden = true;
+      timeElimPending = false;
       setTab('clock');
     }
 

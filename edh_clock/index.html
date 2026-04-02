@@ -27,6 +27,9 @@
       --bg: #000000;
       --bg-elevated: #0a0a0a;
       --bg-card: #111111;
+      --ws-connected: #4eb852;
+      --ws-reconnecting: #e8943d;
+      --ws-offline: #e05252;
     }
 
     html, body {
@@ -610,42 +613,73 @@
     body.in-game #view-game { padding-top: 0; }
 
     body.in-game #timers-area {
-      top: calc(env(safe-area-inset-top, 0px) + 3rem);
+      top: calc(env(safe-area-inset-top, 0px) + 2.5rem);
     }
 
-    /* Room code — top-left of game view */
-    #game-room-code {
+    /* ── In-game top bar ─────────────────────────────────────────────── */
+    #game-topbar {
       display: none;
       position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 0.8rem);
-      left: 1.25rem;
+      top: env(safe-area-inset-top, 0px);
+      left: 0;
+      right: 0;
+      height: 2.5rem;
+      z-index: 60;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      padding: 0 1.25rem;
+    }
+
+    body.in-game #game-topbar { display: flex; }
+
+    /* Room code — centered in topbar */
+    #game-room-code {
       font-family: var(--font-mono);
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       color: var(--text-muted);
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      z-index: 60;
       pointer-events: none;
       user-select: none;
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
     }
 
-    body.in-game #game-room-code { display: block; }
+    /* Right section: ws indicator + pause */
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-left: auto;
+    }
 
-    /* Pause button — top-right fixed */
+    /* WS status dot */
+    #ws-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      flex-shrink: 0;
+      transition: background 0.4s;
+    }
+
+    #ws-indicator.ws-connected    { background: var(--ws-connected); }
+    #ws-indicator.ws-reconnecting { background: var(--ws-reconnecting); }
+    #ws-indicator.ws-offline      { background: var(--ws-offline); }
+
+    /* Pause button — inline in topbar */
     #btn-pause {
       touch-action: manipulation;
-      position: fixed;
-      top: calc(var(--nav-offset) + 0.75rem);
-      right: 1.25rem;
-      z-index: 60;
       background: none;
       border: 1px solid var(--border);
       color: var(--text-muted);
       font-family: var(--font-mono);
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      padding: 0.4rem 0.85rem;
+      padding: 0.3rem 0.75rem;
       cursor: pointer;
       transition: color 0.2s, border-color 0.2s;
     }
@@ -653,10 +687,6 @@
     #btn-pause:hover {
       color: var(--text-primary);
       border-color: var(--text-muted);
-    }
-
-    body.in-game #btn-pause {
-      top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
     }
 
     /* Paused banner */
@@ -679,24 +709,6 @@
       display: block;
     }
 
-    /* ── Status line ──────────────────────────────────────────────────── */
-    #status-line {
-      position: fixed;
-      bottom: 50vh;
-      left: 0;
-      right: 0;
-      padding: 0.35rem 1.5rem;
-      font-family: var(--font-mono);
-      font-size: 0.6rem;
-      color: var(--text-muted);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      z-index: 15;
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg);
-    }
 
     /* ── Player reorder controls (host only) ─────────────────────────── */
     #player-list li {
@@ -898,13 +910,10 @@
     .hp-float.hp-gain { color: var(--accent); }
     .hp-float.hp-loss { color: var(--color-error); }
 
-    /* ── Game tabs (Clock | History) ─────────────────────────────────── */
+    /* ── Game tabs (Clock | History) — live in topbar ───────────────── */
     #game-tabs {
       display: flex;
       gap: 1.25rem;
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
@@ -927,7 +936,7 @@
     .game-tab.active::after {
       content: '';
       position: absolute;
-      bottom: calc(-0.5rem - 1px);
+      bottom: calc(-0.85rem - 1px);  /* aligns with topbar bottom border */
       left: 0;
       right: 0;
       height: 2px;
@@ -1255,6 +1264,12 @@
         <span>min</span>
       </div>
 
+      <div class="time-row">
+        <label for="input-delay">Delay per turn</label>
+        <input type="number" id="input-delay" value="3" min="0" max="30">
+        <span>s</span>
+      </div>
+
       <button class="btn-primary" id="btn-start" disabled>Start game</button>
       <p id="host-waiting">Waiting for first player to start…</p>
 
@@ -1279,22 +1294,22 @@
 
   <!-- ── Game ──────────────────────────────────────────────────────────────── -->
   <div id="view-game">
-    <span id="game-room-code"></span>
-    <button id="btn-pause">Pause</button>
-    <div id="paused-banner">— Paused —</div>
-
-    <div id="timers-area">
+    <div id="game-topbar">
       <div id="game-tabs">
         <button class="game-tab active" id="tab-clock">Clock</button>
         <button class="game-tab" id="tab-history">History</button>
       </div>
+      <span id="game-room-code"></span>
+      <div class="topbar-right">
+        <span id="ws-indicator"></span>
+        <button id="btn-pause">Pause</button>
+      </div>
+    </div>
+    <div id="paused-banner">— Paused —</div>
+
+    <div id="timers-area">
       <ul id="timers"></ul>
       <div id="history-log"></div>
-    </div>
-
-    <div id="status-line">
-      <span id="status-turn"></span>
-      <span id="status-ws">connecting…</span>
     </div>
 
     <div id="hp-area" hidden>
@@ -1410,8 +1425,8 @@
     const elInputName        = document.getElementById('input-name');
     const elInputCode        = document.getElementById('input-code');
     const elInputTime        = document.getElementById('input-time');
-    const elStatusTurn       = document.getElementById('status-turn');
-    const elStatusWs         = document.getElementById('status-ws');
+    const elInputDelay       = document.getElementById('input-delay');
+    const elWsIndicator      = document.getElementById('ws-indicator');
     const elPassName         = document.getElementById('pass-name');
     const elError            = document.getElementById('connect-error');
     const elHostWaiting      = document.getElementById('host-waiting');
@@ -1495,7 +1510,7 @@
       if (!entry) return;
       delete hpPending[pid];
       const sign = entry.delta > 0 ? '+' : '';
-      hpHistory.unshift({ text: `[${fmtWallTime(entry.wallTime)}] ${entry.name}: ${sign}${entry.delta} HP (Result: ${entry.resultHp})`, delta: entry.delta });
+      hpHistory.push({ text: `[${fmtWallTime(entry.wallTime)}] ${entry.name}: ${sign}${entry.delta} HP (Result: ${entry.resultHp})`, delta: entry.delta });
       renderHistory();
     }
 
@@ -1514,6 +1529,13 @@
         elHistoryLog.innerHTML = '<div class="history-empty">No HP changes yet.</div>';
         return;
       }
+      for (const entry of hpHistory) {
+        const cls = entry.delta > 0 ? 'history-delta-pos' : 'history-delta-neg';
+        const el  = document.createElement('div');
+        el.className = 'history-entry';
+        el.innerHTML = `<span class="${cls}">${escHtml(entry.text)}</span>`;
+        elHistoryLog.appendChild(el);
+      }
       for (const entry of pendingEntries) {
         const sign = entry.delta > 0 ? '+' : '';
         const cls  = entry.delta > 0 ? 'history-delta-pos' : 'history-delta-neg';
@@ -1522,13 +1544,7 @@
         el.innerHTML = `<span class="${cls}">[${fmtWallTime(entry.wallTime)}] ${escHtml(entry.name)}: ${sign}${entry.delta} HP (Result: ${entry.resultHp})</span>`;
         elHistoryLog.appendChild(el);
       }
-      for (const entry of hpHistory) {
-        const cls = entry.delta > 0 ? 'history-delta-pos' : 'history-delta-neg';
-        const el  = document.createElement('div');
-        el.className = 'history-entry';
-        el.innerHTML = `<span class="${cls}">${escHtml(entry.text)}</span>`;
-        elHistoryLog.appendChild(el);
-      }
+      elHistoryLog.scrollTop = elHistoryLog.scrollHeight;
     }
 
     // ── Tab switching ─────────────────────────────────────────────────────────
@@ -1562,6 +1578,11 @@
     // ── Reconnect overlay ─────────────────────────────────────────────────────
     function setReconnecting(on) {
       document.body.classList.toggle('reconnecting', on);
+    }
+
+    // ── WS status indicator ───────────────────────────────────────────────────
+    function setWsStatus(state) {
+      elWsIndicator.className = 'ws-' + state;
     }
 
     // ── Add to Home Screen ────────────────────────────────────────────────────
@@ -1657,11 +1678,11 @@
     // we reuse the module-level playerName (already set by startSession).
     function connectWs(code, nameOverride) {
       if (ws) { ws.onclose = null; ws.close(); }
-      elStatusWs.textContent = 'connecting…';
+      setWsStatus('offline');
       ws = new WebSocket(`${WS_PROTO}://${WORKER_HOST}/edh/game/${code}`);
 
       ws.onopen = () => {
-        elStatusWs.textContent = 'connected';
+        setWsStatus('connected');
         setReconnecting(false);
         const name = nameOverride || playerName;
         if (name) send({ type: 'JOIN', playerId, name });
@@ -1675,10 +1696,10 @@
         render();
       };
 
-      ws.onerror = () => { elStatusWs.textContent = 'error'; };
+      ws.onerror = () => { setWsStatus('offline'); };
 
       ws.onclose = () => {
-        elStatusWs.textContent = 'reconnecting…';
+        setWsStatus('reconnecting');
         // Only show overlay if we're mid-session (have received at least one state)
         if (currentCode && gameState.phase) setReconnecting(true);
         setTimeout(() => connectWs(code), 2000);
@@ -1797,6 +1818,9 @@
       if (document.activeElement !== elInputTime) {
         elInputTime.value = Math.round(gs.defaultMs / 60000);
       }
+      if (document.activeElement !== elInputDelay) {
+        elInputDelay.value = Math.round(gs.delayMs / 1000);
+      }
 
       // Player roster with reorder controls (↑/↓, host-only)
       elPlayerList.innerHTML = '';
@@ -1847,9 +1871,6 @@
         document.getElementById('you-died-time').textContent = fmtMs(gs.players[myIndex].bankedMs);
       }
 
-      elStatusTurn.textContent = gs.paused
-        ? 'paused'
-        : cp ? `${cp.name}'s turn` : '';
 
       elTimers.innerHTML = '';
       for (let i = 0; i < gs.players.length; i++) {
@@ -1943,6 +1964,11 @@
     elInputTime.addEventListener('change', () => {
       const mins = parseInt(elInputTime.value, 10);
       if (mins >= 1 && mins <= 999) send({ type: 'SET_TIME', minutes: mins });
+    });
+
+    elInputDelay.addEventListener('change', () => {
+      const secs = parseInt(elInputDelay.value, 10);
+      if (secs >= 0 && secs <= 30) send({ type: 'SET_DELAY', seconds: secs });
     });
 
     // Start button → open confirmation modal

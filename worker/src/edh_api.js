@@ -131,6 +131,16 @@ export class EDHClock {
         break;
       }
 
+      case 'SET_DELAY': {
+        if (gs.phase !== 'lobby') break;
+        const secs = Number(msg.seconds);
+        if (!Number.isFinite(secs) || secs < 0 || secs > 30) break;
+        gs.delayMs = Math.round(secs) * 1000;
+        await this._saveState(gs);
+        this._broadcast(gs);
+        break;
+      }
+
       case 'REORDER': {
         if (gs.phase !== 'lobby') break;
         const att = ws.deserializeAttachment();

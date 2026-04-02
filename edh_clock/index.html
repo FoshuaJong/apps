@@ -1156,7 +1156,7 @@
 <body>
 
   <!-- ── Nav ───────────────────────────────────────────────────────────────── -->
-  <nav>
+  <!-- <nav>
     <div class="container">
       <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
       <ul class="nav-links" id="nav-links">
@@ -1167,7 +1167,7 @@
         <span></span><span></span><span></span>
       </button>
     </div>
-  </nav>
+  </nav> -->
 
   <!-- ── Connect (pre-join) ───────────────────────────────────────────────── -->
   <div id="view-connect">
@@ -1385,25 +1385,13 @@
     elHpArea.addEventListener('click', e => {
       const btn = e.target.closest('.hp-btn');
       if (!btn || !playerId) return;
-      const delta  = parseInt(btn.dataset.delta, 10);
-      const selfP  = gameState.players?.find(p => p.id === playerId);
-      const currentHp = selfP?.hp ?? gameState.defaultHp ?? 40;
-      if (delta < 0 && currentHp + delta <= 0 && !selfP?.eliminated) {
-        // Would eliminate — show confirmation modal first
-        hpElimDelta   = delta;
-        hpElimPending = true;
-        elHpElimTitle.textContent = `You're at ${currentHp + delta} HP`;
-        elModalHpElim.hidden = false;
-        return;
-      }
-      send({ type: 'HP_CHANGE', playerId, delta });
+      send({ type: 'HP_CHANGE', playerId, delta: parseInt(btn.dataset.delta, 10) });
     });
 
     // ── HP history state ──────────────────────────────────────────────────────
     const hpHistory = [];              // committed log entries [{text, delta}]
     const hpPending = {};              // playerId → {delta, resultHp, name, wallTime, timer}
     let   hpElimPending = false;       // hp-elimination modal open
-    let   hpElimDelta   = 0;           // delta that triggered the modal
     let   prevPlayers   = [];          // for HP change detection
 
     // ── HP history helpers ────────────────────────────────────────────────────
@@ -1421,7 +1409,11 @@
       const delta = newHp - oldHp;
       spawnHpFloat(idx, delta);
       recordHpChange(player, oldHp, newHp, delta);
-      // Modal is now shown pre-emptively before sending HP_CHANGE, so no reactive check needed here.
+      if (player.id === playerId && newHp <= 0 && !player.eliminated && !hpElimPending) {
+        hpElimPending = true;
+        elHpElimTitle.textContent = `You're at ${newHp} HP`;
+        elModalHpElim.hidden = false;
+      }
     }
 
     function spawnHpFloat(idx, delta) {
@@ -1929,17 +1921,13 @@
     // HP elimination modal
     document.getElementById('btn-hp-elim-confirm').addEventListener('click', () => {
       elModalHpElim.hidden = true;
-      const delta = hpElimDelta;
       hpElimPending = false;
-      hpElimDelta   = 0;
-      send({ type: 'HP_CHANGE', playerId, delta });
       send({ type: 'ELIMINATE', playerId });
     });
 
     function dismissHpModal() {
       elModalHpElim.hidden = true;
       hpElimPending = false;
-      hpElimDelta   = 0;
     }
     document.getElementById('btn-hp-elim-cancel').addEventListener('click', dismissHpModal);
     document.getElementById('modal-hp-backdrop').addEventListener('click', dismissHpModal);

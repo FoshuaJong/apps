@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>EDH Clock</title>
   <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/edh_clock/manifest.json">
+  <meta name="theme-color" content="#000000">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="EDH Clock">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
@@ -755,6 +760,143 @@
       justify-content: center;
     }
 
+    /* ── Toast notifications ─────────────────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 1rem);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 0.65rem 1.25rem;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(-0.5rem);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .toast.toast-error {
+      border-color: var(--color-error);
+      color: var(--color-error);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Reconnecting overlay ─────────────────────────────────────────── */
+    #reconnect-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(0, 0, 0, 0.82);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    body.reconnecting #reconnect-overlay {
+      display: flex;
+    }
+
+    .reconnect-spinner {
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .reconnect-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ── Add to Home Screen banner ────────────────────────────────────── */
+    #a2hs-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      background: var(--bg-elevated);
+      border-top: 1px solid var(--border);
+      padding: 0.9rem 1.5rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    #a2hs-banner.visible {
+      display: flex;
+    }
+
+    body.in-game #a2hs-banner {
+      display: none !important;
+    }
+
+    .a2hs-text {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.07em;
+    }
+
+    .a2hs-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .a2hs-actions button {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .a2hs-actions button:hover {
+      color: var(--text-primary);
+      border-color: var(--text-muted);
+    }
+
+    #a2hs-install {
+      border-color: var(--accent) !important;
+      color: var(--accent) !important;
+    }
+
     /* ── Responsive ───────────────────────────────────────────────────── */
     @media (max-width: 640px) {
       .connect-inner,
@@ -888,8 +1030,30 @@
     </button>
   </div>
 
+  <!-- ── Toast container ───────────────────────────────────────────────────── -->
+  <div id="toast-container"></div>
+
+  <!-- ── Reconnecting overlay ──────────────────────────────────────────────── -->
+  <div id="reconnect-overlay">
+    <span class="reconnect-spinner"></span>
+    <span class="reconnect-label">Reconnecting…</span>
+  </div>
+
+  <!-- ── Add to Home Screen banner ─────────────────────────────────────────── -->
+  <div id="a2hs-banner">
+    <span class="a2hs-text">Add EDH Clock to your home screen for the best experience.</span>
+    <div class="a2hs-actions">
+      <button id="a2hs-dismiss">Dismiss</button>
+      <button id="a2hs-install">Install</button>
+    </div>
+  </div>
+
   <!-- ── Script ────────────────────────────────────────────────────────────── -->
   <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/edh_clock/sw.js').catch(() => {});
+  }
+
   (() => {
     // ── Config ────────────────────────────────────────────────────────────────
     const WORKER_HOST = 'apps.fong.nz'; // same origin — worker is colocated
@@ -936,6 +1100,58 @@
     const elBtnCancelStart   = document.getElementById('btn-cancel-start');
     const elModalBackdrop    = document.getElementById('modal-backdrop');
     const elGameRoomCode     = document.getElementById('game-room-code');
+    const elToastContainer   = document.getElementById('toast-container');
+    const elA2hsBanner       = document.getElementById('a2hs-banner');
+
+    // ── Toast ─────────────────────────────────────────────────────────────────
+    function showToast(message, isError = true, duration = 3500) {
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' toast-error' : '');
+      toast.textContent = message;
+      elToastContainer.appendChild(toast);
+      requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+      }, duration);
+    }
+
+    // ── Reconnect overlay ─────────────────────────────────────────────────────
+    function setReconnecting(on) {
+      document.body.classList.toggle('reconnecting', on);
+    }
+
+    // ── Add to Home Screen ────────────────────────────────────────────────────
+    let a2hsPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      a2hsPrompt = e;
+      elA2hsBanner.classList.add('visible');
+    });
+
+    document.getElementById('a2hs-install').addEventListener('click', async () => {
+      if (!a2hsPrompt) return;
+      a2hsPrompt.prompt();
+      await a2hsPrompt.userChoice;
+      a2hsPrompt = null;
+      elA2hsBanner.classList.remove('visible');
+    });
+
+    document.getElementById('a2hs-dismiss').addEventListener('click', () => {
+      elA2hsBanner.classList.remove('visible');
+    });
+
+    // iOS: no beforeinstallprompt — show manual hint if in Safari (not standalone)
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || ('standalone' in navigator && navigator.standalone);
+    if (isIos && !isStandalone) {
+      elA2hsBanner.querySelector('.a2hs-text').textContent =
+        'Install: tap the Share icon then "Add to Home Screen".';
+      document.getElementById('a2hs-install').hidden = true;
+      elA2hsBanner.classList.add('visible');
+    }
 
     // ── Init ──────────────────────────────────────────────────────────────────
     if (playerName) elInputName.value = playerName;
@@ -1003,12 +1219,14 @@
 
       ws.onopen = () => {
         elStatusWs.textContent = 'connected';
+        setReconnecting(false);
         const name = nameOverride || playerName;
         if (name) send({ type: 'JOIN', playerId, name });
       };
 
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
+        if (msg.type === 'ERROR') { handleServerError(msg); return; }
         if (msg.serverNow) clockOffset = Date.now() - msg.serverNow;
         gameState = msg;
         render();
@@ -1018,6 +1236,8 @@
 
       ws.onclose = () => {
         elStatusWs.textContent = 'reconnecting…';
+        // Only show overlay if we're mid-session (have received at least one state)
+        if (currentCode && gameState.phase) setReconnecting(true);
         setTimeout(() => connectWs(code), 2000);
       };
     }
@@ -1026,6 +1246,23 @@
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(obj));
       }
+    }
+
+    // ── Server error handling ─────────────────────────────────────────────────
+    function handleServerError(msg) {
+      const reason = msg.reason || '';
+      if (reason === 'INVALID_CODE') {
+        showToast('Invalid room code.');
+      } else if (reason === 'LOBBY_FULL') {
+        showToast('Lobby full — 16 players maximum.');
+      } else {
+        showToast(msg.message || 'Connection error.');
+      }
+      // Disconnect cleanly and return to connect screen
+      if (ws) { ws.onclose = null; ws.close(); }
+      setReconnecting(false);
+      currentCode = null;
+      showConnect();
     }
 
     // ── Long-press utility ────────────────────────────────────────────────────

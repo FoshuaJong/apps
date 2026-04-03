@@ -8,35 +8,19 @@ const JSON_HEADERS = { 'Content-Type': 'application/json', ...CORS };
 
 const SYSTEM_PROMPT = `You are a LinkedIn Thought Leader ghostwriter. Rewrite the user's input in maximum LinkedIn style — short punchy lines, dramatic spacing, humblebrags disguised as vulnerability, vague universal lessons, and contrived metaphors. Every mundane event becomes a life-changing leadership revelation.
 
+Respond with a single JSON object with exactly these keys: headline, post_body, reaction_name, comments.
+
 headline: A LinkedIn-style professional headline for the user. Use pipe-separated buzzword fragments. Include one fake prestigious ex-employer (ex-McKinsey, ex-Google, ex-Goldman, etc.), one vague identity claim, and one role keyword. Example: "Founder & CEO | Disrupting Disruption | ex-Deloitte | Speaker | Dog Dad"
 
-post_body: The LinkedIn-maxxed rewrite of the user's input. Use heavy line breaks (one sentence per line, blank lines for drama). Open with a hook that overpromises. Include a contrived anecdote where the original event becomes a leadership metaphor. End with a lesson compressed into a moral-sounding takeaway that removes all nuance. Use "I" frequently. Occasional ellipsis for gravitas. No hashtags.
+post_body: The LinkedIn-maxxed rewrite of the user's input. IMPORTANT: Use \\n (newline) between each sentence and \\n\\n (blank line) between thematic breaks — this is essential for the dramatic LinkedIn formatting effect. One sentence per line. Open with a hook that overpromises. Include a contrived anecdote where the original event becomes a leadership metaphor. End with a lesson compressed into a moral-sounding takeaway that removes all nuance. Use "I" frequently. Occasional ellipsis for gravitas. No hashtags.
 
 reaction_name: A single plausible full name that would appear as "X and [N] others reacted." Should be a realistic-sounding person — not a celebrity, not a placeholder. Something like "Priya Nair" or "Marcus Webb".
 
-comments: Exactly 3 comment objects. Each commenter should be a distinct LinkedIn archetype. Names should be realistic and diverse. Titles should be buzzword-heavy LinkedIn titles (e.g. "Senior Strategy Lead | Change Maker | LinkedIn Top Voice 2024", "2x Founder | Building in Public | Advisor"). Comments should be short (1–2 sentences), written in the style of LinkedIn users who are trying to sound insightful but are mostly just echoing the same platitudes: affirming, and slightly hollow — the kind that signals engagement with the context, but without saying anything. Occasional emoji.`;
+comments: An array of exactly 3 objects, each with keys: name, title, comment. Each commenter should be a distinct LinkedIn archetype. Names should be realistic and diverse. Titles should be buzzword-heavy LinkedIn titles (e.g. "Senior Strategy Lead | Change Maker | LinkedIn Top Voice 2024", "2x Founder | Building in Public | Advisor"). Comments should be short (1–2 sentences), written in the style of LinkedIn users who are trying to sound insightful but are mostly just echoing the same platitudes: affirming, and slightly hollow — the kind that signals engagement with the context, but without saying anything. Occasional emoji.
 
-const RESPONSE_SCHEMA = {
-  type: 'OBJECT',
-  properties: {
-    headline: { type: 'STRING' },
-    post_body: { type: 'STRING' },
-    reaction_name: { type: 'STRING' },
-    comments: {
-      type: 'ARRAY',
-      items: {
-        type: 'OBJECT',
-        properties: {
-          name: { type: 'STRING' },
-          title: { type: 'STRING' },
-          comment: { type: 'STRING' },
-        },
-        required: ['name', 'title', 'comment'],
-      },
-    },
-  },
-  required: ['headline', 'post_body', 'reaction_name', 'comments'],
-};
+Example output shape (values are illustrative only):
+{"headline":"...","post_body":"I almost quit.\\n\\nBut then something shifted...\\n\\nThe lesson? Discomfort is just growth in disguise.","reaction_name":"Priya Nair","comments":[{"name":"Marcus Webb","title":"Growth Lead | ex-Uber | Building in Public","comment":"This resonates deeply. 🙌"},{"name":"Fatima Al-Hassan","title":"2x Founder | Advisor | LinkedIn Top Voice 2024","comment":"Needed this today. The lesson is everything."},{"name":"Daniel Park","title":"Senior Strategy Lead | Change Maker","comment":"The metaphor here is spot on. Real leadership is uncomfortable."}]}`;
+
 
 export async function handleLinkedinApiRequest(request, env) {
   if (request.method === 'OPTIONS') {
@@ -118,7 +102,6 @@ export async function handleLinkedinApiRequest(request, env) {
         contents: [{ parts: [{ text: `${name} wrote: ${text}` }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          responseSchema: RESPONSE_SCHEMA,
         },
       }),
     }

@@ -281,6 +281,185 @@
         justify-content: center;
       }
     }
+
+    /* ── Two-column layout ── */
+    .ll-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .ll-left {
+      min-width: 0;
+    }
+
+    /* ── Skeleton ── */
+    @keyframes skel-pulse {
+      0%, 100% { opacity: 0.35; }
+      50%       { opacity: 0.65; }
+    }
+
+    .ll-demo-skeleton {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 1rem;
+    }
+
+    .skel {
+      background: var(--bg-elevated);
+      animation: skel-pulse 1.6s ease-in-out infinite;
+    }
+
+    .skel-header {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .skel-avatar-lg {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .skel-meta {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding-top: 4px;
+    }
+
+    .skel-line {
+      height: 10px;
+    }
+
+    .skel-w-90 { width: 90%; }
+    .skel-w-80 { width: 80%; }
+    .skel-w-70 { width: 70%; }
+    .skel-w-55 { width: 55%; }
+    .skel-w-40 { width: 40%; }
+
+    .skel-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .skel-actions {
+      height: 32px;
+      width: 100%;
+    }
+
+    /* ── Demo panel ── */
+    .ll-demo-framing {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .ll-demo-input {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 300;
+      font-style: italic;
+      border-left: 2px solid var(--border);
+      padding-left: 0.75rem;
+      margin: 0 0 1.25rem;
+    }
+
+    .ll-demo-comment {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      margin-top: 0.75rem;
+      min-height: 72px;
+    }
+
+    .ll-demo-dots {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      justify-content: center;
+    }
+
+    .ll-demo-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .ll-demo-dot.active {
+      background: var(--accent);
+    }
+
+    .ll-demo-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .ll-demo-arrow {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 2rem;
+      height: 2rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .ll-demo-arrow:hover {
+      border-color: var(--accent-border-hover);
+      color: var(--text-primary);
+    }
+
+    .ll-demo-counter {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Slide-in transitions ── */
+    @keyframes slide-in-right {
+      from { opacity: 0; transform: translateX(12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes slide-in-left {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .anim-from-right { animation: slide-in-right 250ms ease-out both; }
+    .anim-from-left  { animation: slide-in-left  250ms ease-out both; }
+
+    @media (max-width: 900px) {
+      .ll-layout {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -313,38 +492,79 @@
         <p class="ll-desc">Enter something real. Get something insufferable.</p>
       </section>
 
-      <form class="ll-form" id="llForm" novalidate>
-        <div class="ll-field">
-          <label for="userName">Your name</label>
-          <input type="text" id="userName" name="userName" placeholder="Joshua Fong" autocomplete="name" maxlength="100" required>
-        </div>
-        <div class="ll-field">
-          <label for="userText">What do you actually want to say?</label>
-          <textarea id="userText" name="userText" rows="5" placeholder="I failed my driving test twice." maxlength="1000" required></textarea>
-        </div>
-        <div class="cf-turnstile"
-             data-sitekey="0x4AAAAAAC0Os7cup2SmN7JT"
-             data-callback="onTurnstileSuccess"
-             data-expired-callback="onTurnstileExpired"
-             data-error-callback="onTurnstileError"
-             data-theme="dark"
-             data-appearance="interaction-only">
-        </div>
-        <div class="ll-form-actions">
-          <button type="submit" id="submitBtn" class="btn-primary" disabled>Generate</button>
-          <p class="ll-quota-msg" id="quotaMsg" hidden>
-            You've reached your thought leadership quota.<br>
-            The algorithm will allow you back in 10 minutes.
-          </p>
-        </div>
-      </form>
+      <div class="ll-layout">
+        <div class="ll-left">
 
-      <div class="ll-output" id="outputSection" hidden>
-        <div class="li-card" id="liCard"></div>
-        <div class="ll-output-actions">
-          <button class="btn-primary" id="copyBtn">Copy post</button>
-          <button class="btn-secondary" id="shareBtn" hidden>Share</button>
-          <button class="btn-secondary" id="resetBtn">Generate another</button>
+          <form class="ll-form" id="llForm" novalidate>
+            <div class="ll-field">
+              <label for="userName">Your name</label>
+              <input type="text" id="userName" name="userName" placeholder="Joshua Fong" autocomplete="name" maxlength="100" required>
+            </div>
+            <div class="ll-field">
+              <label for="userText">What do you actually want to say?</label>
+              <textarea id="userText" name="userText" rows="5" placeholder="I failed my driving test twice." maxlength="1000" required></textarea>
+            </div>
+            <div class="cf-turnstile"
+                 data-sitekey="0x4AAAAAAC0Os7cup2SmN7JT"
+                 data-callback="onTurnstileSuccess"
+                 data-expired-callback="onTurnstileExpired"
+                 data-error-callback="onTurnstileError"
+                 data-theme="dark"
+                 data-appearance="interaction-only">
+            </div>
+            <div class="ll-form-actions">
+              <button type="submit" id="submitBtn" class="btn-primary" disabled>Generate</button>
+              <p class="ll-quota-msg" id="quotaMsg" hidden>
+                You've reached your thought leadership quota.<br>
+                The algorithm will allow you back in 10 minutes.
+              </p>
+            </div>
+          </form>
+
+          <div class="ll-output" id="outputSection" hidden>
+            <div class="li-card" id="liCard"></div>
+            <div class="ll-output-actions">
+              <button class="btn-primary" id="copyBtn">Copy post</button>
+              <button class="btn-secondary" id="shareBtn" hidden>Share</button>
+              <button class="btn-secondary" id="resetBtn">Generate another</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="ll-demo" id="llDemo">
+
+          <div class="ll-demo-skeleton" id="demoSkeleton">
+            <div class="skel-header">
+              <div class="skel skel-avatar-lg"></div>
+              <div class="skel-meta">
+                <div class="skel skel-line skel-w-80"></div>
+                <div class="skel skel-line skel-w-55"></div>
+              </div>
+            </div>
+            <div class="skel-body">
+              <div class="skel skel-line skel-w-90"></div>
+              <div class="skel skel-line skel-w-70"></div>
+              <div class="skel skel-line skel-w-80"></div>
+              <div class="skel skel-line skel-w-40"></div>
+              <div class="skel skel-line skel-w-90"></div>
+            </div>
+            <div class="skel skel-actions"></div>
+          </div>
+
+          <div class="ll-demo-content" id="demoContent" hidden>
+            <p class="ll-demo-framing">Instead of saying:</p>
+            <blockquote class="ll-demo-input" id="demoInput"></blockquote>
+            <div class="li-card" id="demoCard"></div>
+            <div class="ll-demo-comment" id="demoComment"></div>
+            <div class="ll-demo-dots" id="demoDots"></div>
+            <div class="ll-demo-nav" id="demoNav" hidden>
+              <button class="ll-demo-arrow" id="demoPrev" aria-label="Previous example">&#8249;</button>
+              <span class="ll-demo-counter" id="demoCounter">1 / 1</span>
+              <button class="ll-demo-arrow" id="demoNext" aria-label="Next example">&#8250;</button>
+            </div>
+          </div>
+
         </div>
       </div>
 

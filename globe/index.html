@@ -23,6 +23,7 @@
     }
 
     .globe-page-left {
+      min-width: 0;
       padding-top: var(--nav-offset);
       padding-bottom: 6rem;
       padding-left: max(2rem, calc((100vw - 1080px) / 2 + 2rem));
@@ -506,8 +507,8 @@
     /* --- ROTATE PAUSE INDICATOR --- */
     #rotateHint {
       position: fixed;
-      bottom: 2rem;
-      right: 2rem;
+      top: calc(var(--nav-offset) + 0.75rem);
+      left: calc(42vw + 1.5rem);
       z-index: 2;
       font-family: var(--font-mono);
       font-size: 0.6rem;
@@ -543,6 +544,10 @@
         margin: 0 auto;
         opacity: 0.8;
         background: radial-gradient(circle at 50% 50%, var(--bg) 46%, transparent 52%);
+      }
+
+      #rotateHint {
+        left: 1.5rem;
       }
     }
 
@@ -755,8 +760,6 @@
           </div>
         </div>
 
-        <!-- TODO: exports, imports, and shares should encode and decode the globe.autorotate and 
-         globe.pointOfView settings so imported/linked globes render as they were shared -->
         <div class="share-section">
           <div class="share-btn-row">
             <button class="btn-secondary" id="shareBtn" data-state="idle" onclick="shareGlobe()">Copy link</button>
@@ -775,8 +778,7 @@
     <div class="globe-wrapper">
       <div id="globeViz"></div>
     </div>
-    <!-- TODO: add a similar playing ▶︎ hint for users to infer click-to-pause exists -->
-    <div id="rotateHint">Paused</div>
+    <div id="rotateHint"></div>
 
   </div><!-- end .globe-page -->
 
@@ -849,6 +851,9 @@
     }
 
     let globe = null;
+    let pendingPov = null;
+    let pendingAutoRotate = null;
+    let pendingLoadMsg = false;
 
     function updateGlobe() {
       if (!globe) return;
@@ -1019,12 +1024,23 @@
         })
         (globeViz);
 
-      globe.controls().autoRotate = true;
+      const initAutoRotate = pendingAutoRotate !== null ? pendingAutoRotate : true;
+      globe.controls().autoRotate = initAutoRotate;
+      pendingAutoRotate = null;
       globe.controls().autoRotateSpeed = 1.5;
       globe.controls().enableZoom = true;
 
       // Click-to-pause: distinguish click vs drag by tracking pointer travel distance
       const hint = document.getElementById('rotateHint');
+      let rotateHintTimer;
+      function showRotateHint(text, persist = false) {
+        clearTimeout(rotateHintTimer);
+        hint.textContent = text;
+        hint.classList.add('visible');
+        if (!persist) {
+          rotateHintTimer = setTimeout(() => hint.classList.remove('visible'), 1800);
+        }
+      }
       let pointerDownPos = null;
       globeViz.addEventListener('pointerdown', e => {
         pointerDownPos = { x: e.clientX, y: e.clientY };
@@ -1038,13 +1054,22 @@
         if (dist > 4) return; // it was a drag, not a click
         const rotating = globe.controls().autoRotate;
         globe.controls().autoRotate = !rotating;
-        hint.classList.toggle('visible', rotating); // rotating→pausing, show hint
+        if (rotating) {
+          showRotateHint('Paused', true);
+        } else {
+          showRotateHint('Playing ▶︎');
+        }
       });
 
-      globe.pointOfView({
-        altitude: 2
-      });
+      globe.pointOfView(pendingPov || { altitude: 2 });
+      pendingPov = null;
       updateGlobe();
+      if (pendingLoadMsg) {
+        pendingLoadMsg = false;
+        showShareStatus('Setting up the view…', false, true);
+        setTimeout(() => showShareStatus('Globe loaded from shared link'), 800);
+      }
+      showRotateHint(initAutoRotate ? 'Playing ▶︎' : 'Paused', !initAutoRotate);
     });
 
     // --- UI ---
@@ -1266,6 +1291,18 @@
       if (Array.isArray(state.l)) {
         for (const [name, color] of state.l) cityColors.set(name, color);
       }
+      // Restore view state — apply immediately if globe is ready, else defer to onGlobeReady
+      const pov = Array.isArray(state.pov)
+        ? { lat: state.pov[0], lng: state.pov[1], altitude: state.pov[2] }
+        : null;
+      const autoRotate = state.r !== undefined ? state.r === 1 : null;
+      if (globe) {
+        if (pov) globe.pointOfView(pov, 0);
+        if (autoRotate !== null) globe.controls().autoRotate = autoRotate;
+      } else {
+        pendingPov = pov;
+        pendingAutoRotate = autoRotate;
+      }
       saveState();
     }
 
@@ -1303,13 +1340,14 @@
     let shareStatusTimer;
     let shareBtnTimer;
 
-    // TODO: long links horizontally overwhelm the controls div (like when a KV value pair cannot be made so fallback to #v2 happens)
-    function showShareStatus(msg, isError = false) {
+    function showShareStatus(msg, isError = false, persist = false) {
       const el = document.getElementById('shareStatus');
       el.textContent = msg;
       el.style.color = isError ? 'var(--text-muted)' : 'var(--accent)';
       clearTimeout(shareStatusTimer);
-      shareStatusTimer = setTimeout(() => { el.textContent = ''; }, 500);
+      if (!persist) {
+        shareStatusTimer = setTimeout(() => { el.textContent = ''; }, 500);
+      }
     }
 
     function setShareBtnState(s, url = '') {
@@ -1357,13 +1395,26 @@
       return JSON.parse(new TextDecoder().decode(buf));
     }
 
+    function encodeViewState(state) {
+      if (globe) {
+        const pov = globe.pointOfView();
+        state.pov = [
+          Math.round(pov.lat * 1e4) / 1e4,
+          Math.round(pov.lng * 1e4) / 1e4,
+          Math.round(pov.altitude * 1e4) / 1e4,
+        ];
+        state.r = globe.controls().autoRotate ? 1 : 0;
+      }
+      return state;
+    }
+
     async function shareGlobe() {
       if (connections.length === 0) {
         showShareStatus('Add connections first', true);
         return;
       }
       setShareBtnState('saving');
-      const state = encodeGlobeState();
+      const state = encodeViewState(encodeGlobeState());
       try {
         const res = await fetch('/globe/api/save', {
           method: 'POST',
@@ -1388,7 +1439,7 @@
 
     let exportBtnTimer;
     function exportGlobe() {
-      const data = JSON.stringify(encodeGlobeState(), null, 2);
+      const data = JSON.stringify(encodeViewState(encodeGlobeState()), null, 2);
       const blob = new Blob([data], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -1705,22 +1756,26 @@
         if (hash) {
           const isId = hash.length <= 12 && !hash.includes('=');
           if (isId) {
+            showShareStatus('Loading globe…', false, true);
             fetch(`/globe/api/load?id=${encodeURIComponent(hash)}`)
               .then(r => r.ok ? r.json() : Promise.reject())
               .then(state => {
+                showShareStatus('Making connections…', false, true);
                 applyGlobeState(state);
                 history.replaceState(null, '', location.pathname);
                 afterLoad();
-                setTimeout(() => showShareStatus('Globe loaded from shared link'), 50);
+                pendingLoadMsg = true;
               })
               .catch(() => afterLoad());
           } else if (hash.startsWith('v2=')) {
+            showShareStatus('Loading globe…', false, true);
             decompressState(hash.slice(3))
               .then(state => {
+                showShareStatus('Making connections…', false, true);
                 applyGlobeState(state);
                 history.replaceState(null, '', location.pathname);
                 afterLoad();
-                setTimeout(() => showShareStatus('Globe loaded from shared link'), 50);
+                pendingLoadMsg = true;
               })
               .catch(() => afterLoad());
           } else {

@@ -287,6 +287,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 4rem;
+      align-items: start;
     }
 
     .ll-left {
@@ -639,6 +640,7 @@
 
     function renderCard(data, userName) {
       const reactionCount = Math.floor(Math.random() * 900) + 100;
+      const timeAgo = Math.floor(Math.random() * 59) + 1;
 
       const commentsHtml = data.comments.map(c => `
         <div class="li-comment">
@@ -657,7 +659,7 @@
           <div class="li-meta">
             <div class="li-name">${escapeHtml(userName)}</div>
             <div class="li-headline">${escapeHtml(data.headline)}</div>
-            <div class="li-sub">1st · 3m · 🌐</div>
+            <div class="li-sub">1st · ${timeAgo}m · 🌐</div>
           </div>
           <button class="li-more" aria-hidden="true">···</button>
         </div>

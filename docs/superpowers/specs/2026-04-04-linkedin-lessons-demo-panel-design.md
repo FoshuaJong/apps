@@ -100,8 +100,18 @@ No worker changes. No shared CSS changes.
 
 ---
 
+## Transition Animations
+
+Both comment advances and card switches use a directional fade-slide:
+
+- **Next / auto-advance:** new content fades in from the right (`translateX(12px) → 0`, `opacity 0 → 1`)
+- **Prev:** new content fades in from the left (`translateX(-12px) → 0`, `opacity 0 → 1`)
+- Duration: `250ms ease-out`
+- Implementation: two CSS `@keyframes` (`slide-in-right`, `slide-in-left`) applied as a short-lived class on the element being replaced. Class is removed after the animation ends (`animationend` event or a `setTimeout(250)`).
+
+---
+
 ## Out of Scope
 
 - User-navigable comment arrows (dots only)
-- Transition animations between cards (instant swap)
 - Showing more than one comment at a time

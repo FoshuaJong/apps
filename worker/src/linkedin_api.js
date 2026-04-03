@@ -56,6 +56,10 @@ export async function handleLinkedinApiRequest(request, env) {
   }
 
   // 2. Parse + validate body
+  if (request.headers.get('content-length') && Number(request.headers.get('content-length')) > 8192) {
+    return new Response(JSON.stringify({ error: 'Request too large' }), { status: 413, headers: JSON_HEADERS });
+  }
+
   let body;
   try {
     body = await request.json();
@@ -63,10 +67,19 @@ export async function handleLinkedinApiRequest(request, env) {
     return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: JSON_HEADERS });
   }
 
-  const { name, text, cfToken } = body ?? {};
+  const { name: rawName, text: rawText, cfToken } = body ?? {};
+  const name = typeof rawName === 'string' ? rawName.trim() : '';
+  const text = typeof rawText === 'string' ? rawText.trim() : '';
   if (!name || !text || !cfToken) {
     return new Response(
       JSON.stringify({ error: 'Missing required fields: name, text, cfToken' }),
+      { status: 400, headers: JSON_HEADERS }
+    );
+  }
+
+  if (name.length > 100 || text.length > 2000) {
+    return new Response(
+      JSON.stringify({ error: 'Input too long: name max 100 chars, text max 2000 chars' }),
       { status: 400, headers: JSON_HEADERS }
     );
   }
@@ -77,11 +90,16 @@ export async function handleLinkedinApiRequest(request, env) {
   tsForm.append('response', cfToken);
   tsForm.append('remoteip', ip);
 
-  const tsRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST',
-    body: tsForm,
-  });
-  const tsData = await tsRes.json();
+  let tsData;
+  try {
+    const tsRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: tsForm,
+    });
+    tsData = await tsRes.json();
+  } catch {
+    return new Response(JSON.stringify({ error: 'Verification service unavailable' }), { status: 503, headers: JSON_HEADERS });
+  }
   if (!tsData.success) {
     return new Response(JSON.stringify({ error: 'Turnstile verification failed' }), { status: 403, headers: JSON_HEADERS });
   }

@@ -1,6 +1,7 @@
 import { handleCpsatApiRequest } from './cpsat_api.js';
 import { handleGlobeApiRequest } from './globe_api.js';
 import { handleEdhApiRequest, EDHClock } from './edh_api.js';
+import { handleLinkedinApiRequest } from './linkedin_api.js';
 import { handleStaticRequest } from './static_proxy.js';
 
 // Named export required by Wrangler for Durable Object class resolution
@@ -16,6 +17,9 @@ export async function handleRequest(request, env, ctx) {
   }
   if (url.pathname.startsWith('/edh/')) {
     return handleEdhApiRequest(request, env);
+  }
+  if (url.pathname.startsWith('/linkedin/api/')) {
+    return handleLinkedinApiRequest(request, env);
   }
   return handleStaticRequest(request, env, ctx);
 }

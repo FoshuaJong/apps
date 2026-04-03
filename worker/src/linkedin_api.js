@@ -12,7 +12,7 @@ Respond with a single JSON object with exactly these keys: headline, post_body, 
 
 headline: A LinkedIn-style professional headline for the user. Use pipe-separated buzzword fragments. Include one fake prestigious ex-employer (ex-McKinsey, ex-Google, ex-Goldman, etc.), one vague identity claim, and one role keyword. Example: "Founder & CEO | Disrupting Disruption | ex-Deloitte | Speaker | Dog Dad"
 
-post_body: The LinkedIn-maxxed rewrite of the user's input. IMPORTANT: Use \\n (newline) between each sentence and \\n\\n (blank line) between thematic breaks — this is essential for the dramatic LinkedIn formatting effect. One sentence per line. Open with a hook that overpromises. Include a contrived anecdote where the original event becomes a leadership metaphor. End with a lesson compressed into a moral-sounding takeaway that removes all nuance. Use "I" frequently. Occasional ellipsis for gravitas. No hashtags.
+post_body: The LinkedIn-maxxed rewrite of the user's input. IMPORTANT: Use \\n (newline) between every others sentence and \\n\\n (blank line) between thematic breaks — this is essential for the dramatic LinkedIn formatting effect. One sentence per line. Open with a hook that overpromises. Include a contrived anecdote where the original event becomes a leadership metaphor. End with a lesson compressed into a moral-sounding takeaway that removes all nuance. Use "I" frequently. Occasional ellipsis for gravitas. No hashtags.
 
 reaction_name: A single plausible full name that would appear as "X and [N] others reacted." Should be a realistic-sounding person — not a celebrity, not a placeholder. Something like "Priya Nair" or "Marcus Webb".
 

@@ -1308,7 +1308,7 @@
 
     function saveState() {
       try {
-        localStorage.setItem('globe-state', JSON.stringify(encodeGlobeState()));
+        localStorage.setItem('globe-state', JSON.stringify(encodeViewState(encodeGlobeState())));
       } catch (e) { /* storage full or unavailable — ignore */ }
     }
 

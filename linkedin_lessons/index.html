@@ -793,7 +793,7 @@
             '<button class="li-more" aria-hidden="true">···</button>' +
           '</div>' +
           '<div class="li-body">' + escapeHtml(demo.post_body).replace(/\n/g, '<br>') + '</div>' +
-          '<div class="li-reactions"><span>👍❤️🔥</span><span>' + escapeHtml(demo.reaction_name) + ' and ' + demo.reaction_count + ' others</span></div>' +
+          '<div class="li-reactions"><span>👍❤️🔥</span><span>' + escapeHtml(demo.reaction_name) + ' and ' + escapeHtml(String(demo.reaction_count)) + ' others</span></div>' +
           '<div class="li-divider"></div>' +
           '<div class="li-action-bar">' +
             '<button class="li-action">👍 Like</button>' +
@@ -807,6 +807,7 @@
       function buildDots(count) {
         var dots = document.getElementById('demoDots');
         dots.innerHTML = '';
+        if (count <= 1) return;
         for (var i = 0; i < count; i++) {
           var btn = document.createElement('button');
           btn.className = 'll-demo-dot' + (i === 0 ? ' active' : '');
@@ -843,6 +844,7 @@
         clearInterval(autoTimer);
         autoTimer = setInterval(function () {
           if (paused) return;
+          if (!demos[currentCard].comments.length) return;
           var next = (currentComment + 1) % demos[currentCard].comments.length;
           currentComment = next;
           renderDemoComment(demos[currentCard], currentComment, 'right');
@@ -881,7 +883,11 @@
           demoEl.addEventListener('mouseleave', function () { paused = false; });
         })
         .catch(function () {
-          document.getElementById('demoSkeleton').hidden = true;
+          clearInterval(autoTimer);
+          var demoEl = document.getElementById('llDemo');
+          demoEl.hidden = true;
+          var layout = document.querySelector('.ll-layout');
+          if (layout) layout.style.gridTemplateColumns = '1fr';
         });
     })();
   </script>

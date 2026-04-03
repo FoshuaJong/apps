@@ -782,6 +782,7 @@
 
       function renderDemoCard(demo, direction) {
         var card = document.getElementById('demoCard');
+        const timeAgo = Math.floor(Math.random() * 59) + 1;
         document.getElementById('demoInput').textContent = demo.input;
         card.innerHTML =
           '<div class="li-header">' +
@@ -789,7 +790,7 @@
             '<div class="li-meta">' +
               '<div class="li-name">' + escapeHtml(demo.name) + '</div>' +
               '<div class="li-headline">' + escapeHtml(demo.headline) + '</div>' +
-              '<div class="li-sub">1st · 3m · 🌐</div>' +
+              '<div class="li-sub">1st · ' + timeAgo + 'm · 🌐</div>' +
             '</div>' +
             '<button class="li-more" aria-hidden="true">···</button>' +
           '</div>' +

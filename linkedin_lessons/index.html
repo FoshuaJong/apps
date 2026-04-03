@@ -180,7 +180,6 @@
       line-height: 1.6;
       color: #000000e6;
       font-size: 14px;
-      white-space: pre-line;
     }
 
     .li-reactions {
@@ -234,9 +233,15 @@
     .li-comment-avatar {
       width: 32px;
       height: 32px;
-      background: #c0c0c0;
       border-radius: 50%;
       flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 11px;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
     }
 
     .li-comment-body {
@@ -401,12 +406,23 @@
         .replace(/"/g, '&quot;');
     }
 
+    function getInitials(name) {
+      return name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    }
+
+    function avatarBg(name) {
+      const palette = ['#0a66c2','#057642','#b24020','#6b4fbb','#c37d16','#1d6a96'];
+      let hash = 0;
+      for (const c of name) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff;
+      return palette[Math.abs(hash) % palette.length];
+    }
+
     function renderCard(data, userName) {
       const reactionCount = Math.floor(Math.random() * 900) + 100;
 
       const commentsHtml = data.comments.map(c => `
         <div class="li-comment">
-          <div class="li-comment-avatar"></div>
+          <div class="li-comment-avatar" style="background:${avatarBg(c.name)}">${getInitials(c.name)}</div>
           <div class="li-comment-body">
             <span class="li-comment-name">${escapeHtml(c.name)}</span>
             <span class="li-comment-title">${escapeHtml(c.title)}</span>
@@ -417,7 +433,7 @@
 
       liCard.innerHTML = `
         <div class="li-header">
-          <div class="li-avatar"></div>
+          <div class="li-avatar" style="background:${avatarBg(userName)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:17px;font-family:system-ui,sans-serif;">${getInitials(userName)}</div>
           <div class="li-meta">
             <div class="li-name">${escapeHtml(userName)}</div>
             <div class="li-headline">${escapeHtml(data.headline)}</div>
@@ -425,7 +441,7 @@
           </div>
           <button class="li-more" aria-hidden="true">···</button>
         </div>
-        <div class="li-body">${escapeHtml(data.post_body)}</div>
+        <div class="li-body">${escapeHtml(data.post_body).replace(/\n/g, '<br>')}</div>
         <div class="li-reactions">
           <span>👍❤️🔥</span>
           <span>${escapeHtml(data.reaction_name)} and ${reactionCount} others</span>

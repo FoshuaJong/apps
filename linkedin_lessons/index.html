@@ -17,6 +17,9 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
   <style>
+    /* Ensure [hidden] works even when elements have explicit display values */
+    [hidden] { display: none !important; }
+
     .ll-page {
       padding: var(--nav-offset) 0 6rem;
     }
@@ -110,16 +113,32 @@
       margin: 0;
     }
 
-    .ll-output {
-      margin-top: 3rem;
-      max-width: 560px;
+    /* ── Character counter ── */
+    .ll-char-counter {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-align: right;
+      transition: color 0.2s;
     }
 
-    .ll-output-actions {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1.5rem;
-      flex-wrap: wrap;
+    .ll-char-counter.near-limit {
+      color: var(--accent);
+    }
+
+    /* ── Layout ── */
+    .ll-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+    }
+
+    .ll-left {
+      min-width: 0;
+      position: sticky;
+      top: var(--nav-offset);
+      align-self: start;
     }
 
     /* ─────────────────────────────────────────────
@@ -130,6 +149,8 @@
 
     /* Browser chrome frame */
     .ll-demo-browser {
+      flex: 1;
+      min-width: 0;
       border: 1px solid #d0cfc9;
       overflow: hidden;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
@@ -173,6 +194,19 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    /* Input context bar — inside browser chrome */
+    .ll-demo-browser-input {
+      padding: 0.25rem 0.625rem;
+      background: #f5f4f2;
+      border-bottom: 1px solid #e4e2de;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 11px;
+      color: #888;
+      font-style: italic;
+      line-height: 1.4;
+    }
+
     .li-card {
       background: #ffffff;
       border: 1px solid #e0dfdc;
@@ -270,19 +304,6 @@
       gap: 0.35rem;
     }
 
-    .li-comments {
-      padding: 0.75rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .li-comment {
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-start;
-    }
-
     .li-comment-avatar {
       width: 32px;
       height: 32px;
@@ -320,40 +341,138 @@
     .li-comment-text {
       font-size: 13px;
       color: #000000e6;
-      margin: 0;
       line-height: 1.5;
+      margin: 0.25rem 0 0;
     }
 
-    @media (max-width: 640px) {
-      .ll-output-actions {
-        flex-direction: column;
-      }
-      .ll-output-actions button {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-
-    /* ── Two-column layout ── */
-    .ll-layout {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3rem;
-    }
-
-    .ll-left {
-      min-width: 0;
-      position: sticky;
-      top: var(--nav-offset);
-      align-self: start;
-    }
-
-    /* ── Demo panel container ── */
-    .ll-demo {
+    /* ── Right stage panel ── */
+    .ll-stage {
       background: var(--bg-card);
       border: 1px solid var(--border);
       padding: 0.75rem 0.625rem;
       min-width: 0;
+    }
+
+    /* ── State 1: Idle ── */
+    .ll-stage-idle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1.5rem;
+      min-height: 480px;
+    }
+
+    .ll-placeholder-card {
+      width: 100%;
+      max-width: 320px;
+      border: 1px dashed var(--border);
+      padding: 1.25rem;
+      opacity: 0.35;
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+
+    .ll-placeholder-header {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      margin-bottom: 0.375rem;
+    }
+
+    .ll-placeholder-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .ll-placeholder-meta {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding-top: 2px;
+    }
+
+    .ll-placeholder-line {
+      height: 7px;
+      background: var(--border);
+    }
+
+    .ll-placeholder-w-80 { width: 80%; }
+    .ll-placeholder-w-60 { width: 60%; }
+    .ll-placeholder-w-95 { width: 95%; }
+    .ll-placeholder-w-70 { width: 70%; }
+    .ll-placeholder-w-85 { width: 85%; }
+    .ll-placeholder-w-50 { width: 50%; }
+
+    .ll-placeholder-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-align: center;
+    }
+
+    /* ── State 2: Terminal ── */
+    .ll-stage-terminal {
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ll-terminal {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      letter-spacing: 0.03em;
+    }
+
+    .ll-terminal-output {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      overflow-y: auto;
+    }
+
+    .ll-terminal-line {
+      opacity: 0;
+      animation: terminal-line-in 200ms ease-out forwards;
+    }
+
+    @keyframes terminal-line-in {
+      from { opacity: 0; transform: translateX(-6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .ll-terminal-cursor {
+      width: 7px;
+      height: 0.9em;
+      background: var(--accent);
+      margin-top: 0.5rem;
+      animation: cursor-blink 1s step-end infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes cursor-blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ── State 3: Result ── */
+    .ll-stage-result {
+      transition: opacity 0.4s ease;
     }
 
     /* ── Card + activity row ── */
@@ -419,151 +538,13 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Card navigation row (above card + activity) ── */
-    .ll-demo-nav-row {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    /* ── Character counter ── */
-    .ll-char-counter {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      letter-spacing: 0.05em;
-      text-align: right;
-      transition: color 0.2s;
-    }
-
-    .ll-char-counter.near-limit {
-      color: var(--accent);
-    }
-
-
-    /* ── Skeleton ── */
-    @keyframes skel-pulse {
-      0%, 100% { opacity: 0.35; }
-      50%       { opacity: 0.65; }
-    }
-
-    .ll-demo-skeleton {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      padding: 1rem;
-    }
-
-    .skel {
-      background: var(--bg-elevated);
-      animation: skel-pulse 1.6s ease-in-out infinite;
-    }
-
-    .skel-header {
+    /* ── Result actions ── */
+    .ll-result-actions {
       display: flex;
       gap: 0.75rem;
-      align-items: flex-start;
-      margin-bottom: 1rem;
+      margin-top: 0.875rem;
+      flex-wrap: wrap;
     }
-
-    .skel-avatar-lg {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .skel-meta {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      padding-top: 4px;
-    }
-
-    .skel-line {
-      height: 10px;
-    }
-
-    .skel-w-90 { width: 90%; }
-    .skel-w-80 { width: 80%; }
-    .skel-w-70 { width: 70%; }
-    .skel-w-55 { width: 55%; }
-    .skel-w-40 { width: 40%; }
-
-    .skel-body {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .skel-actions {
-      height: 32px;
-      width: 100%;
-    }
-
-    /* ── Demo panel ── */
-    /* Input context bar — inside browser chrome, part of the mockup */
-    .ll-demo-browser-input {
-      padding: 0.25rem 0.625rem;
-      background: #f5f4f2;
-      border-bottom: 1px solid #e4e2de;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 11px;
-      color: #888;
-      font-style: italic;
-      line-height: 1.4;
-    }
-
-    .ll-demo-nav {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 1.25rem;
-    }
-
-    .ll-demo-arrow {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      width: 1.5rem;
-      height: 1.5rem;
-      font-size: 1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: border-color 0.2s, color 0.2s;
-      flex-shrink: 0;
-    }
-
-    .ll-demo-arrow:hover {
-      border-color: var(--accent-border-hover);
-      color: var(--text-primary);
-    }
-
-    .ll-demo-counter {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      letter-spacing: 0.08em;
-    }
-
-    /* ── Slide-in transitions ── */
-    @keyframes slide-in-right {
-      from { opacity: 0; transform: translateX(12px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    @keyframes slide-in-left {
-      from { opacity: 0; transform: translateX(-12px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    .anim-from-right { animation: slide-in-right 250ms ease-out both; }
-    .anim-from-left  { animation: slide-in-left  250ms ease-out both; }
 
     @media (max-width: 900px) {
       .ll-layout {
@@ -598,6 +579,8 @@
     <div class="container">
 
       <div class="ll-layout">
+
+        <!-- LEFT COLUMN: form only, always sticky -->
         <div class="ll-left">
 
           <section class="ll-intro">
@@ -636,43 +619,41 @@
             </div>
           </form>
 
-          <div class="ll-output" id="outputSection" hidden>
-            <div class="li-card" id="liCard"></div>
-            <div class="ll-output-actions">
-              <button class="btn-primary" id="copyBtn">Copy post</button>
-              <button class="btn-secondary" id="shareBtn" hidden>Share</button>
-              <button class="btn-secondary" id="resetBtn">Generate another</button>
-            </div>
-          </div>
-
         </div>
 
-        <div class="ll-demo" id="llDemo">
+        <!-- RIGHT COLUMN: output stage — idle / generating / result -->
+        <div class="ll-stage" id="llStage">
 
-          <div class="ll-demo-skeleton" id="demoSkeleton">
-            <div class="skel-header">
-              <div class="skel skel-avatar-lg"></div>
-              <div class="skel-meta">
-                <div class="skel skel-line skel-w-80"></div>
-                <div class="skel skel-line skel-w-55"></div>
+          <!-- State 1: Idle -->
+          <div class="ll-stage-idle" id="stageIdle">
+            <div class="ll-placeholder-card" aria-hidden="true">
+              <div class="ll-placeholder-header">
+                <div class="ll-placeholder-avatar"></div>
+                <div class="ll-placeholder-meta">
+                  <div class="ll-placeholder-line ll-placeholder-w-80"></div>
+                  <div class="ll-placeholder-line ll-placeholder-w-60"></div>
+                </div>
               </div>
+              <div class="ll-placeholder-line ll-placeholder-w-95"></div>
+              <div class="ll-placeholder-line ll-placeholder-w-70"></div>
+              <div class="ll-placeholder-line ll-placeholder-w-85"></div>
+              <div class="ll-placeholder-line ll-placeholder-w-50"></div>
+              <div class="ll-placeholder-line ll-placeholder-w-95"></div>
+              <div class="ll-placeholder-line ll-placeholder-w-70"></div>
             </div>
-            <div class="skel-body">
-              <div class="skel skel-line skel-w-90"></div>
-              <div class="skel skel-line skel-w-70"></div>
-              <div class="skel skel-line skel-w-80"></div>
-              <div class="skel skel-line skel-w-40"></div>
-              <div class="skel skel-line skel-w-90"></div>
-            </div>
-            <div class="skel skel-actions"></div>
+            <p class="ll-placeholder-label">Awaiting your thought leadership...</p>
           </div>
 
-          <div class="ll-demo-content" id="demoContent" hidden>
-            <div class="ll-demo-nav-row" id="demoNavRow" hidden>
-              <button class="ll-demo-arrow" id="demoPrev" aria-label="Previous example">&#8249;</button>
-              <span class="ll-demo-counter" id="demoCounter"></span>
-              <button class="ll-demo-arrow" id="demoNext" aria-label="Next example">&#8250;</button>
+          <!-- State 2: Terminal -->
+          <div class="ll-stage-terminal" id="stageGenerating" hidden>
+            <div class="ll-terminal">
+              <div class="ll-terminal-output" id="terminalOutput"></div>
+              <div class="ll-terminal-cursor"></div>
             </div>
+          </div>
+
+          <!-- State 3: Result -->
+          <div class="ll-stage-result" id="stageResult" hidden>
             <div class="ll-demo-card-wrap">
               <div class="ll-demo-browser">
                 <div class="ll-demo-browser-bar">
@@ -683,10 +664,15 @@
                   </div>
                   <div class="ll-demo-browser-url">🔒 linkedin.com/feed/</div>
                 </div>
-                <div class="ll-demo-browser-input" id="demoInput"></div>
-                <div class="li-card" id="demoCard"></div>
+                <div class="ll-demo-browser-input" id="resultInput"></div>
+                <div class="li-card" id="liCard"></div>
               </div>
-              <div class="ll-demo-activity" id="demoActivity"></div>
+              <div class="ll-demo-activity" id="resultActivity"></div>
+            </div>
+            <div class="ll-result-actions">
+              <button class="btn-primary" id="copyBtn">Copy post</button>
+              <button class="btn-secondary" id="shareBtn" hidden>Share</button>
+              <button class="btn-secondary" id="resetBtn">Generate another</button>
             </div>
           </div>
 
@@ -706,7 +692,7 @@
   <script>
     // Mobile nav
     const navToggle = document.getElementById('navToggle');
-    const navLinks = document.getElementById('navLinks');
+    const navLinks  = document.getElementById('navLinks');
     navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
     navLinks.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => navLinks.classList.remove('open'));
@@ -714,15 +700,13 @@
   </script>
 
   <script>
-    const form          = document.getElementById('llForm');
-    const submitBtn     = document.getElementById('submitBtn');
-    const quotaMsg      = document.getElementById('quotaMsg');
-    const errorMsg      = document.getElementById('errorMsg');
-    const outputSection = document.getElementById('outputSection');
-    const liCard        = document.getElementById('liCard');
-    const copyBtn       = document.getElementById('copyBtn');
-    const shareBtn      = document.getElementById('shareBtn');
-    const resetBtn      = document.getElementById('resetBtn');
+    const form      = document.getElementById('llForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const quotaMsg  = document.getElementById('quotaMsg');
+    const errorMsg  = document.getElementById('errorMsg');
+    const copyBtn   = document.getElementById('copyBtn');
+    const shareBtn  = document.getElementById('shareBtn');
+    const resetBtn  = document.getElementById('resetBtn');
 
     // Character counter
     document.getElementById('userText').addEventListener('input', function () {
@@ -733,25 +717,63 @@
 
     let cfToken = null;
     let currentPostBody = '';
+    let status = 'idle'; // 'idle' | 'generating' | 'result'
 
-    // Turnstile callbacks — must be global for data-callback attribute
-    window.onTurnstileSuccess = function(token) {
+    // ── Stage state machine ──────────────────────────────────────
+    function setStage(newStatus) {
+      status = newStatus;
+      document.getElementById('stageIdle').hidden      = (newStatus !== 'idle');
+      document.getElementById('stageGenerating').hidden = (newStatus !== 'generating');
+      const result = document.getElementById('stageResult');
+      result.hidden = (newStatus !== 'result');
+      if (newStatus === 'result') {
+        result.style.opacity = '0';
+        // double rAF ensures hidden=false has been painted before transition fires
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          result.style.opacity = '1';
+        }));
+      }
+    }
+
+    // ── Corporate terminal ───────────────────────────────────────
+    const TERMINAL_STEPS = [
+      'Bootstrapping synergy...',
+      'Measuring KPIs...',
+      'Circling back...',
+      'Touching base offline...',
+      'Fleshing out the strawman...',
+      'Aligning paradigms...',
+      'Faking authenticity...',
+    ];
+
+    function runTerminal() {
+      const output = document.getElementById('terminalOutput');
+      output.innerHTML = '';
+      let i = 0;
+      function addLine() {
+        if (i >= TERMINAL_STEPS.length) return;
+        const line = document.createElement('div');
+        line.className = 'll-terminal-line';
+        line.textContent = '> ' + TERMINAL_STEPS[i];
+        output.appendChild(line);
+        output.scrollTop = output.scrollHeight;
+        i++;
+        setTimeout(addLine, 400 + Math.random() * 500);
+      }
+      setTimeout(addLine, 200);
+    }
+
+    // ── Turnstile callbacks (must be global) ─────────────────────
+    window.onTurnstileSuccess = function (token) {
       cfToken = token;
       submitBtn.hidden = false;
       submitBtn.disabled = false;
       quotaMsg.hidden = true;
     };
+    window.onTurnstileExpired = function () { cfToken = null; submitBtn.disabled = true; };
+    window.onTurnstileError   = function () { cfToken = null; submitBtn.disabled = true; };
 
-    window.onTurnstileExpired = function() {
-      cfToken = null;
-      submitBtn.disabled = true;
-    };
-
-    window.onTurnstileError = function() {
-      cfToken = null;
-      submitBtn.disabled = true;
-    };
-
+    // ── Utilities ────────────────────────────────────────────────
     function escapeHtml(str) {
       return String(str)
         .replace(/&/g, '&amp;')
@@ -771,22 +793,13 @@
       return palette[Math.abs(hash) % palette.length];
     }
 
-    function renderCard(data, userName) {
+    // ── Render result into right column ─────────────────────────
+    function renderResultCard(data, userName, userInput) {
       const reactionCount = Math.floor(Math.random() * 900) + 100;
-      const timeAgo = Math.floor(Math.random() * 59) + 1;
+      const timeAgo       = Math.floor(Math.random() * 59) + 1;
 
-      const commentsHtml = data.comments.map(c => `
-        <div class="li-comment">
-          <div class="li-comment-avatar" style="background:${avatarBg(c.name)}">${getInitials(c.name)}</div>
-          <div class="li-comment-body">
-            <span class="li-comment-name">${escapeHtml(c.name)}</span>
-            <span class="li-comment-title">${escapeHtml(c.title)}</span>
-            <p class="li-comment-text">${escapeHtml(c.comment)}</p>
-          </div>
-        </div>
-      `).join('');
-
-      liCard.innerHTML = `
+      document.getElementById('resultInput').textContent = userInput;
+      document.getElementById('liCard').innerHTML = `
         <div class="li-header">
           <div class="li-avatar" style="background:${avatarBg(userName)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:17px;font-family:system-ui,sans-serif;">${getInitials(userName)}</div>
           <div class="li-meta">
@@ -808,9 +821,27 @@
           <button class="li-action">🔁 Repost</button>
           <button class="li-action">✉️ Send</button>
         </div>
-        <div class="li-divider"></div>
-        <div class="li-comments">${commentsHtml}</div>
       `;
+
+      renderActivityColumn(data.comments, 'resultActivity');
+    }
+
+    function renderActivityColumn(comments, targetId) {
+      const activity = document.getElementById(targetId);
+      activity.innerHTML = '';
+      comments.forEach(function (c, i) {
+        const item = document.createElement('div');
+        item.className = 'll-demo-activity-item';
+        item.innerHTML =
+          '<div class="li-comment-avatar" style="background:' + avatarBg(c.name) + '">' + getInitials(c.name) + '</div>' +
+          '<div class="li-comment-body">' +
+            '<span class="li-comment-name">' + escapeHtml(c.name) + '</span>' +
+            '<span class="li-comment-title">' + escapeHtml(c.title) + '</span>' +
+            '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
+          '</div>';
+        item.style.animation = 'activity-item-in 400ms ease-out ' + (i * 1000) + 'ms both';
+        activity.appendChild(item);
+      });
     }
 
     function resetTurnstile() {
@@ -819,6 +850,7 @@
       submitBtn.disabled = true;
     }
 
+    // ── Form submit ──────────────────────────────────────────────
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -827,9 +859,11 @@
       if (!name || !text || !cfToken) return;
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Crafting your personal brand…';
       quotaMsg.hidden = true;
       errorMsg.hidden = true;
+
+      setStage('generating');
+      runTerminal();
 
       try {
         const res = await fetch('/linkedin/api/generate', {
@@ -839,6 +873,7 @@
         });
 
         if (res.status === 429) {
+          setStage('idle');
           quotaMsg.hidden = false;
           submitBtn.hidden = true;
           resetTurnstile();
@@ -846,9 +881,8 @@
         }
 
         if (!res.ok) {
+          setStage('idle');
           errorMsg.hidden = false;
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Generate';
           resetTurnstile();
           return;
         }
@@ -856,19 +890,13 @@
         const data = await res.json();
         currentPostBody = data.post_body;
 
-        renderCard(data, name);
-        outputSection.hidden = false;
-        const rect = outputSection.getBoundingClientRect();
-        if (rect.top < 0 || rect.bottom > window.innerHeight) {
-          outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
+        renderResultCard(data, name, text);
+        setStage('result');
         if (navigator.share) shareBtn.hidden = false;
 
       } catch {
+        setStage('idle');
         errorMsg.hidden = false;
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Generate';
         resetTurnstile();
       }
     });
@@ -879,121 +907,26 @@
         copyBtn.textContent = 'Copied!';
         setTimeout(() => { copyBtn.textContent = 'Copy post'; }, 2000);
       } catch {
-        // clipboard unavailable — fail silently
+        // clipboard unavailable
       }
     });
 
     shareBtn.addEventListener('click', async () => {
-      try {
-        await navigator.share({ text: currentPostBody });
-      } catch {
-        // share dismissed or unsupported — fail silently
-      }
+      try { await navigator.share({ text: currentPostBody }); } catch { /* dismissed */ }
     });
 
     resetBtn.addEventListener('click', () => {
-      outputSection.hidden = true;
-      submitBtn.hidden = false;
-      submitBtn.textContent = 'Generate';
-      quotaMsg.hidden = true;
       currentPostBody = '';
-      liCard.innerHTML = '';
       shareBtn.hidden = true;
+      quotaMsg.hidden = true;
       errorMsg.hidden = true;
+      submitBtn.hidden = false;
+      document.getElementById('liCard').innerHTML = '';
+      document.getElementById('resultActivity').innerHTML = '';
+      setStage('idle');
       resetTurnstile();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
-  </script>
-
-  <script>
-    (function () {
-      var demos = [];
-      var currentCard = 0;
-
-      function animate(el, direction) {
-        if (!direction) return;
-        el.classList.remove('anim-from-right', 'anim-from-left');
-        void el.offsetWidth;
-        el.classList.add(direction === 'right' ? 'anim-from-right' : 'anim-from-left');
-      }
-
-      function renderDemoCard(demo, direction) {
-        var card = document.getElementById('demoCard');
-        var timeAgo = Math.floor(Math.random() * 59) + 1;
-        document.getElementById('demoInput').textContent = demo.input;
-        card.innerHTML =
-          '<div class="li-header">' +
-            '<div class="li-avatar" style="background:' + avatarBg(demo.name) + ';display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:17px;font-family:system-ui,sans-serif;">' + getInitials(demo.name) + '</div>' +
-            '<div class="li-meta">' +
-              '<div class="li-name">' + escapeHtml(demo.name) + '</div>' +
-              '<div class="li-headline">' + escapeHtml(demo.headline) + '</div>' +
-              '<div class="li-sub">1st · ' + timeAgo + 'm · 🌐</div>' +
-            '</div>' +
-            '<button class="li-more" aria-hidden="true">···</button>' +
-          '</div>' +
-          '<div class="li-body">' + escapeHtml(demo.post_body).replace(/\n/g, '<br>') + '</div>' +
-          '<div class="li-reactions"><span>👍❤️🔥</span><span>' + escapeHtml(demo.reaction_name) + ' and ' + escapeHtml(String(demo.reaction_count)) + ' others</span></div>' +
-          '<div class="li-divider"></div>' +
-          '<div class="li-action-bar">' +
-            '<button class="li-action">👍 Like</button>' +
-            '<button class="li-action">💬 Comment</button>' +
-            '<button class="li-action">🔁 Repost</button>' +
-            '<button class="li-action">✉️ Send</button>' +
-          '</div>';
-        animate(card, direction);
-      }
-
-      function renderActivityColumn(demo) {
-        var activity = document.getElementById('demoActivity');
-        activity.innerHTML = '';
-        demo.comments.forEach(function (c, i) {
-          var item = document.createElement('div');
-          item.className = 'll-demo-activity-item';
-          item.innerHTML =
-            '<div class="li-comment-avatar" style="background:' + avatarBg(c.name) + '">' + getInitials(c.name) + '</div>' +
-            '<div class="li-comment-body">' +
-              '<span class="li-comment-name">' + escapeHtml(c.name) + '</span>' +
-              '<span class="li-comment-title">' + escapeHtml(c.title) + '</span>' +
-              '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
-            '</div>';
-          item.style.animation = 'activity-item-in 400ms ease-out ' + (i * 1000) + 'ms both';
-          activity.appendChild(item);
-        });
-      }
-
-      function showCard(index, direction) {
-        currentCard = index;
-        renderDemoCard(demos[index], direction);
-        renderActivityColumn(demos[index]);
-        var counter = document.getElementById('demoCounter');
-        if (counter) counter.textContent = (index + 1) + ' / ' + demos.length;
-      }
-
-      fetch('/linkedin_lessons/demos.json')
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
-        .then(function (data) {
-          if (!data || !data.length) return;
-          demos = data;
-          document.getElementById('demoSkeleton').hidden = true;
-          document.getElementById('demoContent').hidden = false;
-          if (demos.length > 1) {
-            document.getElementById('demoNavRow').hidden = false;
-          }
-          showCard(0, null);
-          document.getElementById('demoPrev').addEventListener('click', function () {
-            showCard((currentCard - 1 + demos.length) % demos.length, 'left');
-          });
-          document.getElementById('demoNext').addEventListener('click', function () {
-            showCard((currentCard + 1) % demos.length, 'right');
-          });
-        })
-        .catch(function () {
-          var demoEl = document.getElementById('llDemo');
-          demoEl.hidden = true;
-          var layout = document.querySelector('.ll-layout');
-          if (layout) layout.style.gridTemplateColumns = '1fr';
-        });
-    })();
   </script>
 
 </body>

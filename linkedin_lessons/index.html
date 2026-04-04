@@ -752,6 +752,7 @@
       const demo = cachedDemos[classicIndex];
       renderResultCard(demo, demo.name, demo.input);
       setStage('result');
+      document.querySelector('.ll-result-actions').hidden = true;
     });
 
     // ── Stage state machine ──────────────────────────────────────
@@ -927,6 +928,7 @@
 
         renderResultCard(data, name, text);
         setStage('result');
+        document.querySelector('.ll-result-actions').hidden = false;
         if (navigator.share) shareBtn.hidden = false;
 
       } catch {

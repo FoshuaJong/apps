@@ -664,8 +664,6 @@
                  data-appearance="interaction-only">
             </div>
             <div class="ll-form-actions">
-              <button type="submit" id="submitBtn" class="btn-primary" disabled>Generate</button>
-              <button type="button" id="classicBtn" class="ll-classic-btn">Need inspiration? Load a classic.</button>
               <p class="ll-quota-msg" id="quotaMsg" hidden>
                 You've reached your thought leadership quota.<br>
                 The algorithm will allow you back in 10 minutes.
@@ -673,6 +671,8 @@
               <p class="ll-quota-msg" id="errorMsg" hidden>
                 Something went wrong. Try again in a moment.
               </p>
+              <button type="submit" id="submitBtn" class="btn-primary" disabled>Generate</button>
+              <button type="button" id="classicBtn" class="ll-classic-btn">Need inspiration? Load a classic.</button>
             </div>
           </form>
 
@@ -769,11 +769,19 @@
     const quotaMsg  = document.getElementById('quotaMsg');
     const errorMsg  = document.getElementById('errorMsg');
 
-    // Character counter
+    // ── Ready gate — button only enabled when token + both fields are set ──
+    function checkReady() {
+      const name = document.getElementById('userName').value.trim();
+      const text = document.getElementById('userText').value.trim();
+      submitBtn.disabled = !(cfToken && name && text);
+    }
+
+    document.getElementById('userName').addEventListener('input', checkReady);
     document.getElementById('userText').addEventListener('input', function () {
       const count = this.value.length;
       document.getElementById('charCount').textContent = count;
       document.getElementById('charCounter').classList.toggle('near-limit', count > 800);
+      checkReady();
     });
 
     let cfToken = null;
@@ -852,7 +860,7 @@
         output.appendChild(line);
         output.scrollTop = output.scrollHeight;
         i++;
-        setTimeout(addLine, 600 + Math.random() * 1200);
+        setTimeout(addLine, 1000 + Math.random() * 1500);
       }
       setTimeout(addLine, 200);
     }
@@ -861,11 +869,11 @@
     window.onTurnstileSuccess = function (token) {
       cfToken = token;
       submitBtn.hidden = false;
-      submitBtn.disabled = false;
       quotaMsg.hidden = true;
+      checkReady();
     };
-    window.onTurnstileExpired = function () { cfToken = null; submitBtn.disabled = true; };
-    window.onTurnstileError   = function () { cfToken = null; submitBtn.disabled = true; };
+    window.onTurnstileExpired = function () { cfToken = null; checkReady(); };
+    window.onTurnstileError   = function () { cfToken = null; checkReady(); };
 
     // ── Utilities ────────────────────────────────────────────────
     function escapeHtml(str) {
@@ -956,7 +964,7 @@
     function resetTurnstile() {
       if (window.turnstile) window.turnstile.reset();
       cfToken = null;
-      submitBtn.disabled = true;
+      checkReady();
     }
 
     // ── Core generation logic ────────────────────────────────────

@@ -789,9 +789,6 @@
     let status = 'idle';         // 'idle' | 'generating' | 'result'
     let isCustomResult = false;  // true only after a real generation, not a demo
 
-    // ── Warm-up ping — fires on page load so the CF Worker isn't cold on first generate ──
-    fetch('/linkedin/api/generate', { method: 'GET' }).catch(() => {});
-
     // ── Confirmation modal ───────────────────────────────────────
     function showConfirmModal(onConfirm) {
       const modal = document.getElementById('confirmModal');
@@ -980,6 +977,10 @@
       runTerminal();
 
       try {
+        // Warm up the CF Worker, then wait 1s for it to be ready before the real request
+        fetch('/linkedin/api/generate', { method: 'GET' }).catch(() => {});
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         const res = await fetch('/linkedin/api/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

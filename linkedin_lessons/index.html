@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Joshua Fong — LinkedIn Lessons</title>
   <meta name="description" content="Say something real. Get something insufferable.">
   <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
@@ -615,9 +615,14 @@
     }
 
     @media (max-width: 640px) {
-      /* Activity sidebar is 130px wide — too cramped on phone; hide it */
+      /* Stack card and comments vertically instead of side-by-side */
+      .ll-demo-card-wrap {
+        flex-direction: column;
+      }
+
+      /* Full-width comments below the card */
       .ll-demo-activity {
-        display: none;
+        width: 100%;
       }
 
       /* 480px min-heights are excessive on a phone */
@@ -865,6 +870,9 @@
         requestAnimationFrame(() => requestAnimationFrame(() => {
           result.style.opacity = '1';
         }));
+      }
+      if (newStatus === 'generating' && window.innerWidth <= 640) {
+        document.getElementById('llStage').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 

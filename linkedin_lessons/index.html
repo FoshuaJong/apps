@@ -562,6 +562,28 @@
       flex-wrap: wrap;
     }
 
+    /* ── LinkedIn CTA — hardcoded brand color, same justification as mockup ── */
+    .btn-linkedin {
+      background: #0a66c2;
+      color: #ffffff;
+      border: 1px solid #0a66c2;
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.6rem 1.25rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s, border-color 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-linkedin:hover {
+      background: #004182;
+      border-color: #004182;
+    }
+
     /* ── Confirmation modal ── */
     .ll-modal-overlay {
       position: fixed;
@@ -726,6 +748,7 @@
               <div class="ll-demo-activity" id="resultActivity"></div>
             </div>
             <div class="ll-result-actions">
+              <a class="btn-linkedin" id="linkedinBtn" href="#" target="_blank" rel="noopener" hidden>Post to LinkedIn</a>
               <button class="btn-primary" id="copyBtn">Copy post</button>
               <button class="btn-secondary" id="shareBtn" hidden>Share</button>
             </div>
@@ -771,8 +794,9 @@
     const submitBtn = document.getElementById('submitBtn');
     const quotaMsg  = document.getElementById('quotaMsg');
     const errorMsg  = document.getElementById('errorMsg');
-    const copyBtn   = document.getElementById('copyBtn');
-    const shareBtn  = document.getElementById('shareBtn');
+    const copyBtn      = document.getElementById('copyBtn');
+    const shareBtn     = document.getElementById('shareBtn');
+    const linkedinBtn  = document.getElementById('linkedinBtn');
 
     // Character counter
     document.getElementById('userText').addEventListener('input', function () {
@@ -939,7 +963,7 @@
             '<span class="li-comment-title">' + escapeHtml(c.title) + '</span>' +
             '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
           '</div>';
-        item.style.animation = 'activity-item-in 400ms ease-out ' + ((i + 1) * 3000) + 'ms both';
+        item.style.animation = 'activity-item-in 400ms ease-out ' + ((i + 1) * 2500) + 'ms both';
         activity.appendChild(item);
       });
     }
@@ -988,6 +1012,8 @@
         setStage('result');
         document.querySelector('.ll-result-actions').hidden = false;
         isCustomResult = true;
+        linkedinBtn.href = 'https://www.linkedin.com/feed/?shareActive=true&text=' + encodeURIComponent(currentPostBody);
+        linkedinBtn.hidden = false;
         if (navigator.share) shareBtn.hidden = false;
 
       } catch {

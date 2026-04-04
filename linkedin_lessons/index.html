@@ -837,7 +837,7 @@
       if (!cachedDemos || !cachedDemos.length) return;
       classicIndex = (classicIndex + 1) % cachedDemos.length;
       const demo = cachedDemos[classicIndex];
-      renderResultCard(demo, demo.name, demo.input);
+      renderResultCard(demo, demo.name, demo.input, 1000);
       setStage('result');
       document.querySelector('.ll-result-actions').hidden = true;
       isCustomResult = false;
@@ -918,7 +918,7 @@
     }
 
     // ── Render result into right column ─────────────────────────
-    function renderResultCard(data, userName, userInput) {
+    function renderResultCard(data, userName, userInput, activityIntervalMs = 3000) {
       const reactionCount = Math.floor(Math.random() * 900) + 100;
       const timeAgo       = Math.floor(Math.random() * 59) + 1;
 
@@ -947,10 +947,10 @@
         </div>
       `;
 
-      renderActivityColumn(data.comments, 'resultActivity');
+      renderActivityColumn(data.comments, 'resultActivity', activityIntervalMs);
     }
 
-    function renderActivityColumn(comments, targetId) {
+    function renderActivityColumn(comments, targetId, intervalMs = 3000) {
       const activity = document.getElementById(targetId);
       activity.innerHTML = '';
       comments.forEach(function (c, i) {
@@ -963,7 +963,7 @@
             '<span class="li-comment-title">' + escapeHtml(c.title) + '</span>' +
             '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
           '</div>';
-        item.style.animation = 'activity-item-in 400ms ease-out ' + ((i + 1) * 2500) + 'ms both';
+        item.style.animation = 'activity-item-in 400ms ease-out ' + ((i + 1) * intervalMs) + 'ms both';
         activity.appendChild(item);
       });
     }

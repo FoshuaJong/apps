@@ -465,29 +465,6 @@
       margin: 0 0 1.25rem;
     }
 
-    .ll-demo-dots {
-      display: flex;
-      gap: 0.4rem;
-      margin-top: 0.75rem;
-      justify-content: center;
-    }
-
-    .ll-demo-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--border);
-      cursor: pointer;
-      border: none;
-      padding: 0;
-      transition: background 0.2s;
-      flex-shrink: 0;
-    }
-
-    .ll-demo-dot.active {
-      background: var(--accent);
-    }
-
     .ll-demo-nav {
       display: flex;
       align-items: center;
@@ -650,7 +627,6 @@
               </div>
               <button class="ll-demo-arrow" id="demoNext" aria-label="Next example" hidden>&#8250;</button>
             </div>
-            <div class="ll-demo-dots" id="demoDots"></div>
           </div>
 
         </div>
@@ -909,31 +885,10 @@
         animate(card, direction);
       }
 
-      function buildDots(count) {
-        var dots = document.getElementById('demoDots');
-        dots.innerHTML = '';
-        if (count <= 1) return;
-        for (var i = 0; i < count; i++) {
-          var btn = document.createElement('button');
-          btn.className = 'll-demo-dot' + (i === 0 ? ' active' : '');
-          btn.setAttribute('aria-label', 'Comment ' + (i + 1));
-          (function (idx) {
-            btn.addEventListener('click', function () {
-              currentComment = idx;
-              renderDemoComment(demos[currentCard], currentComment);
-              resetTimer();
-            });
-          })(i);
-          dots.appendChild(btn);
-        }
-      }
 
       function renderDemoComment(demo, index) {
         var c = demo.comments[index];
         var el = document.getElementById('demoComment');
-        document.querySelectorAll('.ll-demo-dot').forEach(function (d, i) {
-          d.classList.toggle('active', i === index);
-        });
         el.innerHTML =
           '<div class="li-comment-avatar" style="background:' + avatarBg(c.name) + '">' + getInitials(c.name) + '</div>' +
           '<div class="li-comment-body">' +
@@ -961,7 +916,6 @@
         currentCard = index;
         currentComment = 0;
         renderDemoCard(demos[index], direction);
-        buildDots(demos[index].comments.length);
         renderDemoComment(demos[index], 0);
           resetTimer();
       }

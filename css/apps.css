@@ -264,37 +264,43 @@ footer .footer-note a:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     margin: 1.5rem;
+    margin-top: 0;
     margin-bottom: calc(1.5rem + env(safe-area-inset-bottom));
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.14);
+    border-top: none;
     transition: border-color 0.2s ease, background 0.2s ease;
   }
 
   .nav-toggle span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    margin: 3.5px 0;
     background: rgba(255, 255, 255, 0.85);
     transition: transform 0.25s ease, opacity 0.25s ease;
   }
 
   /* Hamburger → X when menu is open */
   nav:has(.nav-links.open) .nav-toggle {
-    border-color: var(--accent-border-hover);
+    border-color: rgba(255, 255, 255, 0.14);
   }
   nav:has(.nav-links.open) .nav-toggle span:nth-child(1) {
-    transform: translateY(6.5px) rotate(45deg);
+    transform: translateY(9px) rotate(45deg);
   }
   nav:has(.nav-links.open) .nav-toggle span:nth-child(2) {
     opacity: 0;
   }
   nav:has(.nav-links.open) .nav-toggle span:nth-child(3) {
-    transform: translateY(-6.5px) rotate(-45deg);
+    transform: translateY(-9px) rotate(-45deg);
   }
 
-  /* Links panel — slides up from above the button */
+  /* Links panel — slides up from above the button, visually connected */
   @keyframes navSlideUp {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -313,7 +319,8 @@ footer .footer-note a:hover {
     background: rgba(12, 12, 14, 0.95);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-bottom: none;
   }
 
   .nav-links.open {

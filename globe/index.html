@@ -1030,6 +1030,7 @@
       pendingAutoRotate = null;
       globe.controls().autoRotateSpeed = 1.5;
       globe.controls().enableZoom = true;
+      globe.controls().addEventListener('end', saveState);
 
       // Click-to-pause: distinguish click vs drag by tracking pointer travel distance
       const hint = document.getElementById('rotateHint');
@@ -1055,6 +1056,7 @@
         if (dist > 4) return; // it was a drag, not a click
         const rotating = globe.controls().autoRotate;
         globe.controls().autoRotate = !rotating;
+        saveState();
         if (rotating) {
           showRotateHint('Paused', true);
         } else {

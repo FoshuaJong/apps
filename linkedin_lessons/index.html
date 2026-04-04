@@ -104,6 +104,22 @@
       justify-content: center;
     }
 
+    .ll-classic-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+    }
+
+    .ll-classic-btn:hover {
+      color: var(--accent);
+    }
+
     .ll-quota-msg {
       font-family: var(--font-mono);
       font-size: 0.72rem;
@@ -609,6 +625,7 @@
             </div>
             <div class="ll-form-actions">
               <button type="submit" id="submitBtn" class="btn-primary" disabled>Generate</button>
+              <button type="button" id="classicBtn" class="ll-classic-btn">Need inspiration? Load a classic.</button>
               <p class="ll-quota-msg" id="quotaMsg" hidden>
                 You've reached your thought leadership quota.<br>
                 The algorithm will allow you back in 10 minutes.
@@ -718,6 +735,24 @@
     let cfToken = null;
     let currentPostBody = '';
     let status = 'idle'; // 'idle' | 'generating' | 'result'
+
+    // ── "Load a classic" ─────────────────────────────────────────
+    let cachedDemos = null;
+    let classicIndex = -1;
+
+    document.getElementById('classicBtn').addEventListener('click', async () => {
+      if (!cachedDemos) {
+        try {
+          const r = await fetch('/linkedin_lessons/demos.json');
+          cachedDemos = r.ok ? await r.json() : null;
+        } catch { cachedDemos = null; }
+      }
+      if (!cachedDemos || !cachedDemos.length) return;
+      classicIndex = (classicIndex + 1) % cachedDemos.length;
+      const demo = cachedDemos[classicIndex];
+      renderResultCard(demo, demo.name, demo.input);
+      setStage('result');
+    });
 
     // ── Stage state machine ──────────────────────────────────────
     function setStage(newStatus) {

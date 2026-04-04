@@ -308,9 +308,10 @@
       gap: 0.35rem;
     }
 
-    .ll-demo-card-nav .li-card {
+    .ll-demo-card-wrap {
       flex: 1;
       min-width: 0;
+      position: relative;
     }
 
     /* ── Character counter ── */
@@ -327,16 +328,60 @@
       color: var(--accent);
     }
 
-    /* ── Comment section separator ── */
-    .ll-demo-comment-label {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
+    /* ── Comment overlay ── */
+    .ll-demo-comment {
+      position: absolute;
+      bottom: 0;
+      left: 12%;
+      right: 0;
+      display: flex;
+      gap: 0.4rem;
+      align-items: flex-start;
+      padding: 0.5rem 0.6rem;
+      background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--border);
+      z-index: 2;
+    }
+
+    .ll-demo-comment .li-comment-avatar {
+      width: 24px;
+      height: 24px;
+      font-size: 9px;
+      flex-shrink: 0;
+    }
+
+    .ll-demo-comment .li-comment-body {
+      background: transparent;
+      padding: 0;
+    }
+
+    .ll-demo-comment .li-comment-name {
+      color: var(--text-primary);
+      font-size: 12px;
+    }
+
+    .ll-demo-comment .li-comment-title {
       color: var(--text-muted);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin: 1.25rem 0 0.75rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--border);
+      font-size: 10px;
+    }
+
+    .ll-demo-comment .li-comment-text {
+      color: var(--text-secondary);
+      font-size: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    @keyframes comment-overlay-in {
+      from { opacity: 0; transform: translateX(16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .anim-comment-enter {
+      animation: comment-overlay-in 280ms ease-out both;
     }
 
     /* ── Skeleton ── */
@@ -418,13 +463,6 @@
       border-left: 2px solid var(--border);
       padding-left: 0.75rem;
       margin: 0 0 1.25rem;
-    }
-
-    .ll-demo-comment {
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-start;
-      min-height: 72px;
     }
 
     .ll-demo-dots {
@@ -606,11 +644,12 @@
             <blockquote class="ll-demo-input" id="demoInput"></blockquote>
             <div class="ll-demo-card-nav">
               <button class="ll-demo-arrow" id="demoPrev" aria-label="Previous example" hidden>&#8249;</button>
-              <div class="li-card" id="demoCard"></div>
+              <div class="ll-demo-card-wrap">
+                <div class="li-card" id="demoCard"></div>
+                <div class="ll-demo-comment" id="demoComment"></div>
+              </div>
               <button class="ll-demo-arrow" id="demoNext" aria-label="Next example" hidden>&#8250;</button>
             </div>
-            <p class="ll-demo-comment-label">What the comments say</p>
-            <div class="ll-demo-comment" id="demoComment"></div>
             <div class="ll-demo-dots" id="demoDots"></div>
           </div>
 
@@ -880,9 +919,8 @@
           btn.setAttribute('aria-label', 'Comment ' + (i + 1));
           (function (idx) {
             btn.addEventListener('click', function () {
-              var dir = idx > currentComment ? 'right' : 'left';
               currentComment = idx;
-              renderDemoComment(demos[currentCard], currentComment, dir);
+              renderDemoComment(demos[currentCard], currentComment);
               resetTimer();
             });
           })(i);
@@ -890,7 +928,7 @@
         }
       }
 
-      function renderDemoComment(demo, index, direction) {
+      function renderDemoComment(demo, index) {
         var c = demo.comments[index];
         var el = document.getElementById('demoComment');
         document.querySelectorAll('.ll-demo-dot').forEach(function (d, i) {
@@ -903,7 +941,9 @@
             '<span class="li-comment-title">' + escapeHtml(c.title) + '</span>' +
             '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
           '</div>';
-        animate(el, direction);
+        el.classList.remove('anim-comment-enter');
+        void el.offsetWidth;
+        el.classList.add('anim-comment-enter');
       }
 
       function resetTimer() {
@@ -913,7 +953,7 @@
           if (!demos[currentCard].comments.length) return;
           var next = (currentComment + 1) % demos[currentCard].comments.length;
           currentComment = next;
-          renderDemoComment(demos[currentCard], currentComment, 'right');
+          renderDemoComment(demos[currentCard], currentComment);
         }, 3500);
       }
 
@@ -922,7 +962,7 @@
         currentComment = 0;
         renderDemoCard(demos[index], direction);
         buildDots(demos[index].comments.length);
-        renderDemoComment(demos[index], 0, direction);
+        renderDemoComment(demos[index], 0);
           resetTimer();
       }
 

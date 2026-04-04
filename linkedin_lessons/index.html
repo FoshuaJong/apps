@@ -562,6 +562,45 @@
       flex-wrap: wrap;
     }
 
+    /* ── Confirmation modal ── */
+    .ll-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: color-mix(in srgb, var(--bg) 55%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .ll-modal {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      max-width: 360px;
+      width: calc(100% - 2rem);
+    }
+
+    .ll-modal-msg {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      font-weight: 300;
+      margin: 0 0 0.375rem;
+    }
+
+    .ll-modal-sub {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+      margin: 0 0 1.75rem;
+    }
+
+    .ll-modal-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
     @media (max-width: 900px) {
       .ll-layout {
         grid-template-columns: 1fr;
@@ -689,7 +728,6 @@
             <div class="ll-result-actions">
               <button class="btn-primary" id="copyBtn">Copy post</button>
               <button class="btn-secondary" id="shareBtn" hidden>Share</button>
-              <button class="btn-secondary" id="resetBtn">Generate another</button>
             </div>
           </div>
 
@@ -705,6 +743,18 @@
       <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
     </div>
   </footer>
+
+  <!-- Confirmation modal -->
+  <div class="ll-modal-overlay" id="confirmModal" hidden>
+    <div class="ll-modal">
+      <p class="ll-modal-msg">Generate a new post?</p>
+      <p class="ll-modal-sub">Your current thought leadership will be lost.</p>
+      <div class="ll-modal-actions">
+        <button class="btn-primary" id="confirmProceed">Continue</button>
+        <button class="btn-secondary" id="confirmCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     // Mobile nav
@@ -723,7 +773,6 @@
     const errorMsg  = document.getElementById('errorMsg');
     const copyBtn   = document.getElementById('copyBtn');
     const shareBtn  = document.getElementById('shareBtn');
-    const resetBtn  = document.getElementById('resetBtn');
 
     // Character counter
     document.getElementById('userText').addEventListener('input', function () {
@@ -734,7 +783,21 @@
 
     let cfToken = null;
     let currentPostBody = '';
-    let status = 'idle'; // 'idle' | 'generating' | 'result'
+    let status = 'idle';         // 'idle' | 'generating' | 'result'
+    let isCustomResult = false;  // true only after a real generation, not a demo
+
+    // ── Confirmation modal ───────────────────────────────────────
+    function showConfirmModal(onConfirm) {
+      const modal = document.getElementById('confirmModal');
+      modal.hidden = false;
+      document.getElementById('confirmProceed').onclick = () => {
+        modal.hidden = true;
+        onConfirm();
+      };
+      document.getElementById('confirmCancel').onclick = () => {
+        modal.hidden = true;
+      };
+    }
 
     // ── "Load a classic" ─────────────────────────────────────────
     let cachedDemos = null;
@@ -753,6 +816,7 @@
       renderResultCard(demo, demo.name, demo.input);
       setStage('result');
       document.querySelector('.ll-result-actions').hidden = true;
+      isCustomResult = false;
     });
 
     // ── Stage state machine ──────────────────────────────────────
@@ -794,7 +858,7 @@
         output.appendChild(line);
         output.scrollTop = output.scrollHeight;
         i++;
-        setTimeout(addLine, 400 + Math.random() * 500);
+        setTimeout(addLine, 600 + Math.random() * 1200);
       }
       setTimeout(addLine, 200);
     }
@@ -886,14 +950,8 @@
       submitBtn.disabled = true;
     }
 
-    // ── Form submit ──────────────────────────────────────────────
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const name = document.getElementById('userName').value.trim().slice(0, 100);
-      const text = document.getElementById('userText').value.trim().slice(0, 1000);
-      if (!name || !text || !cfToken) return;
-
+    // ── Core generation logic ────────────────────────────────────
+    async function generatePost(name, text) {
       submitBtn.disabled = true;
       quotaMsg.hidden = true;
       errorMsg.hidden = true;
@@ -929,6 +987,7 @@
         renderResultCard(data, name, text);
         setStage('result');
         document.querySelector('.ll-result-actions').hidden = false;
+        isCustomResult = true;
         if (navigator.share) shareBtn.hidden = false;
 
       } catch {
@@ -936,6 +995,22 @@
         errorMsg.hidden = false;
         resetTurnstile();
       }
+    }
+
+    // ── Form submit ──────────────────────────────────────────────
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('userName').value.trim().slice(0, 100);
+      const text = document.getElementById('userText').value.trim().slice(0, 1000);
+      if (!name || !text || !cfToken) return;
+
+      if (status === 'result' && isCustomResult) {
+        showConfirmModal(() => generatePost(name, text));
+        return;
+      }
+
+      generatePost(name, text);
     });
 
     copyBtn.addEventListener('click', async () => {
@@ -952,18 +1027,6 @@
       try { await navigator.share({ text: currentPostBody }); } catch { /* dismissed */ }
     });
 
-    resetBtn.addEventListener('click', () => {
-      currentPostBody = '';
-      shareBtn.hidden = true;
-      quotaMsg.hidden = true;
-      errorMsg.hidden = true;
-      submitBtn.hidden = false;
-      document.getElementById('liCard').innerHTML = '';
-      document.getElementById('resultActivity').innerHTML = '';
-      setStage('idle');
-      resetTurnstile();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
   </script>
 
 </body>

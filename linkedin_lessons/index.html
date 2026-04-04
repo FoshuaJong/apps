@@ -939,7 +939,7 @@
             '<span class="li-comment-title">' + escapeHtml(c.title) + '</span>' +
             '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
           '</div>';
-        item.style.animation = 'activity-item-in 400ms ease-out ' + (i * 1000) + 'ms both';
+        item.style.animation = 'activity-item-in 400ms ease-out ' + ((i + 1) * 3000) + 'ms both';
         activity.appendChild(item);
       });
     }

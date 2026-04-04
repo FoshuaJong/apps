@@ -1008,6 +1008,7 @@
         renderResultCard(data, name, text, 3000, true);
         setStage('result');
         isCustomResult = true;
+        resetTurnstile(); // token is single-use; refresh silently for the next generation
 
       } catch {
         setStage('idle');

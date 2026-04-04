@@ -953,6 +953,7 @@
             '<div class="li-comment-avatar" style="background:' + avatarBg(c.name) + '">' + getInitials(c.name) + '</div>' +
             '<div class="li-comment-body">' +
               '<span class="li-comment-name">' + escapeHtml(c.name) + '</span>' +
+              '<span class="li-comment-title">' + escapeHtml(c.title) + '</span>' +
               '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
             '</div>';
           item.style.animation = 'activity-item-in 400ms ease-out ' + (i * 1000) + 'ms both';

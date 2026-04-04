@@ -419,16 +419,16 @@
     }
 
     @keyframes activity-item-in {
-      from { opacity: 0; transform: translateX(8px); }
-      to   { opacity: 1; transform: translateX(0); }
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Card navigation row (below card + activity) ── */
+    /* ── Card navigation row (above card + activity) ── */
     .ll-demo-nav-row {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
-      margin-top: 0.75rem;
+      margin-bottom: 0.75rem;
     }
 
     /* ── Character counter ── */
@@ -672,6 +672,10 @@
           </div>
 
           <div class="ll-demo-content" id="demoContent" hidden>
+            <div class="ll-demo-nav-row" id="demoNavRow" hidden>
+              <button class="ll-demo-arrow" id="demoPrev" aria-label="Previous example">&#8249;</button>
+              <button class="ll-demo-arrow" id="demoNext" aria-label="Next example">&#8250;</button>
+            </div>
             <div class="ll-demo-card-wrap">
               <div class="ll-demo-browser">
                 <div class="ll-demo-browser-bar">
@@ -686,10 +690,6 @@
                 <div class="li-card" id="demoCard"></div>
               </div>
               <div class="ll-demo-activity" id="demoActivity"></div>
-            </div>
-            <div class="ll-demo-nav-row" id="demoNavRow" hidden>
-              <button class="ll-demo-arrow" id="demoPrev" aria-label="Previous example">&#8249;</button>
-              <button class="ll-demo-arrow" id="demoNext" aria-label="Next example">&#8250;</button>
             </div>
           </div>
 
@@ -958,7 +958,7 @@
               '<span class="li-comment-name">' + escapeHtml(c.name) + '</span>' +
               '<p class="li-comment-text">' + escapeHtml(c.comment) + '</p>' +
             '</div>';
-          item.style.animation = 'activity-item-in 280ms ease-out ' + (i * 90) + 'ms both';
+          item.style.animation = 'activity-item-in 400ms ease-out ' + (i * 1000) + 'ms both';
           activity.appendChild(item);
         });
       }

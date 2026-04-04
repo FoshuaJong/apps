@@ -57,7 +57,7 @@
     .ll-field label {
       font-family: var(--font-mono);
       font-size: 0.65rem;
-      color: var(--text-muted);
+      color: var(--text-secondary);
       letter-spacing: 0.15em;
       text-transform: uppercase;
     }
@@ -79,7 +79,8 @@
 
     .ll-field input::placeholder,
     .ll-field textarea::placeholder {
-      color: var(--text-muted);
+      color: var(--text-secondary);
+      opacity: 0.55;
     }
 
     .ll-field input:focus,
@@ -93,6 +94,11 @@
       align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
+    }
+
+    .ll-form .btn-primary {
+      width: 100%;
+      justify-content: center;
     }
 
     .ll-quota-msg {
@@ -150,9 +156,7 @@
       border-radius: 50%;
     }
 
-    .dot-red    { background: #ff5f57; }
-    .dot-yellow { background: #febc2e; }
-    .dot-green  { background: #28c840; }
+    .dot-red, .dot-yellow, .dot-green { background: #c2c0bd; }
 
     .ll-demo-browser-url {
       flex: 1;
@@ -355,7 +359,7 @@
     /* ── Card + activity row ── */
     .ll-demo-card-wrap {
       display: flex;
-      gap: 0.625rem;
+      gap: 1.25rem;
       align-items: flex-start;
       min-width: 0;
     }
@@ -504,23 +508,16 @@
     }
 
     /* ── Demo panel ── */
-    .ll-demo-framing {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
-    }
-
-    .ll-demo-input {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      font-weight: 300;
+    /* Input context bar — inside browser chrome, part of the mockup */
+    .ll-demo-browser-input {
+      padding: 0.35rem 0.75rem;
+      background: #f5f4f2;
+      border-bottom: 1px solid #e4e2de;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 11px;
+      color: #888;
       font-style: italic;
-      border-left: 2px solid var(--border);
-      padding-left: 0.75rem;
-      margin: 0 0 1.25rem;
+      line-height: 1.4;
     }
 
     .ll-demo-nav {
@@ -675,8 +672,6 @@
           </div>
 
           <div class="ll-demo-content" id="demoContent" hidden>
-            <p class="ll-demo-framing">Instead of saying:</p>
-            <blockquote class="ll-demo-input" id="demoInput"></blockquote>
             <div class="ll-demo-card-wrap">
               <div class="ll-demo-browser">
                 <div class="ll-demo-browser-bar">
@@ -687,6 +682,7 @@
                   </div>
                   <div class="ll-demo-browser-url">🔒 linkedin.com/feed/</div>
                 </div>
+                <div class="ll-demo-browser-input" id="demoInput"></div>
                 <div class="li-card" id="demoCard"></div>
               </div>
               <div class="ll-demo-activity" id="demoActivity"></div>

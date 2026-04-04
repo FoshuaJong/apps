@@ -8,3 +8,11 @@ CLAUDE.md
 !.dev.vars.example
 .env*
 !.env.example
+
+# Windows reserved filenames
+nul
+con
+prn
+aux
+com1
+lpt1

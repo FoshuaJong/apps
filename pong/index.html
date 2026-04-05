@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0c0c0e">
+  <title>Joshua Fong — Pong</title>
+  <meta name="description" content="A minimal two-player Pong in the browser.">
+  <link rel="icon" type="image/svg+xml" href="../../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../css/variables.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/apps.css">
+
+  <style>
+    .pong-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: var(--nav-offset) 0 2rem;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .pong-intro {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .pong-intro h1 {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      color: var(--text-primary);
+      margin: 0 0 0.5rem;
+      line-height: 1.15;
+    }
+
+    .pong-intro .section-label {
+      margin-bottom: 0.75rem;
+    }
+
+    .pong-canvas-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      flex: 1;
+      min-height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pong-canvas-wrap canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      vertical-align: middle;
+      touch-action: none;
+    }
+
+    .pong-scores {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 0.65rem 1rem;
+      pointer-events: none;
+      font-family: var(--font-mono);
+      font-size: clamp(1.25rem, 4vw, 1.75rem);
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      background: linear-gradient(to bottom, var(--bg-elevated), transparent);
+      z-index: 1;
+    }
+
+    .pong-toolbar {
+      max-width: 920px;
+      margin: 1.25rem auto 0;
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem 1rem;
+    }
+
+    .pong-mode {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+
+    .pong-mode button {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.55rem 1rem;
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.25s ease, color 0.25s ease;
+    }
+
+    .pong-mode button:hover {
+      color: var(--text-secondary);
+      border-color: var(--text-muted);
+    }
+
+    .pong-mode button.is-active {
+      color: var(--text-primary);
+      border-color: var(--accent);
+    }
+
+    .pong-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .pong-hint {
+      max-width: 520px;
+      margin: 1.25rem auto 0;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 300;
+      line-height: 1.65;
+    }
+
+    .pong-hint kbd {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+    }
+
+    .pong-status {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-top: 0.75rem;
+      min-height: 1.25em;
+    }
+
+    body.pong-body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 640px) {
+      .pong-main {
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+      }
+    }
+  </style>
+</head>
+<body class="pong-body">
+
+  <nav>
+    <div class="container">
+      <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/">Apps</a></li>
+        <li class="nav-sep"></li>
+        <li><a href="/apps/pong/" aria-current="page">Pong</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="pong-main">
+    <div class="pong-intro">
+      <p class="section-label">Arcade</p>
+      <h1>Pong</h1>
+    </div>
+
+    <div class="pong-canvas-wrap" id="canvasWrap">
+      <div class="pong-scores" aria-live="polite">
+        <span id="scoreL">0</span>
+        <span aria-hidden="true">—</span>
+        <span id="scoreR">0</span>
+      </div>
+      <canvas id="game" width="800" height="450" aria-label="Pong playfield"></canvas>
+    </div>
+
+    <div class="pong-toolbar">
+      <div class="pong-mode" role="group" aria-label="Game mode">
+        <button type="button" id="mode2p" class="is-active">Two players</button>
+        <button type="button" id="modeCpu">Vs computer</button>
+      </div>
+      <div class="pong-actions">
+        <button type="button" id="btnStart" class="btn-primary">Start round</button>
+        <button type="button" id="btnReset" class="btn-secondary">Reset scores</button>
+      </div>
+    </div>
+
+    <p class="pong-hint" id="hintDesktop">
+      Player 1: <kbd>W</kbd> / <kbd>S</kbd> · Player 2: <kbd>↑</kbd> / <kbd>↓</kbd> · <kbd>Space</kbd> to serve
+    </p>
+    <p class="pong-hint hidden" id="hintTouch">
+      Drag along the left edge for player 1, right edge for player 2. Tap <strong>Start round</strong> to serve.
+    </p>
+    <p class="pong-status" id="status" role="status"></p>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2026 Joshua Fong</p>
+      <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const navToggle = document.getElementById('navToggle');
+      const navLinks = document.getElementById('navLinks');
+      navToggle.addEventListener('click', function () {
+        navLinks.classList.toggle('open');
+      });
+      navLinks.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () {
+          navLinks.classList.remove('open');
+        });
+      });
+
+      const canvas = document.getElementById('game');
+      const ctx = canvas.getContext('2d');
+      const wrap = document.getElementById('canvasWrap');
+      const scoreL = document.getElementById('scoreL');
+      const scoreR = document.getElementById('scoreR');
+      const statusEl = document.getElementById('status');
+      const btnStart = document.getElementById('btnStart');
+      const btnReset = document.getElementById('btnReset');
+      const mode2p = document.getElementById('mode2p');
+      const modeCpu = document.getElementById('modeCpu');
+      const hintDesktop = document.getElementById('hintDesktop');
+      const hintTouch = document.getElementById('hintTouch');
+
+      var LW = 800;
+      var LH = 450;
+      var PADDLE_W = 10;
+      var PADDLE_H = 86;
+      var PADDLE_INSET = 28;
+      var BALL = 9;
+      var WIN_SCORE = 7;
+
+      var mode = '2p';
+      var scores = [0, 0];
+      var keys = Object.create(null);
+      var waitingServe = true;
+      var gameOver = false;
+      var lastT = 0;
+      var rafId = 0;
+
+      var paddleL = { x: PADDLE_INSET, y: LH / 2 - PADDLE_H / 2 };
+      var paddleR = { x: LW - PADDLE_INSET - PADDLE_W, y: LH / 2 - PADDLE_H / 2 };
+      var ball = { x: LW / 2, y: LH / 2, vx: 0, vy: 0 };
+
+      function cssVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      }
+
+      function isCoarsePointer() {
+        return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      }
+
+      if (isCoarsePointer()) {
+        hintDesktop.classList.add('hidden');
+        hintTouch.classList.remove('hidden');
+      }
+
+      function setMode(m) {
+        mode = m;
+        mode2p.classList.toggle('is-active', m === '2p');
+        modeCpu.classList.toggle('is-active', m === 'cpu');
+        touchR = null;
+        if (isCoarsePointer()) {
+          hintTouch.textContent =
+            m === 'cpu'
+              ? 'Drag along the left edge to move your paddle. Tap Start round to serve.'
+              : 'Drag along the left edge for player 1, right edge for player 2. Tap Start round to serve.';
+        }
+        resetPositions();
+        waitingServe = true;
+        ball.vx = 0;
+        ball.vy = 0;
+        setStatus('Choose Start round to serve.');
+      }
+
+      mode2p.addEventListener('click', function () { setMode('2p'); });
+      modeCpu.addEventListener('click', function () { setMode('cpu'); });
+
+      function setStatus(msg) {
+        statusEl.textContent = msg;
+      }
+
+      function resetPositions() {
+        paddleL.y = LH / 2 - PADDLE_H / 2;
+        paddleR.y = LH / 2 - PADDLE_H / 2;
+        ball.x = LW / 2;
+        ball.y = LH / 2;
+      }
+
+      function clampPaddle(p) {
+        if (p.y < 0) p.y = 0;
+        if (p.y + PADDLE_H > LH) p.y = LH - PADDLE_H;
+      }
+
+      function randomServeDirection() {
+        var toward = Math.random() < 0.5 ? -1 : 1;
+        var angle = (Math.random() * 0.5 + 0.15) * Math.PI / 2;
+        if (Math.random() < 0.5) angle = -angle;
+        var speed = 340;
+        ball.vx = toward * speed * Math.cos(angle);
+        ball.vy = speed * Math.sin(angle);
+      }
+
+      function serve() {
+        if (gameOver) return;
+        waitingServe = false;
+        resetPositions();
+        randomServeDirection();
+        btnStart.textContent = 'Start round';
+        lastT = performance.now();
+      }
+
+      function resetMatch() {
+        scores[0] = 0;
+        scores[1] = 0;
+        gameOver = false;
+        btnStart.textContent = 'Start round';
+        updateScoreDisplay();
+        waitingServe = true;
+        ball.vx = 0;
+        ball.vy = 0;
+        resetPositions();
+        setStatus('Scores cleared. Start round when ready.');
+      }
+
+      function updateScoreDisplay() {
+        scoreL.textContent = String(scores[0]);
+        scoreR.textContent = String(scores[1]);
+      }
+
+      btnStart.addEventListener('click', function () {
+        if (gameOver) {
+          resetMatch();
+          return;
+        }
+        serve();
+        setStatus('');
+      });
+
+      btnReset.addEventListener('click', function () {
+        resetMatch();
+      });
+
+      window.addEventListener('keydown', function (e) {
+        keys[e.code] = true;
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (waitingServe) btnStart.click();
+        }
+      });
+      window.addEventListener('keyup', function (e) {
+        keys[e.code] = false;
+      });
+
+      var touchL = null;
+      var touchR = null;
+
+      function touchSide(clientX) {
+        var rect = canvas.getBoundingClientRect();
+        var x = clientX - rect.left;
+        return x < rect.width / 2 ? 'L' : 'R';
+      }
+
+      function touchToPaddleY(clientY) {
+        var rect = canvas.getBoundingClientRect();
+        var scaleY = LH / rect.height;
+        var y = (clientY - rect.top) * scaleY - PADDLE_H / 2;
+        if (y < 0) y = 0;
+        if (y + PADDLE_H > LH) y = LH - PADDLE_H;
+        return y;
+      }
+
+      canvas.addEventListener('touchstart', function (e) {
+        e.preventDefault();
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var t = e.changedTouches[i];
+          var side = touchSide(t.clientX);
+          if (side === 'L') touchL = t.identifier;
+          else if (mode === '2p') touchR = t.identifier;
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', function (e) {
+        e.preventDefault();
+        for (var i = 0; i < e.touches.length; i++) {
+          var t = e.touches[i];
+          if (t.identifier === touchL) paddleL.y = touchToPaddleY(t.clientY);
+          if (mode === '2p' && t.identifier === touchR) paddleR.y = touchToPaddleY(t.clientY);
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', function (e) {
+        for (var i = 0; i < e.changedTouches.length; i++) {
+          var id = e.changedTouches[i].identifier;
+          if (id === touchL) touchL = null;
+          if (id === touchR) touchR = null;
+        }
+      });
+
+      canvas.addEventListener('touchcancel', function (e) {
+        touchL = null;
+        touchR = null;
+      });
+
+      function moveCpu(dt) {
+        var center = paddleR.y + PADDLE_H / 2;
+        var target = ball.y;
+        var maxStep = 260 * dt;
+        var diff = target - center;
+        if (diff > maxStep) diff = maxStep;
+        else if (diff < -maxStep) diff = -maxStep;
+        paddleR.y += diff;
+        clampPaddle(paddleR);
+      }
+
+      function updateKeys(dt) {
+        var step = 360 * dt;
+        if (keys['KeyW']) paddleL.y -= step;
+        if (keys['KeyS']) paddleL.y += step;
+        if (mode === '2p') {
+          if (keys['ArrowUp']) paddleR.y -= step;
+          if (keys['ArrowDown']) paddleR.y += step;
+        }
+        clampPaddle(paddleL);
+        if (mode === '2p') clampPaddle(paddleR);
+      }
+
+      function collidePaddle(p, isLeft) {
+        var bx = ball.x;
+        var by = ball.y;
+        var px = p.x;
+        var py = p.y;
+        if (by + BALL / 2 < py || by - BALL / 2 > py + PADDLE_H) return false;
+        if (isLeft) {
+          if (ball.vx >= 0) return false;
+          if (bx - BALL / 2 > px + PADDLE_W + 2) return false;
+        } else {
+          if (ball.vx <= 0) return false;
+          if (bx + BALL / 2 < px - 2) return false;
+        }
+        var hit = (by - (py + PADDLE_H / 2)) / (PADDLE_H / 2);
+        hit = Math.max(-1, Math.min(1, hit));
+        ball.vx = -ball.vx;
+        ball.vy += hit * 140;
+        var sp = Math.hypot(ball.vx, ball.vy);
+        var cap = 520;
+        if (sp > cap) {
+          ball.vx = (ball.vx / sp) * cap;
+          ball.vy = (ball.vy / sp) * cap;
+        }
+        if (isLeft) ball.x = px + PADDLE_W + BALL / 2 + 1;
+        else ball.x = px - BALL / 2 - 1;
+        return true;
+      }
+
+      function tick(now) {
+        rafId = requestAnimationFrame(tick);
+        var dt = Math.min((now - lastT) / 1000, 0.05);
+        lastT = now;
+
+        updateKeys(dt);
+        if (mode === 'cpu' && !waitingServe && !gameOver) moveCpu(dt);
+
+        if (!waitingServe && !gameOver) {
+          ball.x += ball.vx * dt;
+          ball.y += ball.vy * dt;
+
+          if (ball.y - BALL / 2 <= 0) {
+            ball.y = BALL / 2;
+            ball.vy = Math.abs(ball.vy);
+          } else if (ball.y + BALL / 2 >= LH) {
+            ball.y = LH - BALL / 2;
+            ball.vy = -Math.abs(ball.vy);
+          }
+
+          collidePaddle(paddleL, true);
+          collidePaddle(paddleR, false);
+
+          if (ball.x + BALL / 2 < 0) {
+            scores[1]++;
+            pointScored(1);
+          } else if (ball.x - BALL / 2 > LW) {
+            scores[0]++;
+            pointScored(0);
+          }
+        }
+
+        draw();
+      }
+
+      function pointScored(scorer) {
+        updateScoreDisplay();
+        if (scores[scorer] >= WIN_SCORE) {
+          gameOver = true;
+          waitingServe = true;
+          ball.vx = 0;
+          ball.vy = 0;
+          var winner = scorer === 0 ? 'Left' : 'Right';
+          if (mode === 'cpu') winner = scorer === 0 ? 'You' : 'Computer';
+          setStatus(winner + ' wins. Start round for a new match.');
+          btnStart.textContent = 'New match';
+        } else {
+          waitingServe = true;
+          ball.vx = 0;
+          ball.vy = 0;
+          resetPositions();
+          setStatus('Point. Start round to serve.');
+        }
+      }
+
+      function draw() {
+        var bg = cssVar('--bg-card');
+        var fg = cssVar('--text-primary');
+        var accent = cssVar('--accent');
+        var border = cssVar('--border');
+        var muted = cssVar('--text-muted');
+
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, LW, LH);
+
+        ctx.strokeStyle = border;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 10]);
+        ctx.beginPath();
+        ctx.moveTo(LW / 2, 0);
+        ctx.lineTo(LW / 2, LH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = fg;
+        ctx.fillRect(paddleL.x, paddleL.y, PADDLE_W, PADDLE_H);
+        ctx.fillRect(paddleR.x, paddleR.y, PADDLE_W, PADDLE_H);
+
+        ctx.fillStyle = accent;
+        ctx.fillRect(ball.x - BALL / 2, ball.y - BALL / 2, BALL, BALL);
+
+        if (waitingServe && !gameOver) {
+          ctx.fillStyle = muted;
+          ctx.font = '500 13px JetBrains Mono, monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('Ready', LW / 2, LH / 2 + 48);
+        }
+      }
+
+      function resizeCanvas() {
+        var w = wrap.clientWidth;
+        if (!w) return;
+        var maxH = Math.min(window.innerHeight * 0.5, 520);
+        var fit = Math.min(w / LW, maxH / LH, 1.15);
+        var cssW = Math.floor(LW * fit);
+        var cssH = Math.floor(LH * fit);
+        canvas.style.width = cssW + 'px';
+        canvas.style.height = cssH + 'px';
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(cssW * dpr);
+        canvas.height = Math.round(cssH * dpr);
+        var sx = (dpr * cssW) / LW;
+        var sy = (dpr * cssH) / LH;
+        ctx.setTransform(sx, 0, 0, sy, 0, 0);
+        draw();
+      }
+
+      var ro = new ResizeObserver(resizeCanvas);
+      ro.observe(wrap);
+      window.addEventListener('resize', resizeCanvas);
+
+      lastT = performance.now();
+      resetMatch();
+      resizeCanvas();
+      rafId = requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>

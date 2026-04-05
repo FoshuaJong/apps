@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dracula - apps.fong.nz</title>
+    <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/base.css">
+    <link rel="stylesheet" href="../css/apps.css">
+    <style>
+        /* App-specific styles */
+        .app-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .fetch-button {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            font-family: var(--font-body);
+            font-weight: 300;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .fetch-button:hover {
+            border-color: var(--accent-border-hover);
+        }
+        .data-display {
+            margin-top: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            font-family: var(--font-mono);
+            white-space: pre-wrap;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- Nav -->
+    <nav class="nav">
+        <div class="nav-mark">
+            <a href="https://joshua.fong.nz">JF</a> / <a href="https://apps.fong.nz">apps</a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">Apps</a></li>
+            <li><a href="/dracula/" aria-current="page">Dracula</a></li>
+        </ul>
+        <!-- Mobile nav FAB -->
+        <button class="nav-fab" aria-label="Toggle navigation">
+            <span class="nav-icon">≡</span>
+        </button>
+    </nav>
+
+    <!-- Main content -->
+    <main class="app-content">
+        <h1>Dracula</h1>
+        <p>Fetch random data from the API.</p>
+        <button class="fetch-button" id="fetchBtn">Fetch Data</button>
+        <div class="data-display" id="dataDisplay"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span>© 2026 Joshua Fong</span>
+        <a href="https://joshua.fong.nz">joshua.fong.nz</a>
+    </footer>
+
+    <script>
+        // Simple fetch and display
+        document.getElementById('fetchBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/dracula/api/random');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                document.getElementById('dataDisplay').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('dataDisplay').textContent = 'Error fetching data: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

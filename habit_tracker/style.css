@@ -1,0 +1,639 @@
+/* ============================================================
+   HABIT TRACKER — STYLES
+   Two themes: [data-theme="terminal"] (default) and [data-theme="paper"]
+   ============================================================ */
+
+/* ---- App-level CSS variables (terminal defaults) ----------- */
+:root {
+  --row-separator:  rgba(255, 255, 255, 0.045);
+  --row-hover:      rgba(255, 255, 255, 0.018);
+  --today-bg:       rgba(61, 168, 153, 0.07);
+  --today-accent:   var(--accent);
+  --check-color:    var(--accent);
+  --graph-line:     var(--accent);
+  --graph-dot:      var(--accent);
+  --graph-axis:     rgba(255, 255, 255, 0.07);
+  --cell-focus-bg:  var(--accent-surface);
+  --header-height:  7rem;
+  --modal-overlay:  rgba(0, 0, 0, 0.6);
+}
+
+/* ---- Paper theme overrides --------------------------------- */
+[data-theme="paper"] {
+  --bg:                  #F5F0E8;
+  --bg-elevated:         #EDE8DE;
+  --bg-card:             #E8E2D5;
+  --text-primary:        #2C2318;
+  --text-secondary:      #6B5D4F;
+  --text-muted:          #A08878;
+  --accent:              #5B7FA6;
+  --accent-glow:         rgba(91, 127, 166, 0.12);
+  --accent-border-hover: rgba(91, 127, 166, 0.3);
+  --accent-surface:      rgba(91, 127, 166, 0.07);
+  --border:              rgba(91, 127, 166, 0.18);
+  --color-error:         #C05030;
+
+  --row-separator:  rgba(91, 127, 166, 0.14);
+  --row-hover:      rgba(0, 0, 0, 0.02);
+  --today-bg:       rgba(91, 127, 166, 0.09);
+  --today-accent:   #5B7FA6;
+  --check-color:    #5B7FA6;
+  --graph-line:     #5B7FA6;
+  --graph-dot:      #5B7FA6;
+  --graph-axis:     rgba(91, 127, 166, 0.18);
+  --modal-overlay:  rgba(44, 35, 24, 0.45);
+}
+
+/* Paper: adjust nav and global background for light mode */
+[data-theme="paper"] nav {
+  background: rgba(245, 240, 232, 0.88);
+  border-bottom-color: var(--border);
+}
+[data-theme="paper"] nav::before {
+  background: rgba(245, 240, 232, 0.88);
+}
+[data-theme="paper"] .nav-toggle span {
+  background: var(--text-secondary);
+}
+[data-theme="paper"] #grid-spotlight {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+}
+
+/* ============================================================
+   APP HEADER
+   ============================================================ */
+#app-header {
+  padding-top: calc(var(--nav-offset) + 2.5rem);
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 0.9rem;
+}
+
+#month-heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 400;
+  color: var(--text-primary);
+  line-height: 1;
+  min-width: 12rem;
+  text-align: center;
+}
+
+.btn-month-nav {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.3rem 0.6rem;
+  line-height: 1;
+  transition: color 0.2s;
+  font-family: var(--font-body);
+}
+.btn-month-nav:hover { color: var(--accent); }
+.btn-month-nav:disabled { opacity: 0.25; cursor: default; }
+
+.header-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn-action {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-import-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.btn-import-label input[type="file"] {
+  display: none;
+}
+
+.import-error {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--color-error);
+  letter-spacing: 0.04em;
+  display: none;
+}
+.import-error.visible { display: inline; }
+
+/* ============================================================
+   MOBILE TABS
+   ============================================================ */
+#mobile-tabs {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  #mobile-tabs {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+}
+
+/* ============================================================
+   MAIN TABLE AREA
+   ============================================================ */
+#tracker-main {
+  padding: 0;
+  padding-bottom: 4rem;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-wrapper {
+  position: relative;
+  min-width: 600px;
+}
+
+#tracker-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+/* ---- Column base widths (set on <col> elements via class) -- */
+col.col-day    { width: 4.5rem; }  /* day# + name combined */
+col.col-text   { /* flexible — auto-filled */ }
+col.col-add    { width: 2rem; }
+col.col-habit  { width: 2.75rem; }
+col.col-sleep  { width: 9rem; }
+
+/* ---- Header row -------------------------------------------- */
+thead tr {
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  padding: 0 0.5rem 0.5rem;
+  vertical-align: bottom;
+  font-weight: 400;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Day column header */
+th.th-day {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: left;
+  height: var(--header-height);
+}
+
+/* Text column headers — horizontal */
+th.th-text {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-align: left;
+  height: var(--header-height);
+  position: relative;
+  cursor: pointer;
+}
+th.th-text .header-label { display: block; overflow: hidden; text-overflow: ellipsis; }
+
+/* Habit column headers — vertical */
+th.th-habit {
+  height: var(--header-height);
+  padding: 0 0 0.4rem;
+  text-align: center;
+  vertical-align: bottom;
+  position: relative;
+  overflow: visible;
+  cursor: pointer;
+}
+th.th-habit .header-inner {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  max-height: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sleep column header */
+th.th-sleep {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  height: var(--header-height);
+  padding-bottom: 0.5rem;
+}
+.sleep-axis-label {
+  display: block;
+  font-size: 0.5rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+  opacity: 0.7;
+}
+
+/* Add-column button header cells */
+th.th-add {
+  text-align: center;
+  vertical-align: bottom;
+  padding-bottom: 0.5rem;
+  overflow: visible;
+}
+.btn-add-col {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+.btn-add-col:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Header delete button (on hover) */
+.header-delete {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.1rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.65rem;
+  line-height: 1;
+  padding: 2px 3px;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  z-index: 1;
+}
+th:hover .header-delete { opacity: 0.7; }
+.header-delete:hover { opacity: 1 !important; color: var(--color-error); }
+
+/* Inline rename input */
+.header-rename-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  padding: 2px 4px;
+  outline: none;
+  max-width: 8rem;
+}
+
+/* ---- Body rows --------------------------------------------- */
+tbody tr {
+  border-bottom: 1px solid var(--row-separator);
+  transition: background 0.12s;
+}
+tbody tr:hover { background: var(--row-hover); }
+tbody tr.today { background: var(--today-bg); }
+
+/* Paper theme: slightly more prominent row lines */
+[data-theme="paper"] thead tr { border-bottom: 1.5px solid rgba(91, 127, 166, 0.25); }
+[data-theme="paper"] tbody tr { border-bottom: 1px solid rgba(91, 127, 166, 0.12); }
+
+td {
+  padding: 0.48rem 0.5rem;
+  vertical-align: middle;
+  overflow: hidden;
+}
+
+/* ---- Day cell --------------------------------------------- */
+.td-day {
+  white-space: nowrap;
+  text-align: left;
+}
+.cell-day-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: block;
+  line-height: 1.2;
+}
+.cell-day-name {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  line-height: 1.2;
+}
+tr.today .cell-day-num { color: var(--today-accent); }
+tr.weekend .cell-day-num { opacity: 0.55; }
+tr.weekend .cell-day-name { opacity: 0.55; }
+
+/* ---- Text (notes) cells ------------------------------------ */
+.td-text {
+  vertical-align: middle;
+}
+.text-cell-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 300;
+  line-height: 1.4;
+  padding: 0;
+  resize: none;
+  outline: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: background 0.15s;
+}
+.text-cell-input:focus {
+  background: var(--cell-focus-bg);
+  white-space: normal;
+  overflow: visible;
+}
+
+/* ---- Habit cells ------------------------------------------ */
+.td-habit {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Custom checkbox */
+.habit-check {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0 auto;
+  border: 1.5px solid var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+.habit-check:checked {
+  background: var(--check-color);
+  border-color: var(--check-color);
+}
+.habit-check:checked::after {
+  content: '';
+  position: absolute;
+  left: 2px; top: -1px;
+  width: 5px; height: 9px;
+  border: 2px solid var(--bg);
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+.habit-check:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Short text habit input */
+.habit-text-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-align: center;
+  padding: 1px 2px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.habit-text-input:focus { border-bottom-color: var(--accent); }
+
+/* ---- Sleep cells ------------------------------------------ */
+.td-sleep {
+  text-align: center;
+  vertical-align: middle;
+  position: relative;
+}
+
+.sleep-input {
+  width: 3.8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 3px 6px;
+  outline: none;
+  transition: border-color 0.15s;
+  /* Center it */
+  display: block;
+  margin: 0 auto;
+}
+.sleep-input:focus { border-color: var(--accent); }
+
+/* The phantom placeholder shown when value is set (graph renders over it) */
+.sleep-value-hint {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  opacity: 0;  /* invisible — just holds the space; SVG dot is the visual */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ---- Add-col spacer cells ---------------------------------- */
+.td-add {
+  border: none !important;
+}
+
+/* ---- SVG sleep graph overlay ------------------------------ */
+#sleep-svg {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* ============================================================
+   MODAL (dialog element)
+   ============================================================ */
+#col-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 2rem;
+  max-width: 360px;
+  width: calc(100% - 2rem);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+[data-theme="paper"] #col-modal {
+  box-shadow: 0 12px 40px rgba(44,35,24,0.18);
+}
+#col-modal::backdrop {
+  background: var(--modal-overlay);
+  backdrop-filter: blur(3px);
+}
+
+.modal-inner h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+.modal-field {
+  display: block;
+  margin-bottom: 1.1rem;
+}
+.modal-field > span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+.modal-field input,
+.modal-field select {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: auto;
+}
+.modal-field input:focus,
+.modal-field select:focus { border-color: var(--accent); }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+/* Reuse btn-primary / btn-secondary from apps.css */
+.modal-actions .btn-primary,
+.modal-actions .btn-secondary {
+  padding: 0.6rem 1.4rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* ============================================================
+   RESPONSIVE / MOBILE
+   ============================================================ */
+@media (max-width: 640px) {
+  #app-header {
+    padding-top: 2.5rem;
+    padding-bottom: 1rem;
+  }
+
+  .table-scroll {
+    overflow-x: hidden; /* tabs replace horizontal scroll on mobile */
+  }
+  .table-wrapper {
+    min-width: unset;
+  }
+
+  /* Mobile tab column hiding —
+     data-mobile-tab attr set on .table-wrapper by JS */
+  .table-wrapper[data-mobile-tab="notes"] .g-habit,
+  .table-wrapper[data-mobile-tab="notes"] .g-sleep { display: none; }
+
+  .table-wrapper[data-mobile-tab="habits"] .g-notes,
+  .table-wrapper[data-mobile-tab="habits"] .g-sleep { display: none; }
+
+  .table-wrapper[data-mobile-tab="sleep"] .g-notes,
+  .table-wrapper[data-mobile-tab="sleep"] .g-habit { display: none; }
+
+  /* Day column always visible */
+  .g-day { display: table-cell !important; }
+
+  /* Full-width table on mobile */
+  #tracker-table { font-size: 0.78rem; }
+  td, th { padding: 0.45rem 0.4rem; }
+
+  .header-row { gap: 0.75rem; }
+  .header-actions { gap: 0.5rem; }
+  .btn-action { font-size: 0.58rem; padding: 0.3rem 0.65rem; }
+}

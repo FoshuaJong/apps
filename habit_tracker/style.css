@@ -631,6 +631,17 @@ tr.weekend .cell-day-name { opacity: 0.55; }
   .table-wrapper[data-mobile-tab="sleep"] .g-notes,
   .table-wrapper[data-mobile-tab="sleep"] .g-habit { display: none; }
 
+  /* Zero out hidden <col> widths — table-layout:fixed allocates space for
+     <col> elements even when display:none, stealing it from visible columns */
+  .table-wrapper[data-mobile-tab="notes"] col.g-habit,
+  .table-wrapper[data-mobile-tab="notes"] col.g-sleep { width: 0 !important; }
+
+  .table-wrapper[data-mobile-tab="habits"] col.g-notes,
+  .table-wrapper[data-mobile-tab="habits"] col.g-sleep { width: 0 !important; }
+
+  .table-wrapper[data-mobile-tab="sleep"] col.g-notes,
+  .table-wrapper[data-mobile-tab="sleep"] col.g-habit { width: 0 !important; }
+
   /* Day column always visible */
   .g-day { display: table-cell !important; }
 

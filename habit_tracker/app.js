@@ -732,6 +732,29 @@ function setupEvents() {
     btn.addEventListener('click', () => setMobileTab(btn.dataset.tab));
   });
 
+  // Swipe left/right on the tracker to navigate tabs
+  const SWIPE_TABS = ['notes', 'habits', 'sleep'];
+  let swipeTouchStartX = 0;
+  let swipeTouchStartY = 0;
+  const swipeEl = document.getElementById('tracker-main');
+  swipeEl.addEventListener('touchstart', e => {
+    swipeTouchStartX = e.touches[0].clientX;
+    swipeTouchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  swipeEl.addEventListener('touchend', e => {
+    // Don't hijack interaction with inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const dx = e.changedTouches[0].clientX - swipeTouchStartX;
+    const dy = e.changedTouches[0].clientY - swipeTouchStartY;
+    // Require a clear horizontal gesture (60px min, 1.5x more horizontal than vertical)
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const activeBtn = document.querySelector('.tab-btn.active');
+    if (!activeBtn) return;
+    const idx = SWIPE_TABS.indexOf(activeBtn.dataset.tab);
+    if (dx < 0 && idx < SWIPE_TABS.length - 1) setMobileTab(SWIPE_TABS[idx + 1]);
+    else if (dx > 0 && idx > 0) setMobileTab(SWIPE_TABS[idx - 1]);
+  }, { passive: true });
+
   // Resize: redraw sleep graph
   let resizeTimer;
   window.addEventListener('resize', () => {

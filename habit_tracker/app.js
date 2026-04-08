@@ -136,11 +136,31 @@ function applyTheme(theme) {
   saveDb();
 }
 
+// ---- Mobile column width enforcement -----------------------
+// CSS width on <col> is unreliable in table-layout:fixed — browsers
+// compute fixed widths at first render and don't always re-evaluate
+// when CSS changes via attribute selectors.  Set inline styles directly.
+function applyMobileColWidths() {
+  if (window.innerWidth > 640) return;
+  const wrapper = document.querySelector('.table-wrapper');
+  const tab = (wrapper && wrapper.dataset.mobileTab) || 'notes';
+  const SHOW = {
+    notes:  ['g-day', 'g-notes'],
+    habits: ['g-day', 'g-habit'],
+    sleep:  ['g-day', 'g-sleep'],
+  };
+  const show = SHOW[tab] || SHOW.notes;
+  document.querySelectorAll('#table-colgroup col').forEach(col => {
+    col.style.width = show.some(g => col.classList.contains(g)) ? '' : '0';
+  });
+}
+
 // ---- Render ------------------------------------------------
 function render() {
   const md = ensureMonth(viewYear, viewMonth);
   renderHeading();
   buildColgroup(md);
+  applyMobileColWidths();
   buildThead(md);
   buildTbody(md);
   requestAnimationFrame(() => drawSleepGraph(md));
@@ -625,7 +645,7 @@ function setMobileTab(tab) {
   });
   const wrapper = document.querySelector('.table-wrapper');
   if (wrapper) wrapper.dataset.mobileTab = tab;
-  // Re-draw sleep graph when switching to sleep tab (layout may change)
+  applyMobileColWidths();
   if (tab === 'sleep') {
     requestAnimationFrame(() => drawSleepGraph(ensureMonth(viewYear, viewMonth)));
   }
@@ -775,12 +795,11 @@ function init() {
 
   applyTheme(db.theme || 'terminal');
 
-  render();
-
-  // Set default mobile tab
+  // Set default mobile tab BEFORE render so applyMobileColWidths reads it correctly
   const wrapper = document.querySelector('.table-wrapper');
   if (wrapper) wrapper.dataset.mobileTab = 'notes';
 
+  render();
   setupEvents();
 }
 

@@ -621,29 +621,26 @@ tr.weekend .cell-day-name { opacity: 0.55; }
   }
 
   /* Mobile tab column hiding —
-     data-mobile-tab attr set on .table-wrapper by JS */
-  .table-wrapper[data-mobile-tab="notes"] .g-habit,
-  .table-wrapper[data-mobile-tab="notes"] .g-sleep { display: none; }
-
-  .table-wrapper[data-mobile-tab="habits"] .g-notes,
-  .table-wrapper[data-mobile-tab="habits"] .g-sleep { display: none; }
-
-  .table-wrapper[data-mobile-tab="sleep"] .g-notes,
-  .table-wrapper[data-mobile-tab="sleep"] .g-habit { display: none; }
-
-  /* Zero out hidden <col> widths — table-layout:fixed allocates space for
-     <col> elements even when display:none, stealing it from visible columns */
-  .table-wrapper[data-mobile-tab="notes"] col.g-habit,
-  .table-wrapper[data-mobile-tab="notes"] col.g-sleep { width: 0 !important; }
-
-  .table-wrapper[data-mobile-tab="habits"] col.g-notes,
-  .table-wrapper[data-mobile-tab="habits"] col.g-sleep { width: 0 !important; }
-
-  .table-wrapper[data-mobile-tab="sleep"] col.g-notes,
-  .table-wrapper[data-mobile-tab="sleep"] col.g-habit { width: 0 !important; }
-
-  /* Day column always visible */
-  .g-day { display: table-cell !important; }
+     Use visibility:hidden (not display:none) so cells keep their column
+     slots.  display:none removes cells from row flow, misaligning the
+     remaining cells with their <col> width definitions. */
+  .table-wrapper[data-mobile-tab="notes"] td.g-habit,
+  .table-wrapper[data-mobile-tab="notes"] th.g-habit,
+  .table-wrapper[data-mobile-tab="notes"] td.g-sleep,
+  .table-wrapper[data-mobile-tab="notes"] th.g-sleep,
+  .table-wrapper[data-mobile-tab="habits"] td.g-notes,
+  .table-wrapper[data-mobile-tab="habits"] th.g-notes,
+  .table-wrapper[data-mobile-tab="habits"] td.g-sleep,
+  .table-wrapper[data-mobile-tab="habits"] th.g-sleep,
+  .table-wrapper[data-mobile-tab="sleep"] td.g-notes,
+  .table-wrapper[data-mobile-tab="sleep"] th.g-notes,
+  .table-wrapper[data-mobile-tab="sleep"] td.g-habit,
+  .table-wrapper[data-mobile-tab="sleep"] th.g-habit {
+    visibility: hidden;
+    padding: 0 !important;
+    border-width: 0 !important;
+    overflow: hidden;
+  }
 
   /* Compact column widths — give content more room */
   col.col-day   { width: 2.8rem; }

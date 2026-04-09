@@ -621,24 +621,15 @@ tr.weekend .cell-day-name { opacity: 0.55; }
   }
 
   /* Mobile tab column hiding —
-     data-mobile-tab attr set on .table-wrapper by JS.
-     Only hide cells (td/th), NOT <col> elements — display:none on <col>
-     causes table-layout:fixed to ignore width:0, stealing space from
-     visible columns. */
-  .table-wrapper[data-mobile-tab="notes"] td.g-habit,
-  .table-wrapper[data-mobile-tab="notes"] th.g-habit,
-  .table-wrapper[data-mobile-tab="notes"] td.g-sleep,
-  .table-wrapper[data-mobile-tab="notes"] th.g-sleep { display: none; }
+     data-mobile-tab attr set on .table-wrapper by JS */
+  .table-wrapper[data-mobile-tab="notes"] .g-habit,
+  .table-wrapper[data-mobile-tab="notes"] .g-sleep { display: none; }
 
-  .table-wrapper[data-mobile-tab="habits"] td.g-notes,
-  .table-wrapper[data-mobile-tab="habits"] th.g-notes,
-  .table-wrapper[data-mobile-tab="habits"] td.g-sleep,
-  .table-wrapper[data-mobile-tab="habits"] th.g-sleep { display: none; }
+  .table-wrapper[data-mobile-tab="habits"] .g-notes,
+  .table-wrapper[data-mobile-tab="habits"] .g-sleep { display: none; }
 
-  .table-wrapper[data-mobile-tab="sleep"] td.g-notes,
-  .table-wrapper[data-mobile-tab="sleep"] th.g-notes,
-  .table-wrapper[data-mobile-tab="sleep"] td.g-habit,
-  .table-wrapper[data-mobile-tab="sleep"] th.g-habit { display: none; }
+  .table-wrapper[data-mobile-tab="sleep"] .g-notes,
+  .table-wrapper[data-mobile-tab="sleep"] .g-habit { display: none; }
 
   /* Zero out hidden <col> widths — table-layout:fixed allocates space for
      <col> elements even when display:none, stealing it from visible columns */

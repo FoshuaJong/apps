@@ -685,6 +685,107 @@ tr.weekend .cell-day-name { opacity: 0.55; }
 }
 
 /* ============================================================
+   SHORTCUTS MODAL
+   ============================================================ */
+.shortcuts-desc {
+  font-family: var(--font-body);
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: -0.5rem 0 1.25rem;
+}
+
+.shortcuts-note {
+  font-family: var(--font-body);
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  padding: 0.5rem 0 1rem;
+}
+
+.shortcuts-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.shortcuts-row:last-child { border-bottom: none; }
+
+.shortcuts-name {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Compact "Set up" button inside the shortcuts list */
+.shortcuts-btn {
+  padding: 0.4rem 1rem !important;
+  font-size: 0.78rem !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   SETUP BANNER  (Add to Home Screen instructions)
+   ============================================================ */
+.setup-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 150;
+  background: var(--bg-card);
+  border-top: 2px solid var(--accent);
+  padding: 1.25rem 1.5rem;
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transform: translateY(100%);
+  transition: transform 0.28s ease;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.35);
+}
+.setup-banner.visible { transform: translateY(0); }
+[data-theme="paper"] .setup-banner {
+  box-shadow: 0 -4px 20px rgba(44, 35, 24, 0.12);
+}
+
+.setup-banner-body { flex: 1; min-width: 0; }
+
+.setup-banner-title {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 0.55rem;
+}
+
+.setup-banner-steps {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.setup-banner-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.setup-banner-close:hover { color: var(--text-primary); }
+
+/* ============================================================
    QUICK-LOG TOAST  (homescreen widget one-tap feedback)
    ============================================================ */
 .quick-log-toast {

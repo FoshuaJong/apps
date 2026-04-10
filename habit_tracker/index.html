@@ -50,6 +50,7 @@
       </div>
       <div class="header-actions">
         <button id="btn-theme-toggle" class="btn-action">Paper</button>
+        <button id="btn-shortcuts" class="btn-action">Shortcuts</button>
         <button id="btn-export" class="btn-action">Export</button>
         <label class="btn-action btn-import-label" id="btn-import-label">
           Import
@@ -82,6 +83,18 @@
       </div>
     </div>
   </main>
+
+  <!-- SHORTCUTS MODAL -->
+  <dialog id="shortcuts-modal">
+    <div class="modal-inner">
+      <h2>One-tap shortcuts</h2>
+      <p class="shortcuts-desc">Save a habit as a Home Screen icon — one tap to log it for today.</p>
+      <div id="shortcuts-list"></div>
+      <div class="modal-actions">
+        <button id="shortcuts-close" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- COLUMN MODAL -->
   <dialog id="col-modal">

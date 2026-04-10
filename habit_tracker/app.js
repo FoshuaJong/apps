@@ -728,6 +728,17 @@ function setupEvents() {
     applyTheme(db.theme === 'terminal' ? 'paper' : 'terminal');
   });
 
+  // Shortcuts
+  document.getElementById('btn-shortcuts').addEventListener('click', openShortcutsModal);
+  document.getElementById('shortcuts-close').addEventListener('click', () => {
+    document.getElementById('shortcuts-modal').close();
+  });
+  document.getElementById('shortcuts-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('shortcuts-modal')) {
+      document.getElementById('shortcuts-modal').close();
+    }
+  });
+
   // Export
   document.getElementById('btn-export').addEventListener('click', exportData);
 
@@ -796,13 +807,16 @@ function setupEvents() {
 
 // ---- Quick-log (homescreen widget) -------------------------
 // Handles ?log=<colId> — ticks the habit for today and shows a toast.
+// ?setup=1 additionally shows the "Add to Home Screen" instructions.
 function checkQuickLog() {
-  const colId = new URLSearchParams(window.location.search).get('log');
+  const params = new URLSearchParams(window.location.search);
+  const colId  = params.get('log');
   if (!colId) return;
 
+  const isSetup = params.get('setup') === '1';
+
   // Clean the URL immediately so a hard-refresh won't re-log
-  const cleanUrl = window.location.pathname;
-  history.replaceState(null, '', cleanUrl);
+  history.replaceState(null, '', window.location.pathname);
 
   const now = new Date();
   const y = now.getFullYear();
@@ -826,6 +840,7 @@ function checkQuickLog() {
   setDayValue(y, m, d, colId, newVal || null);
   render();
   showQuickLogToast(col.n, newVal);
+  if (isSetup) showSetupBanner(col.n);
 }
 
 function showQuickLogToast(habitName, logged) {
@@ -878,6 +893,120 @@ function showQuickLogToast(habitName, logged) {
   };
   setTimeout(dismiss, 2600);
   toast.addEventListener('click', dismiss);
+}
+
+// ---- Setup banner (homescreen add-to-homescreen guide) -----
+function showSetupBanner(habitName) {
+  document.querySelector('.setup-banner')?.remove();
+
+  const isStandalone = !!(window.navigator.standalone ||
+    window.matchMedia('(display-mode: standalone)').matches);
+
+  const banner  = document.createElement('div');
+  banner.className = 'setup-banner';
+
+  const body    = document.createElement('div');
+  body.className = 'setup-banner-body';
+
+  const title   = document.createElement('strong');
+  title.className = 'setup-banner-title';
+
+  const steps   = document.createElement('ol');
+  steps.className = 'setup-banner-steps';
+
+  if (isStandalone) {
+    title.textContent = 'Open in Safari to save shortcuts';
+    [
+      'Close this app',
+      'Open Habit Tracker in Safari (not the home screen icon)',
+      'Tap Shortcuts \u2192 Set up for each habit'
+    ].forEach(t => {
+      const li = document.createElement('li');
+      li.textContent = t;
+      steps.appendChild(li);
+    });
+  } else {
+    title.textContent = '\u201c' + habitName + '\u201d shortcut ready to save';
+    [
+      'Tap the Share button in Safari \u2014 the \u2B06 box icon at the bottom of the screen',
+      'Tap \u201cAdd to Home Screen\u201d',
+      'Tap \u201cAdd\u201d \u2014 done!'
+    ].forEach(t => {
+      const li = document.createElement('li');
+      li.textContent = t;
+      steps.appendChild(li);
+    });
+  }
+
+  const close   = document.createElement('button');
+  close.className = 'setup-banner-close';
+  close.setAttribute('aria-label', 'Dismiss');
+  close.textContent = '\u00d7';
+  close.addEventListener('click', () => {
+    banner.classList.remove('visible');
+    setTimeout(() => banner.remove(), 300);
+  });
+
+  body.appendChild(title);
+  body.appendChild(steps);
+  banner.appendChild(body);
+  banner.appendChild(close);
+  document.body.appendChild(banner);
+  requestAnimationFrame(() => banner.classList.add('visible'));
+}
+
+// ---- Shortcuts modal (per-habit homescreen setup) ----------
+function openShortcutsModal() {
+  const modal = document.getElementById('shortcuts-modal');
+  const list  = document.getElementById('shortcuts-list');
+  list.innerHTML = '';
+
+  const isStandalone = !!(window.navigator.standalone ||
+    window.matchMedia('(display-mode: standalone)').matches);
+
+  if (isStandalone) {
+    const note = document.createElement('p');
+    note.className = 'shortcuts-note';
+    note.textContent =
+      'Shortcuts must be set up from Safari, not from the Home Screen app. ' +
+      'Open Habit Tracker in Safari, then tap Shortcuts.';
+    list.appendChild(note);
+  } else {
+    const md          = ensureMonth(viewYear, viewMonth);
+    const checkHabits = md.hc.filter(c => c.t === 'check');
+
+    if (!checkHabits.length) {
+      const note = document.createElement('p');
+      note.className = 'shortcuts-note';
+      note.textContent = 'No checkbox habits yet — add some habits first.';
+      list.appendChild(note);
+    } else {
+      checkHabits.forEach(col => {
+        const row  = document.createElement('div');
+        row.className = 'shortcuts-row';
+
+        const name = document.createElement('span');
+        name.className = 'shortcuts-name';
+        name.textContent = col.n;
+
+        const btn  = document.createElement('button');
+        btn.className = 'btn-primary shortcuts-btn';
+        btn.textContent = 'Set up';
+        btn.addEventListener('click', () => {
+          modal.close();
+          window.location.href =
+            window.location.pathname +
+            '?log=' + encodeURIComponent(col.id) + '&setup=1';
+        });
+
+        row.appendChild(name);
+        row.appendChild(btn);
+        list.appendChild(row);
+      });
+    }
+  }
+
+  modal.showModal();
 }
 
 // ---- Init --------------------------------------------------

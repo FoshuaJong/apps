@@ -683,3 +683,46 @@ tr.weekend .cell-day-name { opacity: 0.55; }
   th:hover .header-delete { opacity: 0.6; }
   .header-delete:active { opacity: 1 !important; color: var(--color-error); }
 }
+
+/* ============================================================
+   MOBILE NAV — top-right burger for habit tracker
+   ============================================================ */
+@media (max-width: 640px) {
+  @keyframes navSlideDown {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  #habit-tracker nav {
+    top: 0;
+    bottom: auto;
+    left: auto;
+    right: 0;
+  }
+
+  #habit-tracker nav .container {
+    align-items: flex-end;
+  }
+
+  #habit-tracker .nav-toggle {
+    order: 1;
+    margin-top: calc(env(safe-area-inset-top) + 0.75rem);
+    margin-right: 1.5rem;
+    margin-bottom: 0;
+    margin-left: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-bottom: none;
+  }
+
+  #habit-tracker .nav-links {
+    order: 2;
+    margin-left: 0;
+    margin-right: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-top: none;
+  }
+
+  #habit-tracker .nav-links.open {
+    animation: navSlideDown 0.2s ease forwards;
+  }
+}

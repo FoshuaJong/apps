@@ -626,7 +626,7 @@
 
     body.in-game #game-topbar { display: flex; }
 
-    /* Room code — centered in topbar */
+    /* Room code — right side of topbar, left of ws indicator */
     #game-room-code {
       font-family: var(--font-mono);
       font-size: 0.62rem;
@@ -635,9 +635,6 @@
       text-transform: uppercase;
       pointer-events: none;
       user-select: none;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
     }
 
     /* Right section: ws indicator + pause */
@@ -1222,10 +1219,6 @@
         right: 0.75rem;
       }
 
-      body.in-game #game-room-code {
-        left: 1rem;
-        top: calc(env(safe-area-inset-top, 0px) + 0.6rem);
-      }
     }
   </style>
 </head>
@@ -1400,8 +1393,8 @@
         <button class="game-tab active" id="tab-clock">Clock</button>
         <button class="game-tab" id="tab-history">History</button>
       </div>
-      <span id="game-room-code"></span>
       <div class="topbar-right">
+        <span id="game-room-code"></span>
         <span id="ws-indicator"></span>
         <button id="btn-pause">Pause</button>
       </div>

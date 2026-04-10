@@ -153,11 +153,14 @@
 @media (max-width: 640px) {
   #mobile-tabs {
     display: flex;
-    position: sticky;
-    top: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 20;
     background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .tab-btn {
@@ -169,14 +172,14 @@
     text-transform: uppercase;
     background: none;
     border: none;
-    border-bottom: 2px solid transparent;
+    border-top: 2px solid transparent;
     color: var(--text-muted);
     cursor: pointer;
     transition: color 0.2s, border-color 0.2s;
   }
   .tab-btn.active {
     color: var(--accent);
-    border-bottom-color: var(--accent);
+    border-top-color: var(--accent);
   }
 }
 
@@ -606,6 +609,10 @@ tr.weekend .cell-day-name { opacity: 0.55; }
   #app-header {
     padding-top: 1rem;
     padding-bottom: 0.75rem;
+  }
+
+  #tracker-main {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
   }
 
   /* Smaller header height for table columns */

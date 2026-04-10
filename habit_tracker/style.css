@@ -693,14 +693,14 @@ tr.weekend .cell-day-name { opacity: 0.55; }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  #habit-tracker nav {
+  #habit-tracker nav:not(#mobile-tabs) {
     top: 0;
     bottom: auto;
     left: auto;
     right: 0;
   }
 
-  #habit-tracker nav .container {
+  #habit-tracker nav:not(#mobile-tabs) .container {
     align-items: flex-end;
   }
 

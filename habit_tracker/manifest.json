@@ -1,0 +1,37 @@
+{
+  "name": "Habit Tracker",
+  "short_name": "Habits",
+  "description": "Month-at-a-glance habit tracker",
+  "start_url": "/habit_tracker/",
+  "display": "standalone",
+  "background_color": "#0c0c0e",
+  "theme_color": "#0c0c0e",
+  "icons": [
+    {
+      "src": "/images/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Stretching",
+      "short_name": "Stretching",
+      "url": "/habit_tracker/?log=h2",
+      "description": "Mark stretching done for today"
+    },
+    {
+      "name": "Log Coffee",
+      "short_name": "Coffee",
+      "url": "/habit_tracker/?log=h3",
+      "description": "Log coffee for today"
+    },
+    {
+      "name": "Log Mates",
+      "short_name": "Mates",
+      "url": "/habit_tracker/?log=h4",
+      "description": "Log mates for today"
+    }
+  ]
+}

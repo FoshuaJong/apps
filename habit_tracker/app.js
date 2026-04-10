@@ -794,6 +794,92 @@ function setupEvents() {
   });
 }
 
+// ---- Quick-log (homescreen widget) -------------------------
+// Handles ?log=<colId> — ticks the habit for today and shows a toast.
+function checkQuickLog() {
+  const colId = new URLSearchParams(window.location.search).get('log');
+  if (!colId) return;
+
+  // Clean the URL immediately so a hard-refresh won't re-log
+  const cleanUrl = window.location.pathname;
+  history.replaceState(null, '', cleanUrl);
+
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  const md = ensureMonth(y, m);
+
+  const col = md.hc.find(c => c.id === colId);
+  if (!col) {
+    showQuickLogToast(null, false);
+    return;
+  }
+
+  if (col.t !== 'check') {
+    showQuickLogToast(col.n, null);
+    return;
+  }
+
+  const wasChecked = getDayData(md, d)[colId] === true;
+  const newVal = !wasChecked;
+  setDayValue(y, m, d, colId, newVal || null);
+  render();
+  showQuickLogToast(col.n, newVal);
+}
+
+function showQuickLogToast(habitName, logged) {
+  const toast = document.createElement('div');
+  toast.className = 'quick-log-toast';
+
+  const icon = document.createElement('span');
+  icon.className = 'qlt-icon';
+
+  const name = document.createElement('span');
+  name.className = 'qlt-name';
+
+  const sub = document.createElement('span');
+  sub.className = 'qlt-sub';
+
+  if (habitName === null) {
+    // Habit ID not found
+    toast.classList.add('qlt-error');
+    icon.textContent = '?';
+    name.textContent = 'Habit not found';
+    sub.textContent = 'Check your shortcut URL';
+  } else if (logged === null) {
+    // Text habit — can't quick-log
+    toast.classList.add('qlt-error');
+    icon.textContent = 'i';
+    name.textContent = habitName;
+    sub.textContent = 'Open the app to enter a value';
+  } else if (logged) {
+    toast.classList.add('qlt-checked');
+    icon.textContent = '✓';
+    name.textContent = habitName;
+    sub.textContent = 'Logged for today';
+  } else {
+    toast.classList.add('qlt-unchecked');
+    icon.textContent = '○';
+    name.textContent = habitName;
+    sub.textContent = 'Removed for today';
+  }
+
+  toast.appendChild(icon);
+  toast.appendChild(name);
+  if (sub.textContent) toast.appendChild(sub);
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('visible'));
+
+  const dismiss = () => {
+    toast.classList.remove('visible');
+    setTimeout(() => toast.remove(), 300);
+  };
+  setTimeout(dismiss, 2600);
+  toast.addEventListener('click', dismiss);
+}
+
 // ---- Init --------------------------------------------------
 function init() {
   db = loadDb();
@@ -810,6 +896,7 @@ function init() {
 
   render();
   setupEvents();
+  checkQuickLog();
 }
 
 document.addEventListener('DOMContentLoaded', init);

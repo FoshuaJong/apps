@@ -685,6 +685,63 @@ tr.weekend .cell-day-name { opacity: 0.55; }
 }
 
 /* ============================================================
+   QUICK-LOG TOAST  (homescreen widget one-tap feedback)
+   ============================================================ */
+.quick-log-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.92);
+  z-index: 200;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 2rem 2.5rem;
+  min-width: 180px;
+  max-width: calc(100vw - 3rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+.quick-log-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+[data-theme="paper"] .quick-log-toast {
+  box-shadow: 0 12px 40px rgba(44, 35, 24, 0.22);
+}
+
+.qlt-icon {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  line-height: 1;
+  display: block;
+}
+.qlt-name {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.qlt-sub {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.quick-log-toast.qlt-checked   .qlt-icon { color: var(--accent); }
+.quick-log-toast.qlt-unchecked .qlt-icon { color: var(--text-muted); }
+.quick-log-toast.qlt-error     .qlt-icon { color: var(--color-error); }
+.quick-log-toast.qlt-error     .qlt-name { color: var(--color-error); }
+
+/* ============================================================
    MOBILE NAV — top-right burger for habit tracker
    ============================================================ */
 @media (max-width: 640px) {

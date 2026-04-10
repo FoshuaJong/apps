@@ -1165,6 +1165,47 @@
       color: var(--accent) !important;
     }
 
+    /* ── Colour theme picker ────────────────────────────────────────────── */
+    .theme-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .theme-row label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .theme-select {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 0.4rem 0.6rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .theme-select:focus {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
     /* ── Responsive ───────────────────────────────────────────────────── */
     @media (max-width: 640px) {
       .connect-inner,
@@ -1216,6 +1257,46 @@
       </div>
 
       <p id="connect-error"></p>
+
+      <div class="theme-row">
+        <label for="theme-select-connect">Colour theme</label>
+        <select class="theme-select" id="theme-select-connect">
+          <optgroup label="Single Colour">
+            <option value="colorless">Colorless</option>
+            <option value="white">White</option>
+            <option value="blue">Blue</option>
+            <option value="black">Black</option>
+            <option value="red">Red</option>
+            <option value="green">Green</option>
+          </optgroup>
+          <optgroup label="Guild Pairs">
+            <option value="azorius">Azorius · White / Blue</option>
+            <option value="dimir">Dimir · Blue / Black</option>
+            <option value="rakdos">Rakdos · Black / Red</option>
+            <option value="gruul">Gruul · Red / Green</option>
+            <option value="selesnya">Selesnya · Green / White</option>
+            <option value="orzhov">Orzhov · White / Black</option>
+            <option value="izzet">Izzet · Blue / Red</option>
+            <option value="golgari">Golgari · Black / Green</option>
+            <option value="boros">Boros · Red / White</option>
+            <option value="simic">Simic · Green / Blue</option>
+          </optgroup>
+          <optgroup label="Shards">
+            <option value="bant">Bant · Green / White / Blue</option>
+            <option value="esper">Esper · White / Blue / Black</option>
+            <option value="grixis">Grixis · Blue / Black / Red</option>
+            <option value="jund">Jund · Black / Red / Green</option>
+            <option value="naya">Naya · Red / Green / White</option>
+          </optgroup>
+          <optgroup label="Wedges">
+            <option value="abzan">Abzan · White / Black / Green</option>
+            <option value="jeskai">Jeskai · Blue / Red / White</option>
+            <option value="sultai">Sultai · Black / Green / Blue</option>
+            <option value="mardu">Mardu · Red / White / Black</option>
+            <option value="temur">Temur · Green / Blue / Red</option>
+          </optgroup>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -1255,6 +1336,46 @@
 
       <div class="roster-label">Players</div>
       <ul id="player-list"></ul>
+
+      <div class="theme-row">
+        <label for="theme-select-lobby">Colour theme</label>
+        <select class="theme-select" id="theme-select-lobby">
+          <optgroup label="Single Colour">
+            <option value="colorless">Colorless</option>
+            <option value="white">White</option>
+            <option value="blue">Blue</option>
+            <option value="black">Black</option>
+            <option value="red">Red</option>
+            <option value="green">Green</option>
+          </optgroup>
+          <optgroup label="Guild Pairs">
+            <option value="azorius">Azorius · White / Blue</option>
+            <option value="dimir">Dimir · Blue / Black</option>
+            <option value="rakdos">Rakdos · Black / Red</option>
+            <option value="gruul">Gruul · Red / Green</option>
+            <option value="selesnya">Selesnya · Green / White</option>
+            <option value="orzhov">Orzhov · White / Black</option>
+            <option value="izzet">Izzet · Blue / Red</option>
+            <option value="golgari">Golgari · Black / Green</option>
+            <option value="boros">Boros · Red / White</option>
+            <option value="simic">Simic · Green / Blue</option>
+          </optgroup>
+          <optgroup label="Shards">
+            <option value="bant">Bant · Green / White / Blue</option>
+            <option value="esper">Esper · White / Blue / Black</option>
+            <option value="grixis">Grixis · Blue / Black / Red</option>
+            <option value="jund">Jund · Black / Red / Green</option>
+            <option value="naya">Naya · Red / Green / White</option>
+          </optgroup>
+          <optgroup label="Wedges">
+            <option value="abzan">Abzan · White / Black / Green</option>
+            <option value="jeskai">Jeskai · Blue / Red / White</option>
+            <option value="sultai">Sultai · Black / Green / Blue</option>
+            <option value="mardu">Mardu · Red / White / Black</option>
+            <option value="temur">Temur · Green / Blue / Red</option>
+          </optgroup>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -1387,6 +1508,211 @@
     let clockOffset = 0;   // Date.now() - serverNow at last message receipt
     let currentCode = null;
     let playerName  = localStorage.getItem('edhPlayerName') || '';
+
+    // ── Colour themes ─────────────────────────────────────────────────────────
+    const THEMES = {
+      colorless: {
+        '--bg': '#000000', '--bg-elevated': '#0a0a0a', '--bg-card': '#111111',
+        '--text-primary': '#E8E6E3', '--text-secondary': '#9B9A97', '--text-muted': '#5C5B59',
+        '--accent': '#3DA899', '--accent-glow': 'rgba(61,168,153,0.15)',
+        '--accent-border-hover': 'rgba(61,168,153,0.25)', '--accent-surface': 'rgba(61,168,153,0.08)',
+        '--border': 'rgba(255,255,255,0.06)', '--color-error': '#E87A5D',
+      },
+      white: {
+        '--bg': '#060604', '--bg-elevated': '#0E0E0A', '--bg-card': '#161610',
+        '--text-primary': '#F0EDDC', '--text-secondary': '#B0AD9A', '--text-muted': '#6A6858',
+        '--accent': '#C8A850', '--accent-glow': 'rgba(200,168,80,0.15)',
+        '--accent-border-hover': 'rgba(200,168,80,0.25)', '--accent-surface': 'rgba(200,168,80,0.08)',
+        '--border': 'rgba(255,248,200,0.07)', '--color-error': '#E87A5D',
+      },
+      blue: {
+        '--bg': '#00010A', '--bg-elevated': '#02040E', '--bg-card': '#050818',
+        '--text-primary': '#D8E8F8', '--text-secondary': '#7898B8', '--text-muted': '#3A5878',
+        '--accent': '#3A9AE0', '--accent-glow': 'rgba(58,154,224,0.15)',
+        '--accent-border-hover': 'rgba(58,154,224,0.25)', '--accent-surface': 'rgba(58,154,224,0.08)',
+        '--border': 'rgba(58,154,224,0.08)', '--color-error': '#E87A5D',
+      },
+      black: {
+        '--bg': '#000000', '--bg-elevated': '#080608', '--bg-card': '#100E10',
+        '--text-primary': '#E0D0F0', '--text-secondary': '#9080A8', '--text-muted': '#504860',
+        '--accent': '#9855D4', '--accent-glow': 'rgba(152,85,212,0.15)',
+        '--accent-border-hover': 'rgba(152,85,212,0.25)', '--accent-surface': 'rgba(152,85,212,0.08)',
+        '--border': 'rgba(152,85,212,0.08)', '--color-error': '#E87A5D',
+      },
+      red: {
+        '--bg': '#080000', '--bg-elevated': '#100202', '--bg-card': '#180404',
+        '--text-primary': '#F5E0D5', '--text-secondary': '#B07060', '--text-muted': '#684040',
+        '--accent': '#E04020', '--accent-glow': 'rgba(224,64,32,0.15)',
+        '--accent-border-hover': 'rgba(224,64,32,0.25)', '--accent-surface': 'rgba(224,64,32,0.08)',
+        '--border': 'rgba(224,64,32,0.08)', '--color-error': '#E87A5D',
+      },
+      green: {
+        '--bg': '#000800', '--bg-elevated': '#020E02', '--bg-card': '#041604',
+        '--text-primary': '#D8F0DC', '--text-secondary': '#70B078', '--text-muted': '#3A6840',
+        '--accent': '#40A850', '--accent-glow': 'rgba(64,168,80,0.15)',
+        '--accent-border-hover': 'rgba(64,168,80,0.25)', '--accent-surface': 'rgba(64,168,80,0.08)',
+        '--border': 'rgba(64,168,80,0.08)', '--color-error': '#E87A5D',
+      },
+      // Guilds (colour pairs)
+      azorius: {
+        '--bg': '#01020A', '--bg-elevated': '#04060E', '--bg-card': '#080B18',
+        '--text-primary': '#DDE8F5', '--text-secondary': '#809AB8', '--text-muted': '#3E6080',
+        '--accent': '#78B0E8', '--accent-glow': 'rgba(120,176,232,0.15)',
+        '--accent-border-hover': 'rgba(120,176,232,0.25)', '--accent-surface': 'rgba(120,176,232,0.08)',
+        '--border': 'rgba(120,176,232,0.08)', '--color-error': '#E87A5D',
+      },
+      dimir: {
+        '--bg': '#000008', '--bg-elevated': '#030312', '--bg-card': '#06061E',
+        '--text-primary': '#C0CEEE', '--text-secondary': '#5870A8', '--text-muted': '#2A3A68',
+        '--accent': '#4868E0', '--accent-glow': 'rgba(72,104,224,0.2)',
+        '--accent-border-hover': 'rgba(72,104,224,0.30)', '--accent-surface': 'rgba(72,104,224,0.10)',
+        '--border': 'rgba(72,104,224,0.09)', '--color-error': '#E87A5D',
+      },
+      rakdos: {
+        '--bg': '#060000', '--bg-elevated': '#0E0204', '--bg-card': '#140408',
+        '--text-primary': '#F0C8C0', '--text-secondary': '#A05858', '--text-muted': '#603030',
+        '--accent': '#C81828', '--accent-glow': 'rgba(200,24,40,0.15)',
+        '--accent-border-hover': 'rgba(200,24,40,0.25)', '--accent-surface': 'rgba(200,24,40,0.08)',
+        '--border': 'rgba(200,24,40,0.08)', '--color-error': '#E87A5D',
+      },
+      gruul: {
+        '--bg': '#060200', '--bg-elevated': '#0C0600', '--bg-card': '#140800',
+        '--text-primary': '#F0E0C0', '--text-secondary': '#B09060', '--text-muted': '#705830',
+        '--accent': '#D06020', '--accent-glow': 'rgba(208,96,32,0.15)',
+        '--accent-border-hover': 'rgba(208,96,32,0.25)', '--accent-surface': 'rgba(208,96,32,0.08)',
+        '--border': 'rgba(208,96,32,0.08)', '--color-error': '#E87A5D',
+      },
+      selesnya: {
+        '--bg': '#010604', '--bg-elevated': '#050E08', '--bg-card': '#091408',
+        '--text-primary': '#E0EEDD', '--text-secondary': '#88B880', '--text-muted': '#486848',
+        '--accent': '#70BC58', '--accent-glow': 'rgba(112,188,88,0.15)',
+        '--accent-border-hover': 'rgba(112,188,88,0.25)', '--accent-surface': 'rgba(112,188,88,0.08)',
+        '--border': 'rgba(112,188,88,0.08)', '--color-error': '#E87A5D',
+      },
+      orzhov: {
+        '--bg': '#050402', '--bg-elevated': '#0C0A06', '--bg-card': '#14100A',
+        '--text-primary': '#EEE4D0', '--text-secondary': '#A09070', '--text-muted': '#605848',
+        '--accent': '#C8A050', '--accent-glow': 'rgba(200,160,80,0.15)',
+        '--accent-border-hover': 'rgba(200,160,80,0.25)', '--accent-surface': 'rgba(200,160,80,0.08)',
+        '--border': 'rgba(200,160,80,0.07)', '--color-error': '#E87A5D',
+      },
+      izzet: {
+        '--bg': '#040008', '--bg-elevated': '#08000E', '--bg-card': '#10001E',
+        '--text-primary': '#D5C8F8', '--text-secondary': '#8068C0', '--text-muted': '#483080',
+        '--accent': '#7038E0', '--accent-glow': 'rgba(112,56,224,0.15)',
+        '--accent-border-hover': 'rgba(112,56,224,0.25)', '--accent-surface': 'rgba(112,56,224,0.08)',
+        '--border': 'rgba(112,56,224,0.08)', '--color-error': '#E87A5D',
+      },
+      golgari: {
+        '--bg': '#010402', '--bg-elevated': '#050A04', '--bg-card': '#0A1008',
+        '--text-primary': '#C8E0C0', '--text-secondary': '#6A9060', '--text-muted': '#3A5830',
+        '--accent': '#508840', '--accent-glow': 'rgba(80,136,64,0.15)',
+        '--accent-border-hover': 'rgba(80,136,64,0.25)', '--accent-surface': 'rgba(80,136,64,0.08)',
+        '--border': 'rgba(80,136,64,0.08)', '--color-error': '#E87A5D',
+      },
+      boros: {
+        '--bg': '#060300', '--bg-elevated': '#0E0800', '--bg-card': '#160C00',
+        '--text-primary': '#F8E8D0', '--text-secondary': '#C09860', '--text-muted': '#7A5E30',
+        '--accent': '#E87820', '--accent-glow': 'rgba(232,120,32,0.15)',
+        '--accent-border-hover': 'rgba(232,120,32,0.25)', '--accent-surface': 'rgba(232,120,32,0.08)',
+        '--border': 'rgba(232,120,32,0.08)', '--color-error': '#E87A5D',
+      },
+      simic: {
+        '--bg': '#000806', '--bg-elevated': '#001208', '--bg-card': '#001C10',
+        '--text-primary': '#C8F0E5', '--text-secondary': '#58B898', '--text-muted': '#2A7860',
+        '--accent': '#28C890', '--accent-glow': 'rgba(40,200,144,0.15)',
+        '--accent-border-hover': 'rgba(40,200,144,0.25)', '--accent-surface': 'rgba(40,200,144,0.08)',
+        '--border': 'rgba(40,200,144,0.08)', '--color-error': '#E87A5D',
+      },
+      // Shards (three adjacent colours)
+      bant: {
+        '--bg': '#000804', '--bg-elevated': '#030E08', '--bg-card': '#061508',
+        '--text-primary': '#D8EEE0', '--text-secondary': '#70A888', '--text-muted': '#3A6858',
+        '--accent': '#50A8C0', '--accent-glow': 'rgba(80,168,192,0.15)',
+        '--accent-border-hover': 'rgba(80,168,192,0.25)', '--accent-surface': 'rgba(80,168,192,0.08)',
+        '--border': 'rgba(80,168,192,0.08)', '--color-error': '#E87A5D',
+      },
+      esper: {
+        '--bg': '#020308', '--bg-elevated': '#05060E', '--bg-card': '#090B18',
+        '--text-primary': '#D8DCF0', '--text-secondary': '#7880A8', '--text-muted': '#3A4068',
+        '--accent': '#8890C8', '--accent-glow': 'rgba(136,144,200,0.15)',
+        '--accent-border-hover': 'rgba(136,144,200,0.25)', '--accent-surface': 'rgba(136,144,200,0.08)',
+        '--border': 'rgba(136,144,200,0.08)', '--color-error': '#E87A5D',
+      },
+      grixis: {
+        '--bg': '#050008', '--bg-elevated': '#0A0010', '--bg-card': '#10001A',
+        '--text-primary': '#E8C0D0', '--text-secondary': '#905088', '--text-muted': '#503048',
+        '--accent': '#C02888', '--accent-glow': 'rgba(192,40,136,0.15)',
+        '--accent-border-hover': 'rgba(192,40,136,0.25)', '--accent-surface': 'rgba(192,40,136,0.08)',
+        '--border': 'rgba(192,40,136,0.08)', '--color-error': '#E87A5D',
+      },
+      jund: {
+        '--bg': '#060200', '--bg-elevated': '#0C0600', '--bg-card': '#140A00',
+        '--text-primary': '#EEE0C0', '--text-secondary': '#B08860', '--text-muted': '#6A4830',
+        '--accent': '#B85020', '--accent-glow': 'rgba(184,80,32,0.15)',
+        '--accent-border-hover': 'rgba(184,80,32,0.25)', '--accent-surface': 'rgba(184,80,32,0.08)',
+        '--border': 'rgba(184,80,32,0.08)', '--color-error': '#E87A5D',
+      },
+      naya: {
+        '--bg': '#050400', '--bg-elevated': '#0C0900', '--bg-card': '#141200',
+        '--text-primary': '#F0EACC', '--text-secondary': '#C0A860', '--text-muted': '#806830',
+        '--accent': '#D4A020', '--accent-glow': 'rgba(212,160,32,0.15)',
+        '--accent-border-hover': 'rgba(212,160,32,0.25)', '--accent-surface': 'rgba(212,160,32,0.08)',
+        '--border': 'rgba(212,160,32,0.08)', '--color-error': '#E87A5D',
+      },
+      // Wedges (three non-adjacent colours)
+      abzan: {
+        '--bg': '#040402', '--bg-elevated': '#0A0A06', '--bg-card': '#121008',
+        '--text-primary': '#E4DCC8', '--text-secondary': '#988868', '--text-muted': '#585840',
+        '--accent': '#908858', '--accent-glow': 'rgba(144,136,88,0.15)',
+        '--accent-border-hover': 'rgba(144,136,88,0.25)', '--accent-surface': 'rgba(144,136,88,0.08)',
+        '--border': 'rgba(144,136,88,0.08)', '--color-error': '#E87A5D',
+      },
+      jeskai: {
+        '--bg': '#020308', '--bg-elevated': '#05070E', '--bg-card': '#08091A',
+        '--text-primary': '#D8E0F8', '--text-secondary': '#8090C8', '--text-muted': '#404880',
+        '--accent': '#5878F0', '--accent-glow': 'rgba(88,120,240,0.15)',
+        '--accent-border-hover': 'rgba(88,120,240,0.25)', '--accent-surface': 'rgba(88,120,240,0.08)',
+        '--border': 'rgba(88,120,240,0.08)', '--color-error': '#E87A5D',
+      },
+      sultai: {
+        '--bg': '#000806', '--bg-elevated': '#020E0A', '--bg-card': '#041610',
+        '--text-primary': '#C0D8CC', '--text-secondary': '#508878', '--text-muted': '#285848',
+        '--accent': '#389880', '--accent-glow': 'rgba(56,152,128,0.15)',
+        '--accent-border-hover': 'rgba(56,152,128,0.25)', '--accent-surface': 'rgba(56,152,128,0.08)',
+        '--border': 'rgba(56,152,128,0.08)', '--color-error': '#E87A5D',
+      },
+      mardu: {
+        '--bg': '#070200', '--bg-elevated': '#0E0500', '--bg-card': '#160800',
+        '--text-primary': '#F0D8C8', '--text-secondary': '#B87858', '--text-muted': '#704838',
+        '--accent': '#D03020', '--accent-glow': 'rgba(208,48,32,0.15)',
+        '--accent-border-hover': 'rgba(208,48,32,0.25)', '--accent-surface': 'rgba(208,48,32,0.08)',
+        '--border': 'rgba(208,48,32,0.08)', '--color-error': '#E87A5D',
+      },
+      temur: {
+        '--bg': '#000804', '--bg-elevated': '#020E08', '--bg-card': '#041808',
+        '--text-primary': '#D0ECD8', '--text-secondary': '#68A880', '--text-muted': '#2A6840',
+        '--accent': '#38B868', '--accent-glow': 'rgba(56,184,104,0.15)',
+        '--accent-border-hover': 'rgba(56,184,104,0.25)', '--accent-surface': 'rgba(56,184,104,0.08)',
+        '--border': 'rgba(56,184,104,0.08)', '--color-error': '#E87A5D',
+      },
+    };
+
+    function applyTheme(id) {
+      const t = THEMES[id] || THEMES.colorless;
+      const root = document.documentElement;
+      Object.entries(t).forEach(([k, v]) => root.style.setProperty(k, v));
+      document.querySelectorAll('.theme-select').forEach(s => { s.value = id; });
+      if (currentCode) renderCode(currentCode);
+      document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = t['--bg'] || '#000000'; });
+      localStorage.setItem('edhTheme', id);
+    }
+
+    applyTheme(localStorage.getItem('edhTheme') || 'colorless');
+
+    document.addEventListener('change', e => {
+      if (e.target.classList.contains('theme-select')) applyTheme(e.target.value);
+    });
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
     const viewConnect  = document.getElementById('view-connect');
@@ -2061,12 +2387,15 @@
       elQr.innerHTML = '';
       const canvas = document.createElement('canvas');
       elQr.appendChild(canvas);
+      const style = getComputedStyle(document.documentElement);
+      const qrBg = style.getPropertyValue('--bg').trim() || '#000000';
+      const qrFg = style.getPropertyValue('--text-primary').trim() || '#E8E6E3';
       new QRious({
         element:    canvas,
         value:      url,
         size:       128,
-        background: '#000000',
-        foreground: '#E8E6E3',
+        background: qrBg,
+        foreground: qrFg,
         level:      'M',
       });
     }

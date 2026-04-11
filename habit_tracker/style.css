@@ -192,7 +192,7 @@
 }
 
 .table-scroll {
-  overflow-x: auto;
+  overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -218,6 +218,13 @@ col.col-sleep  { width: 9rem; }
 /* ---- Header row -------------------------------------------- */
 thead tr {
   border-bottom: 1px solid var(--border);
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
 }
 
 th {

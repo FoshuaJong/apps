@@ -164,6 +164,17 @@ function applyMobileColWidths() {
   });
 }
 
+// ---- Table scroll height -----------------------------------
+// Makes .table-scroll fill the remaining viewport so the sticky
+// thead works (position:sticky requires a constrained scroll container).
+function setTableScrollHeight() {
+  const el = document.querySelector('.table-scroll');
+  if (!el) return;
+  el.style.height = '';
+  const top = el.getBoundingClientRect().top + window.scrollY;
+  el.style.height = `calc(100dvh - ${top}px)`;
+}
+
 // ---- Render ------------------------------------------------
 function render() {
   const md = ensureMonth(viewYear, viewMonth);
@@ -172,7 +183,7 @@ function render() {
   applyMobileColWidths();
   buildThead(md);
   buildTbody(md);
-  requestAnimationFrame(() => drawSleepGraph(md));
+  requestAnimationFrame(() => { drawSleepGraph(md); setTableScrollHeight(); });
 }
 
 function renderHeading() {
@@ -784,12 +795,13 @@ function setupEvents() {
     else if (dx > 0 && idx > 0) setMobileTab(SWIPE_TABS[idx - 1]);
   }, { passive: true });
 
-  // Resize: redraw sleep graph
+  // Resize: redraw sleep graph and recalculate scroll container height
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
       drawSleepGraph(ensureMonth(viewYear, viewMonth));
+      setTableScrollHeight();
     }, 150);
   });
 }

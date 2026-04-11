@@ -1,9 +1,16 @@
 {
-  "name": "apps-worker",
-  "version": "1.0.0",
+  "name": "apps",
   "private": true,
-  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
   "dependencies": {
     "hono": "^4.7.11"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260411.1",
+    "wrangler": "^4.81.1"
   }
 }

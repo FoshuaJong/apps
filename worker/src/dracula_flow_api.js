@@ -1,53 +1,50 @@
+import { Hono } from 'hono';
 import verses from './verses.json';
 
-function json(data) {
+export const draculaApp = new Hono();
+
+draculaApp.get('/random', (c) => {
+  const v = verses[Math.floor(Math.random() * verses.length)];
+  return new Response(JSON.stringify(v, null, 2), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+});
+
+draculaApp.get('/search', (c) => {
+  const q = (c.req.query('q') || '').toLowerCase();
+  const results = verses.filter(v => v.text.toLowerCase().includes(q));
+  return new Response(JSON.stringify(results.slice(0, 20), null, 2), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+});
+
+draculaApp.get('/daily', (c) => {
+  const day = Math.floor(Date.now() / 86400000);
+  const v = verses[day % verses.length];
+  return new Response(JSON.stringify(v, null, 2), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+});
+
+draculaApp.get('/verse/:id', (c) => {
+  const id = parseInt(c.req.param('id'));
+  const v = verses.find(v => v.id === id);
+  const data = v ?? { error: 'Not found' };
   return new Response(JSON.stringify(data, null, 2), {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
-    }
+    headers: { 'Content-Type': 'application/json' },
   });
-}
+});
 
-export async function handleDraculaApiRequest(request, env) {
-  const url = new URL(request.url);
-  const path = url.pathname;
-
-  // 🔀 RANDOM
-  if (path === "/random") {
-    const v = verses[Math.floor(Math.random() * verses.length)];
-    return json(v);
-  }
-
-  // 🔎 SEARCH
-  if (path === "/search") {
-    const q = (url.searchParams.get("q") || "").toLowerCase();
-
-    const results = verses.filter(v =>
-      v.text.toLowerCase().includes(q)
-    );
-
-    return json(results.slice(0, 20));
-  }
-
-  // 📅 DAILY (deterministic)
-  if (path === "/daily") {
-    const day = Math.floor(Date.now() / 86400000);
-    const v = verses[day % verses.length];
-    return json(v);
-  }
-
-  // 🆔 GET BY ID
-  if (path.startsWith("/verse/")) {
-    const id = parseInt(path.split("/")[2]);
-    const v = verses.find(v => v.id === id);
-
-    return v ? json(v) : json({ error: "Not found" });
-  }
-
-  // 🧪 ROOT
-  return json({
-    message: "Dracula Flow API 🧛",
-    endpoints: ["/random", "/search?q=", "/daily", "/verse/:id"]
-  });
-};
+draculaApp.get('/', (c) => {
+  return new Response(
+    JSON.stringify(
+      {
+        message: 'Dracula Flow API 🧛',
+        endpoints: ['/random', '/search?q=', '/daily', '/verse/:id'],
+      },
+      null,
+      2
+    ),
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+});

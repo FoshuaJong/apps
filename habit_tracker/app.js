@@ -149,9 +149,18 @@ function applyMobileColWidths() {
     habits: ['g-day', 'g-habit'],
     sleep:  ['g-day', 'g-sleep'],
   };
+  // Content columns that should flex to fill remaining width
+  const FLEX = { notes: 'col-text', habits: 'col-habit', sleep: 'col-sleep' };
   const show = SHOW[tab] || SHOW.notes;
+  const flex = FLEX[tab] || 'col-text';
   document.querySelectorAll('#table-colgroup col').forEach(col => {
-    col.style.width = show.some(g => col.classList.contains(g)) ? '' : '0';
+    if (!show.some(g => col.classList.contains(g))) {
+      col.style.width = '0';
+    } else if (col.classList.contains(flex)) {
+      col.style.width = 'auto';
+    } else {
+      col.style.width = '';
+    }
   });
 }
 

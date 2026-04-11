@@ -1,36 +1,17 @@
-const JSON_HEADERS = { 'Content-Type': 'application/json' };
+import { Hono } from 'hono';
 
-export async function handleCpsatApiRequest(request, env) {
-  const url = new URL(request.url);
-  const path = url.pathname;
+export const cpsatApp = new Hono();
 
-  if (path === '/cpsat/api/v1/health' && request.method === 'GET') {
-    return handleHealth();
-  }
+cpsatApp.get('/api/v1/health', (c) => {
+  return c.json({ ok: true });
+});
 
-  if (path === '/cpsat/api/v1/solve' && request.method === 'POST') {
-    return handleSolve(request);
-  }
-
-  return new Response(JSON.stringify({ error: 'Not found' }), {
-    status: 404,
-    headers: JSON_HEADERS,
-  });
-}
-
-function handleHealth() {
-  return new Response(JSON.stringify({ ok: true }), { headers: JSON_HEADERS });
-}
-
-async function handleSolve(request) {
+cpsatApp.post('/api/v1/solve', async (c) => {
   let body;
   try {
-    body = await request.json();
+    body = await c.req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
-      status: 400,
-      headers: JSON_HEADERS,
-    });
+    return c.json({ error: 'Invalid JSON' }, 400);
   }
 
   if (
@@ -39,9 +20,9 @@ async function handleSolve(request) {
     !Array.isArray(body.assets) ||
     body.assets.length === 0
   ) {
-    return new Response(
-      JSON.stringify({ error: 'Missing required fields: horizon_days (number), assets (array)' }),
-      { status: 422, headers: JSON_HEADERS }
+    return c.json(
+      { error: 'Missing required fields: horizon_days (number), assets (array)' },
+      422
     );
   }
 
@@ -57,7 +38,7 @@ async function handleSolve(request) {
     color: colors[i % colors.length],
   }));
 
-  const response = {
+  return c.json({
     job_id: jobId,
     status: 'SUCCEEDED',
     solution: {
@@ -65,7 +46,5 @@ async function handleSolve(request) {
       items,
       relationships: Array.isArray(body.relationships) ? body.relationships : [],
     },
-  };
-
-  return new Response(JSON.stringify(response), { headers: JSON_HEADERS });
-}
+  });
+});

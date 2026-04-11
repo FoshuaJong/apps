@@ -1,10 +1,4 @@
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-const JSON_HEADERS = { 'Content-Type': 'application/json', ...CORS };
+import { Hono } from 'hono';
 
 const SYSTEM_PROMPT = `You are a LinkedIn Thought Leader ghostwriter. Rewrite the user's input in maximum LinkedIn style — short punchy lines, dramatic spacing, humblebrags disguised as vulnerability, vague universal lessons, and contrived metaphors. Every mundane event becomes a life-changing leadership revelation.
 
@@ -21,56 +15,48 @@ comments: An array of exactly 3 objects, each with keys: name, title, comment. E
 Example output shape (values are illustrative only):
 {"headline":"...","post_body":"I almost quit.\\n\\nBut then something shifted...\\n\\nThe lesson? Discomfort is just growth in disguise.","reaction_name":"Priya Nair","comments":[{"name":"Marcus Webb","title":"Growth Lead | ex-Uber | Building in Public","comment":"This resonates deeply. 🙌"},{"name":"Fatima Al-Hassan","title":"2x Founder | Advisor | LinkedIn Top Voice 2024","comment":"Needed this today. The lesson is everything."},{"name":"Daniel Park","title":"Senior Strategy Lead | Change Maker","comment":"The metaphor here is spot on. Real leadership is uncomfortable."}]}`;
 
+export const linkedinApp = new Hono();
 
-export async function handleLinkedinApiRequest(request, env) {
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: CORS });
-  }
-
-  const url = new URL(request.url);
-  if (url.pathname !== '/linkedin/api/generate' || request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: JSON_HEADERS });
-  }
-
+linkedinApp.post('/api/generate', async (c) => {
   // 1. Rate limit
-  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
-  const { success: withinLimit } = await env.LIMITER.limit({ key: ip });
+  const ip = c.req.header('CF-Connecting-IP') ?? 'unknown';
+  const { success: withinLimit } = await c.env.LIMITER.limit({ key: ip });
   if (!withinLimit) {
-    return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429, headers: JSON_HEADERS });
+    return c.json({ error: 'Rate limit exceeded' }, 429);
   }
 
   // 2. Parse + validate body
-  if (request.headers.get('content-length') && Number(request.headers.get('content-length')) > 8192) {
-    return new Response(JSON.stringify({ error: 'Request too large' }), { status: 413, headers: JSON_HEADERS });
+  if (c.req.header('content-length') && Number(c.req.header('content-length')) > 8192) {
+    return c.json({ error: 'Request too large' }, 413);
   }
 
   let body;
   try {
-    body = await request.json();
+    body = await c.req.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400, headers: JSON_HEADERS });
+    return c.json({ error: 'Invalid JSON' }, 400);
   }
 
   const { name: rawName, text: rawText, cfToken } = body ?? {};
   const name = typeof rawName === 'string' ? rawName.trim() : '';
   const text = typeof rawText === 'string' ? rawText.trim() : '';
   if (!name || !text || !cfToken) {
-    return new Response(
-      JSON.stringify({ error: 'Missing required fields: name, text, cfToken' }),
-      { status: 400, headers: JSON_HEADERS }
+    return c.json(
+      { error: 'Missing required fields: name, text, cfToken' },
+      400
     );
   }
 
   if (name.length > 100 || text.length > 2000) {
-    return new Response(
-      JSON.stringify({ error: 'Input too long: name max 100 chars, text max 2000 chars' }),
-      { status: 400, headers: JSON_HEADERS }
+    return c.json(
+      { error: 'Input too long: name max 100 chars, text max 2000 chars' },
+      400
     );
   }
 
   // 3. Turnstile verify
   const tsForm = new FormData();
-  tsForm.append('secret', env.TURNSTILE_SECRET_KEY);
+  tsForm.append('secret', c.env.TURNSTILE_SECRET_KEY);
   tsForm.append('response', cfToken);
   tsForm.append('remoteip', ip);
 
@@ -82,10 +68,10 @@ export async function handleLinkedinApiRequest(request, env) {
     });
     tsData = await tsRes.json();
   } catch {
-    return new Response(JSON.stringify({ error: 'Verification service unavailable' }), { status: 503, headers: JSON_HEADERS });
+    return c.json({ error: 'Verification service unavailable' }, 503);
   }
   if (!tsData.success) {
-    return new Response(JSON.stringify({ error: 'Turnstile verification failed' }), { status: 403, headers: JSON_HEADERS });
+    return c.json({ error: 'Turnstile verification failed' }, 403);
   }
 
   // 4. Gemini structured output
@@ -95,7 +81,7 @@ export async function handleLinkedinApiRequest(request, env) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': env.GEMINI_API_KEY,
+        'x-goog-api-key': c.env.GEMINI_API_KEY,
       },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -110,21 +96,21 @@ export async function handleLinkedinApiRequest(request, env) {
   if (!geminiRes.ok) {
     const errText = await geminiRes.text();
     console.error('Gemini error:', geminiRes.status, errText);
-    return new Response(JSON.stringify({ error: 'Gemini API error' }), { status: 500, headers: JSON_HEADERS });
+    return c.json({ error: 'Gemini API error' }, 500);
   }
 
   const geminiData = await geminiRes.json();
   const raw = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!raw) {
-    return new Response(JSON.stringify({ error: 'Empty response from Gemini' }), { status: 500, headers: JSON_HEADERS });
+    return c.json({ error: 'Empty response from Gemini' }, 500);
   }
 
   let result;
   try {
     result = JSON.parse(raw);
   } catch {
-    return new Response(JSON.stringify({ error: 'Failed to parse Gemini response' }), { status: 500, headers: JSON_HEADERS });
+    return c.json({ error: 'Failed to parse Gemini response' }, 500);
   }
 
-  return new Response(JSON.stringify(result), { headers: JSON_HEADERS });
-}
+  return c.json(result);
+});

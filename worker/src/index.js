@@ -1,35 +1,30 @@
-import { handleCpsatApiRequest } from './cpsat_api.js';
-import { handleGlobeApiRequest } from './globe_api.js';
-import { handleEdhApiRequest, EDHClock } from './edh_api.js';
-import { handleLinkedinApiRequest } from './linkedin_api.js';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { cpsatApp } from './cpsat_api.js';
+import { globeApp } from './globe_api.js';
+import { edhApp } from './edh_api.js';
+import { linkedinApp } from './linkedin_api.js';
+import { draculaApp } from './dracula_flow_api.js';
 import { handleStaticRequest } from './static_proxy.js';
-import { handleDraculaApiRequest } from './dracula_flow_api.js';
 
 // Named export required by Wrangler for Durable Object class resolution
-export { EDHClock };
+export { EDHClock } from './edh_api.js';
 
-export async function handleRequest(request, env, ctx) {
-  const url = new URL(request.url);
-  if (url.pathname.startsWith('/cpsat/api/')) {
-    return handleCpsatApiRequest(request, env);
-  }
-  if (url.pathname.startsWith('/globe/api/')) {
-    return handleGlobeApiRequest(request, env);
-  }
-  if (url.pathname.startsWith('/edh/')) {
-    return handleEdhApiRequest(request, env);
-  }
-  if (url.pathname.startsWith('/linkedin/api/')) {
-    return handleLinkedinApiRequest(request, env);
-  }
-  if (url.pathname.startsWith('/dracula/api/')) {
-    return handleDraculaApiRequest(request, env);
-  }
-  return handleStaticRequest(request, env, ctx);
-}
+const app = new Hono();
 
-export default {
-  async fetch(request, env, ctx) {
-    return handleRequest(request, env, ctx);
-  },
-};
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type'],
+}));
+
+app.route('/cpsat', cpsatApp);
+app.route('/globe', globeApp);
+app.route('/edh', edhApp);
+app.route('/linkedin', linkedinApp);
+app.route('/dracula/api', draculaApp);
+
+// Fallback: serve static assets for all non-API paths
+app.all('*', (c) => handleStaticRequest(c.req.raw, c.env, c.executionCtx));
+
+export default app;

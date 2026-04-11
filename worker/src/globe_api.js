@@ -1,8 +1,4 @@
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+import { Hono } from 'hono';
 
 // Sort connections and custom cities so that identical logical states always
 // produce the same canonical JSON string, regardless of insertion order.
@@ -43,47 +39,37 @@ async function contentId(canonical) {
   return b64url.slice(0, 10);
 }
 
-export async function handleGlobeApiRequest(request, env) {
-  const url = new URL(request.url);
+export const globeApp = new Hono();
 
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { headers: CORS });
+globeApp.post('/api/save', async (c) => {
+  const body = await c.req.text();
+
+  let state;
+  try {
+    state = JSON.parse(body);
+  } catch {
+    return c.text('Bad JSON', 400);
   }
 
-  if (request.method === 'POST' && url.pathname === '/globe/api/save') {
-    const body = await request.text();
+  if (body.length > 65536) return c.text('State too large', 413);
 
-    let state;
-    try {
-      state = JSON.parse(body);
-    } catch {
-      return new Response('Bad JSON', { status: 400 });
-    }
+  const normalized = normalize(state);
+  const canonical = JSON.stringify(normalized);
+  const id = await contentId(canonical);
 
-    if (body.length > 65536) return new Response('State too large', { status: 413 });
-
-    const normalized = normalize(state);
-    const canonical = JSON.stringify(normalized);
-    const id = await contentId(canonical);
-
-    // Content-addressable: only write if this ID isn't already stored.
-    const existing = await env.GLOBE_LINKS.get(id);
-    if (!existing) {
-      await env.GLOBE_LINKS.put(id, canonical);
-    }
-
-    return new Response(JSON.stringify({ id }), {
-      headers: { 'Content-Type': 'application/json', ...CORS },
-    });
+  // Content-addressable: only write if this ID isn't already stored.
+  const existing = await c.env.GLOBE_LINKS.get(id);
+  if (!existing) {
+    await c.env.GLOBE_LINKS.put(id, canonical);
   }
 
-  if (request.method === 'GET' && url.pathname === '/globe/api/load') {
-    const id = url.searchParams.get('id');
-    if (!id) return new Response('Missing id', { status: 400 });
-    const data = await env.GLOBE_LINKS.get(id);
-    if (!data) return new Response('Not found', { status: 404 });
-    return new Response(data, { headers: { 'Content-Type': 'application/json', ...CORS } });
-  }
+  return c.json({ id });
+});
 
-  return new Response('Not found', { status: 404 });
-}
+globeApp.get('/api/load', async (c) => {
+  const id = c.req.query('id');
+  if (!id) return c.text('Missing id', 400);
+  const data = await c.env.GLOBE_LINKS.get(id);
+  if (!data) return c.text('Not found', 404);
+  return c.body(data, 200, { 'Content-Type': 'application/json' });
+});

@@ -8,11 +8,7 @@
 //   Uses the Hibernatable WebSocket API so the DO sleeps between messages.
 //   All game state is persisted to DO storage so cold-starts are seamless.
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
+import { Hono } from 'hono';
 
 // Base-30 alphabet — no ambiguous chars (0/O, 1/I)
 const B30 = '23456789ABCDEFGHJKLMNPQRSTUVWX';
@@ -36,34 +32,24 @@ function nextAlive(players, fromIndex) {
   return -1;
 }
 
-// ─── Request router ────────────────────────────────────────────────────────────
+// ─── Hono sub-app ─────────────────────────────────────────────────────────────
 
-export async function handleEdhApiRequest(request, env) {
-  const url = new URL(request.url);
+export const edhApp = new Hono();
 
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS });
-  }
+// GET /edh/new — create a new room
+edhApp.get('/new', (c) => {
+  const code = generateCode();
+  return c.json({ code });
+});
 
-  // GET /edh/new — create a new room
-  if (request.method === 'GET' && url.pathname === '/edh/new') {
-    const code = generateCode();
-    return new Response(JSON.stringify({ code }), {
-      headers: { 'Content-Type': 'application/json', ...CORS },
-    });
-  }
-
-  // WS /edh/game/:CODE — join a room via WebSocket
-  const wsMatch = url.pathname.match(/^\/edh\/game\/([A-Z2-9]{5})$/);
-  if (wsMatch) {
-    const code = wsMatch[1];
-    const id = env.EDH_CLOCK.idFromName(code);
-    const stub = env.EDH_CLOCK.get(id);
-    return stub.fetch(request);
-  }
-
-  return new Response('Not found', { status: 404, headers: CORS });
-}
+// WS /edh/game/:CODE — join a room via WebSocket
+edhApp.get('/game/:CODE', async (c) => {
+  const code = c.req.param('CODE');
+  if (!/^[A-Z2-9]{5}$/.test(code)) return c.notFound();
+  const id = c.env.EDH_CLOCK.idFromName(code);
+  const stub = c.env.EDH_CLOCK.get(id);
+  return stub.fetch(c.req.raw);
+});
 
 // ─── Durable Object ────────────────────────────────────────────────────────────
 

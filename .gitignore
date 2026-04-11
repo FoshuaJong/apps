@@ -2,6 +2,9 @@ CLAUDE.md
 .claude/
 .mcp.json
 
+# dependencies
+node_modules/
+
 # wrangler files
 .wrangler
 .dev.vars*

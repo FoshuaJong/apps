@@ -1,0 +1,13 @@
+{
+  "name": "apps",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260411.1",
+    "wrangler": "^4.81.1"
+  }
+}

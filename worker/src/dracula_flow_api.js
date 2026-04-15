@@ -11,7 +11,8 @@ function json(data) {
 
 export async function handleDraculaApiRequest(request, env) {
   const url = new URL(request.url);
-  const path = url.pathname;
+  // Strip the /dracula/api mount prefix so the route table below stays clean.
+  const path = url.pathname.replace(/^\/dracula\/api/, "") || "/";
 
   // 🔀 RANDOM
   if (path === "/random") {

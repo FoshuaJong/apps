@@ -1,64 +1,71 @@
-
-<style>
-:root{
-  --tp:#1a1a1a;--ts:#666;--tt:#999;
-  --bp:#ffffff;--bs:#f5f4f1;
-  --bt:rgba(0,0,0,.12);--bsec:rgba(0,0,0,.22);
-  --rm:8px;--rl:12px;
-  --fn:system-ui,-apple-system,sans-serif;
-}
-@media(prefers-color-scheme:dark){:root{
-  --tp:#f0ece4;--ts:#a0998e;--tt:#6a6460;
-  --bp:#1e1c1a;--bs:#2a2826;
-  --bt:rgba(255,255,255,.1);--bsec:rgba(255,255,255,.2);
-}}
-*{box-sizing:border-box;margin:0;padding:0}
-.app{padding:.5rem 0;font-family:var(--fn);color:var(--tp);background:var(--bp)}
-.hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:.6rem;border-bottom:.5px solid var(--bt);margin-bottom:.65rem}
-.hdr-title{font-size:15px;font-weight:500;color:var(--tp)}
-.statrow{display:flex;gap:16px;font-size:12px;color:var(--ts);flex-wrap:wrap}
-.sv{font-weight:500;color:var(--tp)}
-.sk{font-weight:500;color:#D85A30}
-.ctrls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:.65rem;font-size:12px;color:var(--ts)}
-.seg-g{display:flex;border:.5px solid var(--bsec);border-radius:6px;overflow:hidden}
-.seg{padding:3px 10px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;border:none;color:var(--ts);border-right:.5px solid var(--bsec);transition:.12s;white-space:nowrap}
-.seg:last-child{border-right:none}
-.seg.on{background:var(--tp);color:var(--bp)}
-.seg:not(.on):hover{background:var(--bs)}
-.abtn{padding:4px 13px;border:.5px solid var(--bsec);border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;color:var(--tp);transition:.12s}
-.abtn:hover{background:var(--bs)}
-.abtn.go{background:var(--tp);color:var(--bp);border-color:var(--tp)}
-.abtn.go:hover{opacity:.85}
-.tracks{display:grid;gap:7px;margin-bottom:.7rem}
-.tbox{border:.5px solid var(--bt);border-radius:var(--rm);padding:7px 9px;background:var(--bs);transition:border-color .25s,background .25s}
-.tbox.ik{border-color:#D85A30;background:rgba(216,90,48,.07)}
-.ttop{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
-.rpills{display:flex;gap:3px}
-.rp{font-size:10px;padding:1px 5px;border-radius:100px;border:.5px solid var(--bt);color:var(--tt);transition:.18s}
-.rp.cur{background:#185FA5;border-color:#185FA5;color:#E6F1FB}
-.rp.past{background:rgba(29,158,117,.12);border-color:rgba(29,158,117,.3);color:#1D9E75}
-.tscore{font-size:13px;font-weight:500}
-.darea{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
-.die{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);border-radius:5px;border:1.5px solid var(--bsec);background:var(--bp);flex-shrink:0;transition:border-color .12s,background .12s,opacity .2s}
-.die.lg{width:34px;height:34px;padding:3.5px;gap:1.5px}
-.die.md{width:27px;height:27px;padding:2.5px;gap:1px}
-.die.sm{width:22px;height:22px;padding:2px;gap:1px}
-.die.rolling{border-color:#EF9F27;background:rgba(239,159,39,.09);animation:dshk .1s infinite alternate}
-.die.ok{border-color:#1D9E75;background:rgba(29,158,117,.1)}
-.die.ik2{border-color:#D85A30;background:rgba(216,90,48,.11)}
-.die.dead{opacity:.15;border-color:var(--bt)}
-.pip{border-radius:50%;width:100%;height:100%}
-.pip.v{background:var(--tp)}
-.pip.x{background:transparent}
-.die.rolling .pip.v{background:#EF9F27}
-.die.ok .pip.v{background:#1D9E75}
-.die.ik2 .pip.v{background:#D85A30}
-@keyframes dshk{from{transform:rotate(-9deg) scale(1.08)}to{transform:rotate(9deg) scale(.93)}}
-@keyframes dpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-.die.pop{animation:dpop .18s ease-out}
-.legend{display:flex;gap:12px;font-size:11px;color:var(--ts);margin-bottom:4px;flex-wrap:wrap}
-.lsw{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle}
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>d6 Cascade Simulator</title>
+    <style>
+    :root{
+      --tp:#1a1a1a;--ts:#666;--tt:#999;
+      --bp:#ffffff;--bs:#f5f4f1;
+      --bt:rgba(0,0,0,.12);--bsec:rgba(0,0,0,.22);
+      --rm:8px;--rl:12px;
+      --fn:system-ui,-apple-system,sans-serif;
+    }
+    @media(prefers-color-scheme:dark){:root{
+      --tp:#f0ece4;--ts:#a0998e;--tt:#6a6460;
+      --bp:#1e1c1a;--bs:#2a2826;
+      --bt:rgba(255,255,255,.1);--bsec:rgba(255,255,255,.2);
+    }}
+    *{box-sizing:border-box;margin:0;padding:0}
+    .app{padding:.5rem 0;font-family:var(--fn);color:var(--tp);background:var(--bp)}
+    .hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:.6rem;border-bottom:.5px solid var(--bt);margin-bottom:.65rem}
+    .hdr-title{font-size:15px;font-weight:500;color:var(--tp)}
+    .statrow{display:flex;gap:16px;font-size:12px;color:var(--ts);flex-wrap:wrap}
+    .sv{font-weight:500;color:var(--tp)}
+    .sk{font-weight:500;color:#D85A30}
+    .ctrls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:.65rem;font-size:12px;color:var(--ts)}
+    .seg-g{display:flex;border:.5px solid var(--bsec);border-radius:6px;overflow:hidden}
+    .seg{padding:3px 10px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;border:none;color:var(--ts);border-right:.5px solid var(--bsec);transition:.12s;white-space:nowrap}
+    .seg:last-child{border-right:none}
+    .seg.on{background:var(--tp);color:var(--bp)}
+    .seg:not(.on):hover{background:var(--bs)}
+    .abtn{padding:4px 13px;border:.5px solid var(--bsec);border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;color:var(--tp);transition:.12s}
+    .abtn:hover{background:var(--bs)}
+    .abtn.go{background:var(--tp);color:var(--bp);border-color:var(--tp)}
+    .abtn.go:hover{opacity:.85}
+    .tracks{display:grid;gap:7px;margin-bottom:.7rem}
+    .tbox{border:.5px solid var(--bt);border-radius:var(--rm);padding:7px 9px;background:var(--bs);transition:border-color .25s,background .25s}
+    .tbox.ik{border-color:#D85A30;background:rgba(216,90,48,.07)}
+    .ttop{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+    .rpills{display:flex;gap:3px}
+    .rp{font-size:10px;padding:1px 5px;border-radius:100px;border:.5px solid var(--bt);color:var(--tt);transition:.18s}
+    .rp.cur{background:#185FA5;border-color:#185FA5;color:#E6F1FB}
+    .rp.past{background:rgba(29,158,117,.12);border-color:rgba(29,158,117,.3);color:#1D9E75}
+    .tscore{font-size:13px;font-weight:500}
+    .darea{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+    .die{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);border-radius:5px;border:1.5px solid var(--bsec);background:var(--bp);flex-shrink:0;transition:border-color .12s,background .12s,opacity .2s}
+    .die.lg{width:34px;height:34px;padding:3.5px;gap:1.5px}
+    .die.md{width:27px;height:27px;padding:2.5px;gap:1px}
+    .die.sm{width:22px;height:22px;padding:2px;gap:1px}
+    .die.rolling{border-color:#EF9F27;background:rgba(239,159,39,.09);animation:dshk .1s infinite alternate}
+    .die.ok{border-color:#1D9E75;background:rgba(29,158,117,.1)}
+    .die.ik2{border-color:#D85A30;background:rgba(216,90,48,.11)}
+    .die.dead{opacity:.15;border-color:var(--bt)}
+    .pip{border-radius:50%;width:100%;height:100%}
+    .pip.v{background:var(--tp)}
+    .pip.x{background:transparent}
+    .die.rolling .pip.v{background:#EF9F27}
+    .die.ok .pip.v{background:#1D9E75}
+    .die.ik2 .pip.v{background:#D85A30}
+    @keyframes dshk{from{transform:rotate(-9deg) scale(1.08)}to{transform:rotate(9deg) scale(.93)}}
+    @keyframes dpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+    .die.pop{animation:dpop .18s ease-out}
+    .legend{display:flex;gap:12px;font-size:11px;color:var(--ts);margin-bottom:4px;flex-wrap:wrap}
+    .lsw{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle}
+    </style>
+</head>
+<body>
 
 <div class="app">
 <h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Live d6 cascade dice simulator with animated rolling, parallel tracks and histogram</h2>
@@ -67,9 +74,9 @@
   <span class="hdr-title">d6 cascade simulator</span>
   <div class="statrow">
     <span>sims <span class="sv" id="sc">0</span></span>
-    <span>mean <span class="sv" id="sm">—</span></span>
-    <span>instakill <span class="sk" id="sk">—</span></span>
-    <span style="color:var(--tt)">8+ = insta-kill · threshold ↓ each round</span>
+    <span>mean <span class="sv" id="sm">&mdash;</span></span>
+    <span>instakill <span class="sk" id="sk">&mdash;</span></span>
+    <span style="color:var(--tt)">8+ = insta-kill &middot; threshold &darr; each round</span>
   </div>
 </div>
 
@@ -95,8 +102,8 @@
     <button class="seg" data-v="256">256</button>
   </div>
   <div style="display:flex;gap:6px;margin-left:auto">
-    <button class="abtn go" id="bgo">▶ start</button>
-    <button class="abtn" id="brst">↺ reset</button>
+    <button class="abtn go" id="bgo">&#9654; start</button>
+    <button class="abtn" id="brst">&#8634; reset</button>
   </div>
 </div>
 
@@ -130,7 +137,7 @@ function record(pts){counts[Math.min(pts,MAXD)]++;totalSims++;}
 
 function refreshStats(){
   document.getElementById('sc').textContent=totalSims.toLocaleString();
-  if(!totalSims){document.getElementById('sm').textContent='—';document.getElementById('sk').textContent='—';return;}
+  if(!totalSims){document.getElementById('sm').textContent='\u2014';document.getElementById('sk').textContent='\u2014';return;}
   let sum=0,kills=0;
   for(let i=0;i<=MAXD;i++){sum+=i*counts[i];if(i>=8)kills+=counts[i];}
   document.getElementById('sm').textContent=(sum/totalSims).toFixed(2);
@@ -180,10 +187,10 @@ function drawTrack(idx){
     else if(i===t.round)c+=' cur';
     return `<span class="${c}">${l}</span>`;
   }).join('');
-  const scoreStr=t.phase==='idle'?'&nbsp;':t.points>=8?`<span style="color:#D85A30">⚡ ${t.points} pts</span>`:`${t.points} pts`;
+  const scoreStr=t.phase==='idle'?'&nbsp;':t.points>=8?`<span style="color:#D85A30">\u26A1 ${t.points} pts</span>`:`${t.points} pts`;
   const diceHTML=t.pool.length
     ?t.pool.map(d=>{const h=dieHTML(d.v,d.cls,s,d.pop);d.pop=false;return h;}).join('')
-    :`<span style="font-size:11px;color:var(--tt)">${t.phase==='idle'?'ready…':t.phase==='done'?'↳ cascade ended':''}</span>`;
+    :`<span style="font-size:11px;color:var(--tt)">${t.phase==='idle'?'ready\u2026':t.phase==='done'?'\u21B3 cascade ended':''}</span>`;
   el.className='tbox'+(t.points>=8&&t.phase==='done'?' ik':'');
   el.innerHTML=`<div class="ttop"><div class="rpills">${pills}</div><span class="tscore">${scoreStr}</span></div><div class="darea" style="min-height:${minH()}px">${diceHTML}</div>`;
 }
@@ -244,20 +251,20 @@ function doStart(){
   if(running)return;
   running=true;
   const myGen=++gen;
-  document.getElementById('bgo').textContent='⏸ pause';
+  document.getElementById('bgo').innerHTML='\u23F8 pause';
   document.getElementById('bgo').classList.remove('go');
   for(let i=0;i<parallel;i++)runTrack(i,myGen);
 }
 function doPause(){
   running=false;gen++;
-  document.getElementById('bgo').textContent='▶ resume';
+  document.getElementById('bgo').innerHTML='&#9654; resume';
   document.getElementById('bgo').classList.add('go');
 }
 function doReset(){
   running=false;gen++;
   counts.fill(0);totalSims=0;
   refreshChart();
-  document.getElementById('bgo').textContent='▶ start';
+  document.getElementById('bgo').innerHTML='&#9654; start';
   document.getElementById('bgo').classList.add('go');
   initTracksDOM();
 }
@@ -284,3 +291,5 @@ document.getElementById('par').addEventListener('click',e=>{
 initChart();
 initTracksDOM();
 </script>
+</body>
+</html>

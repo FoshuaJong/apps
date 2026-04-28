@@ -1,0 +1,286 @@
+
+<style>
+:root{
+  --tp:#1a1a1a;--ts:#666;--tt:#999;
+  --bp:#ffffff;--bs:#f5f4f1;
+  --bt:rgba(0,0,0,.12);--bsec:rgba(0,0,0,.22);
+  --rm:8px;--rl:12px;
+  --fn:system-ui,-apple-system,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --tp:#f0ece4;--ts:#a0998e;--tt:#6a6460;
+  --bp:#1e1c1a;--bs:#2a2826;
+  --bt:rgba(255,255,255,.1);--bsec:rgba(255,255,255,.2);
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+.app{padding:.5rem 0;font-family:var(--fn);color:var(--tp);background:var(--bp)}
+.hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-bottom:.6rem;border-bottom:.5px solid var(--bt);margin-bottom:.65rem}
+.hdr-title{font-size:15px;font-weight:500;color:var(--tp)}
+.statrow{display:flex;gap:16px;font-size:12px;color:var(--ts);flex-wrap:wrap}
+.sv{font-weight:500;color:var(--tp)}
+.sk{font-weight:500;color:#D85A30}
+.ctrls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:.65rem;font-size:12px;color:var(--ts)}
+.seg-g{display:flex;border:.5px solid var(--bsec);border-radius:6px;overflow:hidden}
+.seg{padding:3px 10px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;border:none;color:var(--ts);border-right:.5px solid var(--bsec);transition:.12s;white-space:nowrap}
+.seg:last-child{border-right:none}
+.seg.on{background:var(--tp);color:var(--bp)}
+.seg:not(.on):hover{background:var(--bs)}
+.abtn{padding:4px 13px;border:.5px solid var(--bsec);border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;background:transparent;color:var(--tp);transition:.12s}
+.abtn:hover{background:var(--bs)}
+.abtn.go{background:var(--tp);color:var(--bp);border-color:var(--tp)}
+.abtn.go:hover{opacity:.85}
+.tracks{display:grid;gap:7px;margin-bottom:.7rem}
+.tbox{border:.5px solid var(--bt);border-radius:var(--rm);padding:7px 9px;background:var(--bs);transition:border-color .25s,background .25s}
+.tbox.ik{border-color:#D85A30;background:rgba(216,90,48,.07)}
+.ttop{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.rpills{display:flex;gap:3px}
+.rp{font-size:10px;padding:1px 5px;border-radius:100px;border:.5px solid var(--bt);color:var(--tt);transition:.18s}
+.rp.cur{background:#185FA5;border-color:#185FA5;color:#E6F1FB}
+.rp.past{background:rgba(29,158,117,.12);border-color:rgba(29,158,117,.3);color:#1D9E75}
+.tscore{font-size:13px;font-weight:500}
+.darea{display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.die{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);border-radius:5px;border:1.5px solid var(--bsec);background:var(--bp);flex-shrink:0;transition:border-color .12s,background .12s,opacity .2s}
+.die.lg{width:34px;height:34px;padding:3.5px;gap:1.5px}
+.die.md{width:27px;height:27px;padding:2.5px;gap:1px}
+.die.sm{width:22px;height:22px;padding:2px;gap:1px}
+.die.rolling{border-color:#EF9F27;background:rgba(239,159,39,.09);animation:dshk .1s infinite alternate}
+.die.ok{border-color:#1D9E75;background:rgba(29,158,117,.1)}
+.die.ik2{border-color:#D85A30;background:rgba(216,90,48,.11)}
+.die.dead{opacity:.15;border-color:var(--bt)}
+.pip{border-radius:50%;width:100%;height:100%}
+.pip.v{background:var(--tp)}
+.pip.x{background:transparent}
+.die.rolling .pip.v{background:#EF9F27}
+.die.ok .pip.v{background:#1D9E75}
+.die.ik2 .pip.v{background:#D85A30}
+@keyframes dshk{from{transform:rotate(-9deg) scale(1.08)}to{transform:rotate(9deg) scale(.93)}}
+@keyframes dpop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.die.pop{animation:dpop .18s ease-out}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--ts);margin-bottom:4px;flex-wrap:wrap}
+.lsw{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle}
+</style>
+
+<div class="app">
+<h2 style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">Live d6 cascade dice simulator with animated rolling, parallel tracks and histogram</h2>
+
+<div class="hdr">
+  <span class="hdr-title">d6 cascade simulator</span>
+  <div class="statrow">
+    <span>sims <span class="sv" id="sc">0</span></span>
+    <span>mean <span class="sv" id="sm">—</span></span>
+    <span>instakill <span class="sk" id="sk">—</span></span>
+    <span style="color:var(--tt)">8+ = insta-kill · threshold ↓ each round</span>
+  </div>
+</div>
+
+<div class="ctrls">
+  <span>speed</span>
+  <div class="seg-g" id="spd">
+    <button class="seg on" data-v="1">1×</button>
+    <button class="seg" data-v="2">2×</button>
+    <button class="seg" data-v="4">4×</button>
+    <button class="seg" data-v="8">8×</button>
+    <button class="seg" data-v="16">16×</button>
+  </div>
+  <span>parallel</span>
+  <div class="seg-g" id="par">
+    <button class="seg on" data-v="1">1</button>
+    <button class="seg" data-v="2">2</button>
+    <button class="seg" data-v="4">4</button>
+    <button class="seg" data-v="8">8</button>
+    <button class="seg" data-v="16">16</button>
+    <button class="seg" data-v="32">32</button>
+    <button class="seg" data-v="64">64</button>
+    <button class="seg" data-v="128">128</button>
+    <button class="seg" data-v="256">256</button>
+  </div>
+  <div style="display:flex;gap:6px;margin-left:auto">
+    <button class="abtn go" id="bgo">▶ start</button>
+    <button class="abtn" id="brst">↺ reset</button>
+  </div>
+</div>
+
+<div class="tracks" id="tw"></div>
+
+<div class="legend">
+  <span><span class="lsw" style="background:rgba(100,100,100,.55)"></span>zero damage</span>
+  <span><span class="lsw" style="background:rgba(55,138,221,.8)"></span>normal damage</span>
+  <span><span class="lsw" style="background:rgba(216,90,48,.8)"></span>instakill (8+ pts)</span>
+</div>
+<div style="position:relative;width:100%;height:195px">
+  <canvas id="hcv" role="img" aria-label="Histogram of necrotic points, updating live.">Histogram updates as simulations run.</canvas>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const PIPS={1:[0,0,0,0,1,0,0,0,0],2:[0,0,1,0,0,0,1,0,0],3:[0,0,1,0,1,0,1,0,0],4:[1,0,1,0,0,0,1,0,1],5:[1,0,1,0,1,0,1,0,1],6:[1,0,1,1,0,1,1,0,1]};
+const RLBLS=['6+','5+','4+','3+','2+'];
+const MAXD=20;
+let counts=new Array(MAXD+1).fill(0);
+let totalSims=0,running=false,gen=0,speed=1,parallel=1;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const r6=()=>Math.floor(Math.random()*6)+1;
+
+function timings(){
+  return{roll:Math.max(60,Math.round(280/speed)),rev:Math.max(100,Math.round(380/speed)),pause:Math.max(80,Math.round(220/speed)),tick:Math.max(25,Math.round(80/Math.sqrt(speed)))};
+}
+
+function record(pts){counts[Math.min(pts,MAXD)]++;totalSims++;}
+
+function refreshStats(){
+  document.getElementById('sc').textContent=totalSims.toLocaleString();
+  if(!totalSims){document.getElementById('sm').textContent='—';document.getElementById('sk').textContent='—';return;}
+  let sum=0,kills=0;
+  for(let i=0;i<=MAXD;i++){sum+=i*counts[i];if(i>=8)kills+=counts[i];}
+  document.getElementById('sm').textContent=(sum/totalSims).toFixed(2);
+  document.getElementById('sk').textContent=(kills/totalSims*100).toFixed(1)+'%';
+}
+
+const clabels=Array.from({length:MAXD+1},(_,i)=>i===MAXD?'20+':String(i));
+const cbg=clabels.map((_,i)=>i>=8?'rgba(216,90,48,.8)':i===0?'rgba(100,100,100,.5)':'rgba(55,138,221,.8)');
+const cborder=clabels.map((_,i)=>i>=8?'#A32D2D':i===0?'#5F5E5A':'#185FA5');
+let chart;
+
+function initChart(){
+  const ctx=document.getElementById('hcv').getContext('2d');
+  chart=new Chart(ctx,{type:'bar',data:{labels:clabels,datasets:[{data:new Array(MAXD+1).fill(0),backgroundColor:cbg,borderColor:cborder,borderWidth:.5}]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`${c[0].label} necrotic pts`,label:c=>{const p=totalSims?(c.raw/totalSims*100).toFixed(2):'0.00';return ` ${c.raw.toLocaleString()} rolls (${p}%)`;},}}},scales:{x:{title:{display:true,text:'necrotic points',font:{size:10},color:'#888780'},ticks:{font:{size:10},autoSkip:false,maxRotation:0},grid:{display:false}},y:{title:{display:true,text:'count',font:{size:10},color:'#888780'},ticks:{font:{size:10}},grid:{color:'rgba(136,135,128,.12)'},beginAtZero:true}}}});
+}
+
+function refreshChart(){chart.data.datasets[0].data=[...counts];chart.update('none');refreshStats();}
+
+let tState=[];
+function sz(){return parallel<=1?'lg':parallel<=2?'md':'sm';}
+function minH(){return parallel<=1?36:parallel<=2?29:23;}
+
+function initTracksDOM(){
+  const w=document.getElementById('tw');
+  w.style.gridTemplateColumns=parallel===1?'1fr':'1fr 1fr';
+  w.innerHTML='';tState=[];
+  for(let i=0;i<parallel;i++){
+    tState.push({round:-1,phase:'idle',pool:[],points:0});
+    const d=document.createElement('div');
+    d.className='tbox';d.id='t'+i;
+    w.appendChild(d);drawTrack(i);
+  }
+}
+
+function dieHTML(v,cls,s,pop){
+  const pips=(PIPS[v]||PIPS[1]).map(p=>`<div class="pip ${p?'v':'x'}"></div>`).join('');
+  return `<div class="die ${s} ${cls}${pop?' pop':''}">${pips}</div>`;
+}
+
+function drawTrack(idx){
+  const t=tState[idx],el=document.getElementById('t'+idx);
+  if(!el)return;
+  const s=sz();
+  const pills=RLBLS.map((l,i)=>{
+    let c='rp';
+    if(i<t.round)c+=' past';
+    else if(i===t.round)c+=' cur';
+    return `<span class="${c}">${l}</span>`;
+  }).join('');
+  const scoreStr=t.phase==='idle'?'&nbsp;':t.points>=8?`<span style="color:#D85A30">⚡ ${t.points} pts</span>`:`${t.points} pts`;
+  const diceHTML=t.pool.length
+    ?t.pool.map(d=>{const h=dieHTML(d.v,d.cls,s,d.pop);d.pop=false;return h;}).join('')
+    :`<span style="font-size:11px;color:var(--tt)">${t.phase==='idle'?'ready…':t.phase==='done'?'↳ cascade ended':''}</span>`;
+  el.className='tbox'+(t.points>=8&&t.phase==='done'?' ik':'');
+  el.innerHTML=`<div class="ttop"><div class="rpills">${pills}</div><span class="tscore">${scoreStr}</span></div><div class="darea" style="min-height:${minH()}px">${diceHTML}</div>`;
+}
+
+async function runTrack(idx,myGen){
+  while(running&&gen===myGen){
+    const t=tState[idx];
+    t.round=-1;t.phase='idle';t.pool=[];t.points=0;
+    drawTrack(idx);
+    await sleep(70);
+    if(gen!==myGen)return;
+
+    let pool=Array.from({length:10},()=>({v:r6(),cls:'idle',pop:true}));
+    let pts=0;
+    const T=timings();
+
+    for(let rd=0;rd<5&&gen===myGen&&pool.length>0;rd++){
+      const thr=6-rd;
+      t.round=rd;t.phase='roll';t.pool=pool;
+
+      const iv=setInterval(()=>{
+        for(const d of pool){d.v=r6();d.cls='rolling';}
+        drawTrack(idx);
+      },T.tick);
+
+      await sleep(T.roll);
+      clearInterval(iv);
+      if(gen!==myGen)return;
+
+      let succ=0;
+      for(const d of pool){
+        d.v=r6();
+        if(d.v>=thr){d.cls='ok';succ++;}
+        else d.cls='dead';
+      }
+      pts+=succ;
+      if(pts>=8){for(const d of pool)if(d.cls==='ok')d.cls='ik2';}
+      t.points=pts;t.phase='rev';
+      drawTrack(idx);
+
+      await sleep(T.rev);
+      if(gen!==myGen)return;
+
+      pool=pool.filter(d=>d.cls==='ok'||d.cls==='ik2');
+      for(const d of pool){d.cls='idle';d.pop=true;}
+      t.pool=pool;
+    }
+
+    record(pts);
+    refreshChart();
+    t.pool=[];t.phase='done';t.round=RLBLS.length;
+    drawTrack(idx);
+    await sleep(T.pause);
+  }
+}
+
+function doStart(){
+  if(running)return;
+  running=true;
+  const myGen=++gen;
+  document.getElementById('bgo').textContent='⏸ pause';
+  document.getElementById('bgo').classList.remove('go');
+  for(let i=0;i<parallel;i++)runTrack(i,myGen);
+}
+function doPause(){
+  running=false;gen++;
+  document.getElementById('bgo').textContent='▶ resume';
+  document.getElementById('bgo').classList.add('go');
+}
+function doReset(){
+  running=false;gen++;
+  counts.fill(0);totalSims=0;
+  refreshChart();
+  document.getElementById('bgo').textContent='▶ start';
+  document.getElementById('bgo').classList.add('go');
+  initTracksDOM();
+}
+
+document.getElementById('bgo').addEventListener('click',()=>running?doPause():doStart());
+document.getElementById('brst').addEventListener('click',doReset);
+
+document.getElementById('spd').addEventListener('click',e=>{
+  const b=e.target.closest('.seg');if(!b)return;
+  speed=parseInt(b.dataset.v);
+  document.querySelectorAll('#spd .seg').forEach(s=>s.classList.toggle('on',s===b));
+});
+
+document.getElementById('par').addEventListener('click',e=>{
+  const b=e.target.closest('.seg');if(!b)return;
+  const was=running;
+  if(was){running=false;gen++;}
+  parallel=parseInt(b.dataset.v);
+  document.querySelectorAll('#par .seg').forEach(s=>s.classList.toggle('on',s===b));
+  initTracksDOM();
+  if(was){running=false;doStart();}
+});
+
+initChart();
+initTracksDOM();
+</script>

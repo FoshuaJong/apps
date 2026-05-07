@@ -75,7 +75,7 @@ function ensureMonth(y, m) {
   const key = monthKey(y, m);
   let isNew = false;
   if (!db.months[key]) {
-    db.months[key] = { tc: [], hc: [], d: {} };
+    db.months[key] = { tc: [], hc: [], d: {}, inheritedFrom: null };
     isNew = true;
   }
   const md = db.months[key];
@@ -84,22 +84,46 @@ function ensureMonth(y, m) {
   if (!Array.isArray(md.tc)) md.tc = [];
   if (!Array.isArray(md.hc)) md.hc = [];
   if (typeof md.d !== 'object' || md.d === null) md.d = {};
+  if (typeof md.inheritedFrom !== 'string') md.inheritedFrom = null;
 
-  // For newly created months OR months with no day data, inherit from latest prior month
+  // For newly created months OR months with no day data, inherit from latest prior month when appropriate
   if (isNew || Object.keys(md.d).length === 0) {
     const prior = findLatestPriorMonthWithCols(y, m);
-    
-    // Only populate if we found a prior month with real columns
+    let saved = false;
+
     if (prior) {
-      md.tc = cloneCols(prior.month.tc);
-      md.hc = cloneCols(prior.month.hc || []);
+      const sameAsCurrentPrior = colsAreSame(md.tc, prior.month.tc);
+      const stillInherited = md.inheritedFrom === prior.key;
+      const wasPureInheritance = md.inheritedFrom === prior.key || (md.inheritedFrom === null && md.tc.length === 0);
+
+      if (isNew || md.inheritedFrom !== null && md.inheritedFrom !== prior.key) {
+        // The month was previously inherited from a different prior month, so refresh it.
+        md.tc = cloneCols(prior.month.tc);
+        md.hc = cloneCols(prior.month.hc || []);
+        md.inheritedFrom = prior.key;
+        saved = true;
+      } else if (wasPureInheritance && !sameAsCurrentPrior) {
+        // The month has empty or pure inherited columns and the latest prior month changed.
+        md.tc = cloneCols(prior.month.tc);
+        md.hc = cloneCols(prior.month.hc || []);
+        md.inheritedFrom = prior.key;
+        saved = true;
+      } else if (isNew && !sameAsCurrentPrior) {
+        md.tc = cloneCols(prior.month.tc);
+        md.hc = cloneCols(prior.month.hc || []);
+        md.inheritedFrom = prior.key;
+        saved = true;
+      } else if (isNew && sameAsCurrentPrior) {
+        md.inheritedFrom = prior.key;
+        saved = true;
+      }
     } else if (!md.tc.length) {
-      // Fallback to defaults only if no prior month exists AND this month has no columns yet
       md.tc = cloneCols(DEFAULT_TC);
+      md.inheritedFrom = null;
+      saved = true;
     }
-    
-    // Save after any column modifications
-    if (isNew || !colsAreSame(md.tc, prior ? prior.month.tc : DEFAULT_TC)) {
+
+    if (saved) {
       saveDb();
     }
   }
@@ -615,14 +639,16 @@ function saveModal() {
 
   if (modalAction === 'add-text') {
     md.tc.push({ id: genId('t'), n: name });
+    md.inheritedFrom = null;
   } else if (modalAction === 'add-habit') {
     md.hc.push({ id: genId('h'), n: name, t: type });
+    md.inheritedFrom = null;
   } else if (modalAction === 'edit-text') {
     const col = md.tc.find(c => c.id === modalColId);
-    if (col) col.n = name;
+    if (col) { col.n = name; md.inheritedFrom = null; }
   } else if (modalAction === 'edit-habit') {
     const col = md.hc.find(c => c.id === modalColId);
-    if (col) { col.n = name; col.t = type; }
+    if (col) { col.n = name; col.t = type; md.inheritedFrom = null; }
   }
 
   saveDb();
@@ -638,6 +664,7 @@ function deleteColumn(type, colId) {
   } else {
     md.hc = md.hc.filter(c => c.id !== colId);
   }
+  md.inheritedFrom = null;
   // Remove data for this column from all days in this month
   Object.values(md.d).forEach(dayData => { delete dayData[colId]; });
   saveDb();
@@ -665,7 +692,10 @@ function activateHeaderRename(th, type, colId) {
     const md = ensureMonth(viewYear, viewMonth);
     const cols = type === 'text' ? md.tc : md.hc;
     const col = cols.find(c => c.id === colId);
-    if (col) col.n = newName;
+    if (col) {
+      col.n = newName;
+      md.inheritedFrom = null;
+    }
     saveDb();
     render();
   };

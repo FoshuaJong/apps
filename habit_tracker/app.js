@@ -73,27 +73,33 @@ function saveDb() {
 // ---- Month data management ---------------------------------
 function ensureMonth(y, m) {
   const key = monthKey(y, m);
+  let isNew = false;
   if (!db.months[key]) {
     db.months[key] = { tc: [], hc: [], d: {} };
-    inheritCols(db.months[key], y, m);
-    if (!db.months[key].tc.length) {
-      db.months[key].tc = cloneCols(DEFAULT_TC);
-    }
-    saveDb();
+    isNew = true;
   }
   const md = db.months[key];
+  
   // Ensure sub-objects exist (defensive against corrupt data)
-  if (!Array.isArray(md.tc)) md.tc = cloneCols(DEFAULT_TC);
+  if (!Array.isArray(md.tc)) md.tc = [];
   if (!Array.isArray(md.hc)) md.hc = [];
   if (typeof md.d !== 'object' || md.d === null) md.d = {};
 
-  // Refresh columns for empty future months if they don't match the latest prior month
-  // (handles case where columns were added to an earlier month after this month was created)
-  if (Object.keys(md.d).length === 0) {
+  // For newly created months OR months with no day data, inherit from latest prior month
+  if (isNew || Object.keys(md.d).length === 0) {
     const prior = findLatestPriorMonthWithCols(y, m);
-    if (prior && !colsAreSame(md.tc, prior.month.tc)) {
+    
+    // Only populate if we found a prior month with real columns
+    if (prior) {
       md.tc = cloneCols(prior.month.tc);
       md.hc = cloneCols(prior.month.hc || []);
+    } else if (!md.tc.length) {
+      // Fallback to defaults only if no prior month exists AND this month has no columns yet
+      md.tc = cloneCols(DEFAULT_TC);
+    }
+    
+    // Save after any column modifications
+    if (isNew || !colsAreSame(md.tc, prior ? prior.month.tc : DEFAULT_TC)) {
       saveDb();
     }
   }

@@ -86,21 +86,53 @@ function ensureMonth(y, m) {
   if (!Array.isArray(md.tc)) md.tc = cloneCols(DEFAULT_TC);
   if (!Array.isArray(md.hc)) md.hc = [];
   if (typeof md.d !== 'object' || md.d === null) md.d = {};
+
+  // Refresh columns for empty future months if they don't match the latest prior month
+  // (handles case where columns were added to an earlier month after this month was created)
+  if (Object.keys(md.d).length === 0) {
+    const prior = findLatestPriorMonthWithCols(y, m);
+    if (prior && !colsAreSame(md.tc, prior.month.tc)) {
+      md.tc = cloneCols(prior.month.tc);
+      md.hc = cloneCols(prior.month.hc || []);
+      saveDb();
+    }
+  }
+
   return md;
 }
 
-function inheritCols(target, y, m) {
-  // Walk backwards up to 24 months to find prior month data
+function colsAreSame(cols1, cols2) {
+  // Compare two column arrays by id for equality
+  if (cols1.length !== cols2.length) return false;
+  for (let i = 0; i < cols1.length; i++) {
+    if (cols1[i].id !== cols2[i].id) return false;
+  }
+  return true;
+}
+
+function findLatestPriorMonthWithCols(y, m) {
+  // Walk backwards up to 24 months to find the latest prior month with explicit column data
+  // Returns { month: monthData, key: monthKey } or null if none found
   for (let i = 1; i <= 24; i++) {
     let pm = m - i;
     let py = y;
     while (pm < 1) { pm += 12; py--; }
     const key = monthKey(py, pm);
-    if (db.months[key] && Array.isArray(db.months[key].tc)) {
-      target.tc = cloneCols(db.months[key].tc);
-      target.hc = cloneCols(db.months[key].hc || []);
-      return;
+    const md = db.months[key];
+    // Only use months that have explicit non-empty tc (not just defaults)
+    if (md && Array.isArray(md.tc) && md.tc.length > 0) {
+      return { month: md, key: key };
     }
+  }
+  return null;
+}
+
+function inheritCols(target, y, m) {
+  // Find the latest prior month with explicit column definitions and inherit from it
+  const prior = findLatestPriorMonthWithCols(y, m);
+  if (prior) {
+    target.tc = cloneCols(prior.month.tc);
+    target.hc = cloneCols(prior.month.hc || []);
   }
 }
 

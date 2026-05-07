@@ -92,28 +92,16 @@ function ensureMonth(y, m) {
     let saved = false;
 
     if (prior) {
-      const sameAsCurrentPrior = colsAreSame(md.tc, prior.month.tc);
-      const stillInherited = md.inheritedFrom === prior.key;
-      const wasPureInheritance = md.inheritedFrom === prior.key || (md.inheritedFrom === null && md.tc.length === 0);
+      const sameAsCurrentPrior =
+        colsAreSame(md.tc, prior.month.tc) &&
+        colsAreSame(md.hc, prior.month.hc || []);
+      const wasPureInheritance =
+        md.inheritedFrom === prior.key ||
+        (md.inheritedFrom === null && md.tc.length === 0 && md.hc.length === 0);
 
-      if (isNew || md.inheritedFrom !== null && md.inheritedFrom !== prior.key) {
-        // The month was previously inherited from a different prior month, so refresh it.
+      if (isNew || md.inheritedFrom !== prior.key || (wasPureInheritance && !sameAsCurrentPrior)) {
         md.tc = cloneCols(prior.month.tc);
         md.hc = cloneCols(prior.month.hc || []);
-        md.inheritedFrom = prior.key;
-        saved = true;
-      } else if (wasPureInheritance && !sameAsCurrentPrior) {
-        // The month has empty or pure inherited columns and the latest prior month changed.
-        md.tc = cloneCols(prior.month.tc);
-        md.hc = cloneCols(prior.month.hc || []);
-        md.inheritedFrom = prior.key;
-        saved = true;
-      } else if (isNew && !sameAsCurrentPrior) {
-        md.tc = cloneCols(prior.month.tc);
-        md.hc = cloneCols(prior.month.hc || []);
-        md.inheritedFrom = prior.key;
-        saved = true;
-      } else if (isNew && sameAsCurrentPrior) {
         md.inheritedFrom = prior.key;
         saved = true;
       }
@@ -149,8 +137,8 @@ function findLatestPriorMonthWithCols(y, m) {
     while (pm < 1) { pm += 12; py--; }
     const key = monthKey(py, pm);
     const md = db.months[key];
-    // Only use months that have explicit non-empty tc (not just defaults)
-    if (md && Array.isArray(md.tc) && md.tc.length > 0) {
+    // Only use months that have explicit non-empty tc or hc columns
+    if (md && ((Array.isArray(md.tc) && md.tc.length > 0) || (Array.isArray(md.hc) && md.hc.length > 0))) {
       return { month: md, key: key };
     }
   }

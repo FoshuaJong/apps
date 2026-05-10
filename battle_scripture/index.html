@@ -210,7 +210,7 @@ const RUNES = {
     name:'Thalari', sub:'Zenith', color:'#EAD07A',
     base:'Add 2 to casting rolls for all friendly LUMINETH REALM-LORDS units.',
     enhanced:[],
-    zenith:'If 4+ unique runes are depicted: +4" Move for all friendly units, and attacks score critical hits on unmodified hit rolls of 5+.'
+    zenith:'+4" Move for all friendly units, and attacks score critical hits on unmodified hit rolls of 5+.'
   }
 };
 
@@ -355,12 +355,12 @@ function render() {
             </div>`).join('');
       }
       const zenithPreview = thalariZenithPreview(S.sel)
-        ? `<div class="syn-header"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Zenith preview</div>
+        ? `<div class="syn-header"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Enhanced Effect</div>
            <div class="syn-row">
              <div style="flex-shrink:0;padding-top:1px;">${runeSvg('thalari', 15, 2.2)}</div>
              <div>
                <div class="syn-row-label">Thalari will be the 4th unique rune</div>
-               <div class="syn-row-text">Selecting Thalari now will complete 4 unique runes and activate Zenith.</div>
+               <div class="syn-row-text">+4" Move for all friendly units, and attacks score critical hits on unmodified hit rolls of 5+</div>
              </div>
            </div>`
         : '';
@@ -419,7 +419,7 @@ function render() {
         <div class="effect-icon">${runeSvg('thalari', 17, 2)}</div>
         <div style="flex:1;min-width:0;">
           <div class="effect-meta">
-            <span class="effect-name">Thalari — Zenith Bonus</span>
+            <span class="effect-name">Enhanced — Zenith</span>
             <span class="badge badge-enh">${uq}/4 runes</span>
           </div>
           <div class="effect-text">${RUNES.thalari.zenith}</div>

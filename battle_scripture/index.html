@@ -101,7 +101,7 @@
   .confirm-btn:not(:disabled):active { opacity: 0.85; }
 
   .effect-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); margin-bottom: 7px; }
-  .effect-row.enhanced { background: rgba(74,159,218,0.07); border: 1px solid rgba(74,159,218,0.22); border-left: 3px solid var(--lb); }
+  .effect-row.enhanced { margin-left: 8px; background: rgba(74,159,218,0.07); border: 1px solid rgba(74,159,218,0.22); border-left: 4px solid var(--lb); }
   .effect-icon { flex-shrink: 0; margin-top: 2px; display: flex; align-items: flex-start; }
   .effect-icon svg { color: var(--txt3); }
   .effect-row.enhanced .effect-icon svg { color: var(--lb-text); }
@@ -328,7 +328,7 @@ function render() {
       const futureSyns = futureSynergiesFor(S.sel);
       let synRows = '';
       if (syns.length) {
-        synRows = `<div class="syn-header active"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Synergies unlocked</div>`
+        synRows = `<div class="syn-header active"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Enhanced effects</div>`
           + syns.map(s => `<div class="syn-row active">
               <div style=\"flex-shrink:0;padding-top:1px;display:flex;flex-direction:column;gap:2px;\">
                 ${runeSvg(s.runeId, 12, 2)}
@@ -342,7 +342,7 @@ function render() {
       }
       let futureRows = '';
       if (futureSyns.length && !dep(S.sel)) {
-        futureRows = `<div class="syn-header future"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Future synergies enabled</div>`
+        futureRows = `<div class="syn-header future"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Future enhancements enabled</div>`
           + futureSyns.map(s => `<div class="syn-row future">
               <div style=\"flex-shrink:0;padding-top:1px;display:flex;flex-direction:column;gap:2px;\">
                 ${runeSvg(s.runeId, 12, 2)}
@@ -392,10 +392,9 @@ function render() {
     const rows = allEffects();
     let rowsHTML = rows.map(e => {
       const isEnh = e.type === 'enhanced';
-      const newBadge = e.isNew && e.type==='base' ? `<span class="badge badge-new">active</span>` : '';
       const enhBadge = isEnh ? `<span class="badge badge-enh">enhanced</span>` : '';
       const multi = e.count>1 && e.type==='base'
-        ? `<div class="multi-note">×${e.count} instances — pick up to ${e.count*2} units total</div>` : '';
+        ? `<div class="multi-note">${e.count} instances active • affects up to ${e.count*2} units total</div>` : '';
       const iconHtml = isEnh
         ? `<div style="display:flex;flex-direction:column;gap:2px;">
             ${runeSvg(e.runeId, 14, 2)}
@@ -407,7 +406,7 @@ function render() {
         <div style="flex:1;min-width:0;">
           <div class="effect-meta">
             <span class="effect-name">${RUNES[e.runeId].name}${isEnh?' + '+e.rn:''}</span>
-            ${newBadge}${enhBadge}
+            ${enhBadge}
           </div>
           <div class="effect-text">${e.text}</div>
           ${multi}

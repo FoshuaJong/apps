@@ -263,7 +263,7 @@ function render() {
           ${runeSvg(id, 13, 2.5)}
           ${RUNES[id].name}
           ${S.counts[id]>1 ? `<span style="font-size:10px;opacity:0.6;">×${S.counts[id]}</span>` : ''}
-          ${isNew ? `<span class="badge badge-new" style="margin-left:1px;">new</span>` : ''}
+          ${isNew ? `<span class="badge badge-new" style="margin-left:1px;">active</span>` : ''}
         </span>`;
       }).join('');
 
@@ -365,7 +365,7 @@ function render() {
     const rows = allEffects();
     let rowsHTML = rows.map(e => {
       const isEnh = e.type === 'enhanced';
-      const newBadge = e.isNew && e.type==='base' ? `<span class="badge badge-new">new</span>` : '';
+      const newBadge = e.isNew && e.type==='base' ? `<span class="badge badge-new">active</span>` : '';
       const enhBadge = isEnh ? `<span class="badge badge-enh">enhanced</span>` : '';
       const multi = e.count>1 && e.type==='base'
         ? `<div class="multi-note">×${e.count} instances — pick up to ${e.count*2} units</div>` : '';

@@ -189,18 +189,29 @@ const RUNES = {
 };
 
 /* ── State ─────────────────────────────────────────────────────────────────── */
+const MAX_ROUNDS = 4;
 let S = { round:1, counts:{varinor:0,alaithi:0,ydriliqi:0,oreali:0,thalari:0}, sel:null, phase:'selecting' };
 
 function dep(id){ return S.counts[id] > 0; }
 function uniq(){ return ORDER.filter(dep).length; }
-function zenithActive(){ return dep('thalari') && uniq() >= 4; }
+function zenithActive(){ return S.phase === 'active' && S.sel === 'thalari' && uniq() >= 4; }
+function thalariZenithPreview(id){ return id === 'thalari' && !dep('thalari') && uniq() === 3; }
 
 function synergiesFor(id) {
   const s = [];
-  RUNES[id].enhanced.forEach(e => { if (dep(e.req)) s.push({runeId:id, rn:e.rn, text:e.text}); });
+  RUNES[id].enhanced.forEach(e => {
+    if (dep(e.req)) s.push({runeId:id, rn:e.rn, text:e.text});
+  });
+  return s;
+}
+
+function futureSynergiesFor(id) {
+  const s = [];
   ORDER.forEach(o => {
-    if (!dep(o) || o === id) return;
-    RUNES[o].enhanced.forEach(e => { if (e.req === id) s.push({runeId:o, rn:RUNES[id].name, text:e.text}); });
+    if (o === id) return;
+    RUNES[o].enhanced.forEach(e => {
+      if (e.req === id) s.push({runeId:o, rn:RUNES[id].name, text:e.text});
+    });
   });
   return s;
 }
@@ -208,30 +219,32 @@ function synergiesFor(id) {
 function potentialSynCount(id) {
   let n = 0;
   RUNES[id].enhanced.forEach(e => { if (dep(e.req)) n++; });
-  ORDER.forEach(o => {
-    if (!dep(o) || o === id) return;
-    RUNES[o].enhanced.forEach(e => { if (e.req === id) n++; });
-  });
   return n;
 }
 
 function allEffects() {
   const rows = [];
-  ORDER.forEach(runeId => {
-    if (!dep(runeId)) return;
-    rows.push({runeId, type:'base', isNew:runeId===S.sel, count:S.counts[runeId], text:RUNES[runeId].base});
-    RUNES[runeId].enhanced.forEach(e => {
-      if (dep(e.req)) rows.push({runeId, type:'enhanced', isNew:runeId===S.sel, rn:e.rn, text:e.text});
-    });
+  if (!S.sel) return rows;
+
+  rows.push({
+    runeId: S.sel,
+    type: 'base',
+    isNew: true,
+    count: S.counts[S.sel],
+    text: RUNES[S.sel].base
   });
-  rows.sort((a,b) => (b.isNew?1:0) - (a.isNew?1:0));
+
+  RUNES[S.sel].enhanced.forEach(e => {
+    if (dep(e.req)) rows.push({runeId:S.sel, type:'enhanced', isNew:false, rn:e.rn, text:e.text});
+  });
+
   return rows;
 }
 
 function dispatch(action, payload) {
   if (action==='select')  { S.sel = payload; }
   if (action==='confirm') { if (!S.sel) return; S.counts[S.sel]++; S.phase='active'; }
-  if (action==='next')    { S.round++; S.sel=null; S.phase='selecting'; }
+  if (action==='next')    { if (S.round < MAX_ROUNDS) S.round++; S.sel=null; S.phase='selecting'; }
   if (action==='reset')   { S = {round:1,counts:{varinor:0,alaithi:0,ydriliqi:0,oreali:0,thalari:0},sel:null,phase:'selecting'}; }
   render();
 }
@@ -263,16 +276,20 @@ function render() {
       const r = RUNES[id];
       const isSel = S.sel === id;
       const sc = potentialSynCount(id);
+      const unq = uniq();
+      const showThalariPreview = thalariZenithPreview(id);
+      const previewLabel = showThalariPreview ? `${unq}/4` : sc > 0 ? String(sc) : '';
       const hasDep = dep(id);
+      const meta = hasDep
+        ? `<div class="rune-card-meta">×${S.counts[id]}${sc ? ` <span class="syn-count">+${sc}</span>` : ''}</div>`
+        : previewLabel
+          ? `<div class="syn-count"><i class="ti ti-bolt" style="font-size:8px;" aria-hidden="true"></i>${previewLabel}</div>`
+          : '';
       return `<div class="rune-card${isSel?' selected':''}" onclick="dispatch('select','${id}')">
         <div class="rune-svg-wrap">${runeSvg(id, 26, 2)}</div>
         <div class="rune-card-name">${r.name}</div>
         <div class="rune-card-sub">${r.sub}</div>
-        ${hasDep
-          ? `<div class="rune-card-meta">×${S.counts[id]}</div>`
-          : sc > 0
-            ? `<div class="syn-count"><i class="ti ti-bolt" style="font-size:8px;" aria-hidden="true"></i>${sc}</div>`
-            : ''}
+        ${meta}
       </div>`;
     }).join('');
 
@@ -280,17 +297,45 @@ function render() {
     if (S.sel) {
       const r = RUNES[S.sel];
       const syns = synergiesFor(S.sel);
+      const futureSyns = futureSynergiesFor(S.sel);
       let synRows = '';
       if (syns.length) {
         synRows = `<div class="syn-header"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Synergies unlocked</div>`
           + syns.map(s => `<div class="syn-row">
-              <div style="flex-shrink:0;padding-top:1px;">${runeSvg(s.runeId, 15, 2.2)}</div>
+              <div style=\"flex-shrink:0;padding-top:1px;display:flex;flex-direction:column;gap:2px;\">
+                ${runeSvg(s.runeId, 12, 2)}
+                ${runeSvg(Object.keys(RUNES).find(id => RUNES[id].name === s.rn), 9, 1.8)}
+              </div>
               <div>
                 <div class="syn-row-label">${RUNES[s.runeId].name} + ${s.rn}</div>
                 <div class="syn-row-text">${s.text}</div>
               </div>
             </div>`).join('');
       }
+      let futureRows = '';
+      if (futureSyns.length && !dep(S.sel)) {
+        futureRows = `<div class="syn-header"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Future synergies enabled</div>`
+          + futureSyns.map(s => `<div class="syn-row">
+              <div style=\"flex-shrink:0;padding-top:1px;display:flex;flex-direction:column;gap:2px;\">
+                ${runeSvg(s.runeId, 12, 2)}
+                ${runeSvg(Object.keys(RUNES).find(id => RUNES[id].name === s.rn), 9, 1.8)}
+              </div>
+              <div>
+                <div class="syn-row-label">${RUNES[s.runeId].name} + ${s.rn}</div>
+                <div class="syn-row-text">${s.text}</div>
+              </div>
+            </div>`).join('');
+      }
+      const zenithPreview = thalariZenithPreview(S.sel)
+        ? `<div class="syn-header"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Zenith preview</div>
+           <div class="syn-row">
+             <div style="flex-shrink:0;padding-top:1px;">${runeSvg('thalari', 15, 2.2)}</div>
+             <div>
+               <div class="syn-row-label">Thalari will be the 4th unique rune</div>
+               <div class="syn-row-text">Selecting Thalari now will complete 4 unique runes and activate Zenith.</div>
+             </div>
+           </div>`
+        : '';
       preview = `<div class="preview-box">
         <div class="preview-heading">
           ${runeSvg(S.sel, 16, 2)}
@@ -298,6 +343,8 @@ function render() {
         </div>
         <div class="preview-base">${r.base}</div>
         ${synRows}
+        ${futureRows}
+        ${zenithPreview}
       </div>`;
     }
 
@@ -322,8 +369,14 @@ function render() {
       const enhBadge = isEnh ? `<span class="badge badge-enh">enhanced</span>` : '';
       const multi = e.count>1 && e.type==='base'
         ? `<div class="multi-note">×${e.count} instances — pick up to ${e.count*2} units</div>` : '';
+      const iconHtml = isEnh
+        ? `<div style="display:flex;flex-direction:column;gap:2px;">
+            ${runeSvg(e.runeId, 14, 2)}
+            ${runeSvg(Object.keys(RUNES).find(id => RUNES[id].name === e.rn), 10, 1.8)}
+          </div>`
+        : `${runeSvg(e.runeId, 17, 2)}`;
       return `<div class="effect-row${isEnh?' enhanced':''}">
-        <div class="effect-icon">${runeSvg(e.runeId, 17, 2)}</div>
+        <div class="effect-icon">${iconHtml}</div>
         <div style="flex:1;min-width:0;">
           <div class="effect-meta">
             <span class="effect-name">${RUNES[e.runeId].name}${isEnh?' + '+e.rn:''}</span>
@@ -335,30 +388,37 @@ function render() {
       </div>`;
     }).join('');
 
-    if (dep('thalari')) {
-      rowsHTML += `<div class="effect-row enhanced${!za?' effect-dimmed':''}">
+    if (za) {
+      rowsHTML += `<div class="effect-row enhanced">
         <div class="effect-icon">${runeSvg('thalari', 17, 2)}</div>
         <div style="flex:1;min-width:0;">
           <div class="effect-meta">
             <span class="effect-name">Thalari — Zenith Bonus</span>
-            <span class="badge ${za?'badge-enh':'badge-dim'}">${uq}/4 runes</span>
+            <span class="badge badge-enh">${uq}/4 runes</span>
           </div>
           <div class="effect-text">${RUNES.thalari.zenith}</div>
         </div>
       </div>`;
     }
 
-    if (!rows.length && !dep('thalari')) {
+    if (!rows.length) {
       rowsHTML = `<p style="color:var(--txt3);font-size:13px;">No effects active.</p>`;
     }
 
-    actHTML = `
-      <div class="section-label">Active effects this round</div>
-      ${rowsHTML}
-      <button class="next-btn" onclick="dispatch('next')">
-        Advance to Round ${S.round+1}
-        <i class="ti ti-arrow-right" style="font-size:15px;" aria-hidden="true"></i>
-      </button>`;
+    if (S.round < MAX_ROUNDS) {
+      actHTML = `
+        <div class="section-label">Active effects this round</div>
+        ${rowsHTML}
+        <button class="next-btn" onclick="dispatch('next')">
+          Advance to Round ${S.round+1}
+          <i class="ti ti-arrow-right" style="font-size:15px;" aria-hidden="true"></i>
+        </button>`;
+    } else {
+      actHTML = `
+        <div class="section-label">Active effects this round</div>
+        ${rowsHTML}
+        <div class="multi-note">Maximum of ${MAX_ROUNDS} rounds reached.</div>`;
+    }
   }
 
   document.getElementById('app').innerHTML = `

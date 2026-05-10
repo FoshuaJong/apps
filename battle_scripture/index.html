@@ -27,9 +27,29 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.5;
-    min-height: 100dvh;
+    min-height: 100vh;
   }
-  #app { max-width: 480px; margin: 0 auto; padding: 16px 14px 48px; }
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 0;
+  }
+  .scroll-content {
+    flex: 1;
+    padding: 16px 14px 16px;
+  }
+  .bottom-section {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    flex-shrink: 0;
+    padding: 0 14px 16px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
 
   .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
   .header-title { font-size: 20px; font-weight: 600; color: var(--txt); letter-spacing: 0.02em; font-family: Georgia, serif; }
@@ -38,7 +58,7 @@
   .reset-btn { background: none; border: none; color: var(--txt3); font-size: 12px; cursor: pointer; padding: 4px 4px; margin-top: 6px; display: flex; align-items: center; gap: 3px; }
   .reset-btn:hover { color: var(--txt2); }
 
-  .scripture-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 46px; }
+  .scripture-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 46px; }
   .scripture-label { font-size: 10px; color: var(--txt3); letter-spacing: 0.1em; text-transform: uppercase; margin-right: 2px; flex-shrink: 0; }
   .chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 6px; white-space: nowrap; }
   .chip-normal { background: var(--raised); border: 1px solid var(--border2); color: var(--txt); }
@@ -62,13 +82,19 @@
   .rune-card-meta { font-size: 9px; color: var(--txt3); margin-top: 4px; }
   .syn-count { display: inline-flex; align-items: center; gap: 2px; font-size: 9px; color: var(--lb-text); background: rgba(74,159,218,0.1); border-radius: 4px; padding: 1px 5px; margin-top: 4px; }
 
-  .preview-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
-  .preview-heading { font-size: 11px; font-weight: 600; color: var(--lb-text); font-family: Georgia, serif; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .preview-box { background: rgba(36, 47, 62, 0.95); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+  .preview-heading { font-size: 11px; font-weight: 600; color: #FFFFFF; font-family: Georgia, serif; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
   .preview-base { font-size: 13px; color: var(--txt); line-height: 1.55; margin-bottom: 10px; }
   .syn-header { font-size: 9px; font-weight: 600; color: var(--txt3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
-  .syn-row { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; background: rgba(74,159,218,0.08); border: 1px solid rgba(74,159,218,0.2); border-left: 2px solid var(--lb); margin-bottom: 5px; }
+  .syn-header.active { color: var(--lb-text); }
+  .syn-header.future { color: var(--txt3); }
+  .syn-row { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 5px; }
+  .syn-row.active { background: rgba(74,159,218,0.1); border-color: rgba(74,159,218,0.25); box-shadow: inset 0 0 0 1px rgba(74,159,218,0.08); }
+  .syn-row.future { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.06); }
   .syn-row-label { font-size: 10px; font-weight: 600; color: var(--lb-text); font-family: Georgia, serif; margin-bottom: 3px; }
+  .syn-row.future .syn-row-label { color: var(--txt3); }
   .syn-row-text { font-size: 12px; color: var(--txt); line-height: 1.4; }
+  .syn-row.future .syn-row-text { color: var(--txt3); }
 
   .confirm-btn { width: 100%; background: var(--lb); color: #fff; border: none; border-radius: 10px; padding: 13px 0; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
   .confirm-btn:disabled { background: var(--surface); color: var(--txt3); border: 1px solid var(--border); cursor: default; }
@@ -270,7 +296,9 @@ function render() {
   let zenithChip = za ? `<span class="zenith-chip">${runeSvg('thalari',12,2.5)} Zenith</span>` : '';
 
   /* ── Selecting phase ── */
-  let selHTML = '';
+  let previewHTML = '';
+  let stickyHTML = '';
+  let activeHTML = '';
   if (S.phase === 'selecting') {
     const cards = ORDER.map(id => {
       const r = RUNES[id];
@@ -300,8 +328,8 @@ function render() {
       const futureSyns = futureSynergiesFor(S.sel);
       let synRows = '';
       if (syns.length) {
-        synRows = `<div class="syn-header"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Synergies unlocked</div>`
-          + syns.map(s => `<div class="syn-row">
+        synRows = `<div class="syn-header active"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Synergies unlocked</div>`
+          + syns.map(s => `<div class="syn-row active">
               <div style=\"flex-shrink:0;padding-top:1px;display:flex;flex-direction:column;gap:2px;\">
                 ${runeSvg(s.runeId, 12, 2)}
                 ${runeSvg(Object.keys(RUNES).find(id => RUNES[id].name === s.rn), 9, 1.8)}
@@ -314,8 +342,8 @@ function render() {
       }
       let futureRows = '';
       if (futureSyns.length && !dep(S.sel)) {
-        futureRows = `<div class="syn-header"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Future synergies enabled</div>`
-          + futureSyns.map(s => `<div class="syn-row">
+        futureRows = `<div class="syn-header future"><i class="ti ti-bolt" style="font-size:9px;margin-right:3px;" aria-hidden="true"></i>Future synergies enabled</div>`
+          + futureSyns.map(s => `<div class="syn-row future">
               <div style=\"flex-shrink:0;padding-top:1px;display:flex;flex-direction:column;gap:2px;\">
                 ${runeSvg(s.runeId, 12, 2)}
                 ${runeSvg(Object.keys(RUNES).find(id => RUNES[id].name === s.rn), 9, 1.8)}
@@ -352,15 +380,14 @@ function render() {
       ? `${runeSvg(S.sel, 16, 2.2)} Depict ${RUNES[S.sel].name}`
       : 'Select a rune to continue';
 
-    selHTML = `
+    previewHTML = preview;
+    stickyHTML = `
       <div class="section-label">Depict a rune this round</div>
       <div class="rune-grid">${cards}</div>
-      ${preview}
       <button class="confirm-btn" ${!S.sel?'disabled':''} onclick="dispatch('confirm')">${btnLabel}</button>`;
   }
 
   /* ── Active phase ── */
-  let actHTML = '';
   if (S.phase === 'active') {
     const rows = allEffects();
     let rowsHTML = rows.map(e => {
@@ -368,7 +395,7 @@ function render() {
       const newBadge = e.isNew && e.type==='base' ? `<span class="badge badge-new">active</span>` : '';
       const enhBadge = isEnh ? `<span class="badge badge-enh">enhanced</span>` : '';
       const multi = e.count>1 && e.type==='base'
-        ? `<div class="multi-note">×${e.count} instances — pick up to ${e.count*2} units</div>` : '';
+        ? `<div class="multi-note">×${e.count} instances — pick up to ${e.count*2} units total</div>` : '';
       const iconHtml = isEnh
         ? `<div style="display:flex;flex-direction:column;gap:2px;">
             ${runeSvg(e.runeId, 14, 2)}
@@ -405,44 +432,46 @@ function render() {
       rowsHTML = `<p style="color:var(--txt3);font-size:13px;">No effects active.</p>`;
     }
 
+    activeHTML = `<div class="section-label">Active effects this round</div>
+      ${rowsHTML}`;
+
     if (S.round < MAX_ROUNDS) {
-      actHTML = `
-        <div class="section-label">Active effects this round</div>
-        ${rowsHTML}
-        <button class="next-btn" onclick="dispatch('next')">
-          Advance to Round ${S.round+1}
-          <i class="ti ti-arrow-right" style="font-size:15px;" aria-hidden="true"></i>
-        </button>`;
+      stickyHTML = `<button class="next-btn" onclick="dispatch('next')">
+        Advance to Round ${S.round+1}
+        <i class="ti ti-arrow-right" style="font-size:15px;" aria-hidden="true"></i>
+      </button>`;
     } else {
-      actHTML = `
-        <div class="section-label">Active effects this round</div>
-        ${rowsHTML}
-        <div class="multi-note">Maximum of ${MAX_ROUNDS} rounds reached.</div>`;
+      stickyHTML = `<div class="multi-note">Maximum of ${MAX_ROUNDS} rounds reached.</div>`;
     }
   }
 
   document.getElementById('app').innerHTML = `
-    <div class="header">
-      <div>
-        <div class="header-title">Battle Scripture</div>
-        <div class="header-sub">Lumineth Realm-Lords</div>
+    <div class="scroll-content">
+      <div class="header">
+        <div>
+          <div class="header-title">Battle Scripture</div>
+          <div class="header-sub">Lumineth Realm-Lords</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="round-badge">Round ${S.round}</div>
+          <button class="reset-btn" onclick="dispatch('reset')">
+            <i class="ti ti-refresh" style="font-size:12px;" aria-hidden="true"></i>Reset
+          </button>
+        </div>
       </div>
-      <div style="text-align:right;">
-        <div class="round-badge">Round ${S.round}</div>
-        <button class="reset-btn" onclick="dispatch('reset')">
-          <i class="ti ti-refresh" style="font-size:12px;" aria-hidden="true"></i>Reset
-        </button>
+
+      <div class="scripture-bar">
+        <span class="scripture-label">Scripture</span>
+        ${chips}
+        ${zenithChip}
       </div>
+      ${previewHTML}
+      ${activeHTML}
     </div>
 
-    <div class="scripture-bar">
-      <span class="scripture-label">Scripture</span>
-      ${chips}
-      ${zenithChip}
+    <div class="bottom-section">
+      ${stickyHTML}
     </div>
-
-    ${selHTML}
-    ${actHTML}
   `;
 }
 

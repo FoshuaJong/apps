@@ -176,7 +176,7 @@ const ORDER = ['varinor','alaithi','ydriliqi','oreali','thalari'];
 const RUNES = {
   varinor:  {
     name:'Varinor', sub:'Strength', color:'#C8A96E',
-    base:'Pick up to 2 friendly units per instance. Add 1 to run rolls and charge rolls for each target.',
+    base:'Pick up to 2 friendly units per instance.<br>Add 1 to run rolls and charge rolls for each target.',
     enhanced:[
       {req:'ydriliqi', rn:'Ydriliqi', text:'+1 to wound rolls for combat attacks made by targets.'},
       {req:'oreali',   rn:'Oreali',   text:'Targets may use SHOOT and/or CHARGE even if they used RETREAT this turn.'}
@@ -184,7 +184,7 @@ const RUNES = {
   },
   alaithi:  {
     name:'Alaithi', sub:'Mountain', color:'#9EB8CC',
-    base:"Pick up to 2 friendly units per instance. Each target has WARD (5+).",
+    base:"Pick up to 2 friendly units per instance.<br>Each target has WARD (5+).",
     enhanced:[
       {req:'varinor',  rn:'Varinor',  text:"Targets' melee weapons gain Anti-charge (+1 Rend)."},
       {req:'ydriliqi', rn:'Ydriliqi', text:'Subtract 1 from wound rolls for attacks by enemy units in combat with targets.'}
@@ -192,7 +192,7 @@ const RUNES = {
   },
   ydriliqi: {
     name:'Ydriliqi', sub:'River', color:'#6AADCC',
-    base:'Pick up to 2 friendly units per instance. Subtract 2 from enemy charge rolls within 12" of any target.',
+    base:'Pick up to 2 friendly units per instance.<br>Subtract 2 from enemy charge rolls within 12" of any target.',
     enhanced:[
       {req:'alaithi', rn:'Alaithi', text:'Ignore negative modifiers to hit and wound rolls for attacks made by targets.'},
       {req:'oreali',  rn:'Oreali',  text:'Each target may immediately move up to 3", passing through enemy combat ranges; may end in combat.'}
@@ -200,7 +200,7 @@ const RUNES = {
   },
   oreali:   {
     name:'Oreali', sub:'Wind', color:'#A8CCAA',
-    base:'Pick up to 2 friendly units per instance. Subtract 1 from hit rolls for attacks by enemy units in combat with targets.',
+    base:'Pick up to 2 friendly units per instance.<br>Subtract 1 from hit rolls for attacks by enemy units in combat with targets.',
     enhanced:[
       {req:'varinor', rn:'Varinor', text:"+4\" to each target's Move characteristic."},
       {req:'alaithi', rn:'Alaithi', text:"+5 to each target's control score."}
@@ -367,7 +367,7 @@ function render() {
       preview = `<div class="preview-box">
         <div class="preview-heading">
           ${runeSvg(S.sel, 16, 2)}
-          ${r.name} — base effect
+          ${r.name} | ${r.sub}
         </div>
         <div class="preview-base">${r.base}</div>
         ${synRows}

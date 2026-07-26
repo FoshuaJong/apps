@@ -194,6 +194,11 @@
     font-size: 12px;
   }
 
+  .chip-choice{
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
   /* ---------- eye groups ---------- */
   .eyes-grid{
     display: grid;
@@ -529,7 +534,8 @@
   // Cortical listed before NS to match current clinic note convention.
   var LENS_CONDITIONS = [
     { key: "Cortical", label: "cortical", grades: true },
-    { key: "NS",       label: "NS",       grades: true }
+    { key: "NS",       label: "NS",       grades: true },
+    { key: "PSC",       label: "PSC",     choices: ["on axis", "off axis"] }
   ];
 
   var CONDITIONS_MAP = { lids: LID_CONDITIONS, conj: CONJ_CONDITIONS, lens: LENS_CONDITIONS };
@@ -540,7 +546,7 @@
 
   function freshEyeState(conditions){
     var o = { clear: false };
-    conditions.forEach(function(c){ o[c.key] = c.grades ? null : false; });
+    conditions.forEach(function(c){ o[c.key] = (c.grades || c.choices) ? null : false; });
     return o;
   }
 
@@ -586,6 +592,13 @@
           '" data-eye="' + eye + '" data-cond="' + c.key + '" data-grade="' + g + '">' + g + '</button>';
       }).join("");
       return '<div class="cond-row"><span class="cond-label">' + c.label + '</span><div class="grade-chips">' + chips + '</div></div>';
+    }
+    if (c.choices){
+      var choiceChips = c.choices.map(function(v){
+        return '<button type="button" class="chip chip-choice" data-type="choice" data-section="' + sectionKey +
+          '" data-eye="' + eye + '" data-cond="' + c.key + '" data-value="' + v + '">' + v + '</button>';
+      }).join("");
+      return '<div class="cond-row"><span class="cond-label">' + c.label + '</span><div class="grade-chips">' + choiceChips + '</div></div>';
     }
     return '<div class="cond-row cond-row-bool"><button type="button" class="chip chip-bool" data-type="bool" data-section="' +
       sectionKey + '" data-eye="' + eye + '" data-cond="' + c.key + '">' + c.label + '</button></div>';
@@ -640,6 +653,12 @@
             var btn = document.querySelector('[data-type="grade"][data-section="' + sectionKey + '"][data-eye="' + eye +
               '"][data-cond="' + c.key + '"][data-grade="' + g + '"]');
             btn.classList.toggle("is-active", eyeState[c.key] === g);
+          });
+        } else if (c.choices){
+          c.choices.forEach(function(v){
+            var choiceBtn = document.querySelector('[data-type="choice"][data-section="' + sectionKey + '"][data-eye="' + eye +
+              '"][data-cond="' + c.key + '"][data-value="' + v + '"]');
+            choiceBtn.classList.toggle("is-active", eyeState[c.key] === v);
           });
         } else {
           var boolBtn = document.querySelector('[data-type="bool"][data-section="' + sectionKey + '"][data-eye="' + eye +
@@ -707,19 +726,11 @@
     return out;
   }
 
-  function sectionText(sectionKey){
-    var s = state[sectionKey];
-    var conditions = CONDITIONS_MAP[sectionKey];
-
-    var rClear = s.R.clear, lClear = s.L.clear;
-    if (rClear && lClear) return "clear OU";
-
-    var rClauses = buildClauses(s.R, sectionKey, conditions);
-    var lClauses = buildClauses(s.L, sectionKey, conditions);
-
-    // Match clauses shared by both eyes (same finding, same grade) -> "{clause} OU".
-    // Whatever's left on either eye - including findings the other eye doesn't have -
-    // stays under that eye's own "R"/"L" prefix instead of breaking OU-compaction entirely.
+  // Match clauses shared by both eyes (same finding, same text) so they can be
+  // OU-compacted. Whatever's left on either eye - including findings the other eye
+  // doesn't have - is returned separately so it can stay under that eye's own prefix
+  // instead of breaking OU-compaction entirely.
+  function compactEyeClauses(rClauses, lClauses){
     var lUsed = lClauses.map(function(){ return false; });
     var common = [];
     var rLeft = [];
@@ -733,13 +744,45 @@
       }
     });
     var lLeft = lClauses.filter(function(lc, i){ return !lUsed[i]; }).map(function(lc){ return lc.text; });
+    return { common: common, rLeft: rLeft, lLeft: lLeft };
+  }
+
+  function formatEyeSegments(compacted, rClear, lClear){
+    var segments = [];
+    if (compacted.common.length) segments.push(compacted.common.map(function(c){ return c + " OU"; }).join(", "));
+    if (compacted.rLeft.length) segments.push("R " + compacted.rLeft.join(" "));
+    else if (rClear) segments.push("R clear");
+    if (compacted.lLeft.length) segments.push("L " + compacted.lLeft.join(" "));
+    else if (lClear) segments.push("L clear");
+    return segments.length ? segments.join(" ") : null;
+  }
+
+  function sectionText(sectionKey){
+    var s = state[sectionKey];
+    var conditions = CONDITIONS_MAP[sectionKey];
+
+    var rClear = s.R.clear, lClear = s.L.clear;
+    if (rClear && lClear) return "clear OU";
+
+    // Choice-based conditions (e.g. Lens PSC) are reported as their own labeled
+    // sub-clause - "PSC R on axis" - rather than folding into the main R/L clause
+    // list, so they're excluded here and handled separately below.
+    var mainConditions = conditions.filter(function(c){ return !c.choices; });
+    var rClauses = buildClauses(s.R, sectionKey, mainConditions);
+    var lClauses = buildClauses(s.L, sectionKey, mainConditions);
 
     var segments = [];
-    if (common.length) segments.push(common.map(function(c){ return c + " OU"; }).join(", "));
-    if (rLeft.length) segments.push("R " + rLeft.join(" "));
-    else if (rClear) segments.push("R clear");
-    if (lLeft.length) segments.push("L " + lLeft.join(" "));
-    else if (lClear) segments.push("L clear");
+    var mainText = formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear);
+    if (mainText) segments.push(mainText);
+
+    conditions.filter(function(c){ return c.choices; }).forEach(function(c){
+      var rVal = s.R[c.key], lVal = s.L[c.key];
+      if (!rVal && !lVal) return;
+      var rChoiceClauses = rVal ? [{ key: c.key, text: rVal }] : [];
+      var lChoiceClauses = lVal ? [{ key: c.key, text: lVal }] : [];
+      var choiceText = formatEyeSegments(compactEyeClauses(rChoiceClauses, lChoiceClauses), false, false);
+      if (choiceText) segments.push(c.label + " " + choiceText);
+    });
 
     return segments.length ? segments.join(" ") : null;
   }
@@ -857,6 +900,13 @@
         var eyeState4 = state[sec4][eye4];
         eyeState4[cond4] = !eyeState4[cond4];
         if (eyeState4[cond4]) eyeState4.clear = false;
+        break;
+      }
+      case "choice": {
+        var sec6 = btn.dataset.section, eye6 = btn.dataset.eye, cond6 = btn.dataset.cond, value6 = btn.dataset.value;
+        var eyeState6 = state[sec6][eye6];
+        eyeState6[cond6] = (eyeState6[cond6] === value6) ? null : value6;
+        eyeState6.clear = false;
         break;
       }
       case "cornea": {

@@ -11,6 +11,7 @@
   :root{
     --bg: #EDF1F0;
     --paper: #FFFFFF;
+    --surface-nested: #FBFCFB;
     --ink: #142127;
     --ink-soft: #52616B;
     --line: #D6DEDB;
@@ -19,10 +20,25 @@
     --accent-ink: #08403C;
     --warn: #A2452F;
     --warn-soft: #F5E4DE;
+    /* Footer is a fixed dark "torn receipt" strip in both themes, so its
+       background is decoupled from --ink (which flips per theme). */
+    --footer-bg: #142127;
     --radius: 10px;
     --pill: 999px;
     --gap: 14px;
     font-size: 16px;
+  }
+
+  :root[data-theme="dark"]{
+    --bg: #10161A;
+    --paper: #1A2426;
+    --surface-nested: #141C1E;
+    --ink: #E8EEEC;
+    --ink-soft: #93A6A2;
+    --line: #2A3638;
+    --accent: #2FBBA8;
+    --accent-soft: #163330;
+    --accent-ink: #8FE3D3;
   }
 
   *{ box-sizing: border-box; }
@@ -55,10 +71,45 @@
     background: var(--paper);
   }
 
+  .theme-toggle{
+    appearance: none;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    line-height: 0;
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+
+  .theme-toggle:hover{
+    opacity: 0.75;
+  }
+
+  .theme-toggle:active{
+    transform: scale(0.92);
+  }
+
+  .theme-toggle:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
   .eye-mark{
     flex: none;
     width: 34px;
     height: 34px;
+  }
+
+  .eye-mark path,
+  .eye-mark circle{
+    stroke: var(--accent);
+    transition: stroke 0.15s ease, fill 0.15s ease;
+  }
+
+  .eye-mark circle:last-of-type{
+    fill: var(--accent);
   }
 
   header .title-block{
@@ -216,7 +267,7 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 10px 12px 12px;
-    background: #FBFCFB;
+    background: var(--surface-nested);
   }
 
   .eye-group-head{
@@ -298,7 +349,7 @@
   /* ---------- preview footer ---------- */
   footer{
     flex: none;
-    background: var(--ink);
+    background: var(--footer-bg);
     border-top: 3px dashed #3A4750;
     position: relative;
   }
@@ -431,11 +482,13 @@
 <body>
 
 <header>
-  <svg class="eye-mark" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M2 17C2 17 8 6 17 6C26 6 32 17 32 17C32 17 26 28 17 28C8 28 2 17 2 17Z" stroke="#0E6E68" stroke-width="2"/>
-    <circle cx="17" cy="17" r="6" stroke="#0E6E68" stroke-width="2"/>
-    <circle cx="17" cy="17" r="2" fill="#0E6E68"/>
-  </svg>
+  <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="eye-mark" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M2 17C2 17 8 6 17 6C26 6 32 17 32 17C32 17 26 28 17 28C8 28 2 17 2 17Z" stroke-width="2"/>
+      <circle cx="17" cy="17" r="6" stroke-width="2"/>
+      <circle cx="17" cy="17" r="2"/>
+    </svg>
+  </button>
   <div class="title-block">
     <span class="eyebrow">Optometry Charting</span>
     <h1>Anterior Segment Note Builder</h1>
@@ -937,8 +990,29 @@
     refreshAll();
   }
 
+  // ---------- theme ----------
+
+  var THEME_KEY = "optom-theme";
+
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+
+  function initTheme(){
+    var saved = null;
+    try { saved = localStorage.getItem(THEME_KEY); } catch (e) { /* no-op */ }
+    applyTheme(saved === "dark" ? "dark" : "light");
+  }
+
+  document.getElementById("themeToggle").addEventListener("click", function(){
+    var next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* no-op */ }
+  });
+
   // ---------- init ----------
 
+  initTheme();
   renderEyeSections();
   renderVH();
   refreshAll();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anterior Segment Note Builder</title>
+<title>Anterior &amp; Posterior Segment Note Builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -15,9 +15,10 @@
     --ink: #142127;
     --ink-soft: #52616B;
     --line: #D6DEDB;
-    --accent: #0E6E68;
-    --accent-soft: #E3F0EE;
-    --accent-ink: #08403C;
+    --accent: #3D6B96;
+    --accent-soft: #E2EBF3;
+    --accent-ink: #1D374F;
+    --accent-hover: #2D5478;
     --warn: #A2452F;
     --warn-soft: #F5E4DE;
     /* Footer is a fixed dark "torn receipt" strip in both themes, so its
@@ -36,9 +37,10 @@
     --ink: #E8EEEC;
     --ink-soft: #93A6A2;
     --line: #2A3638;
-    --accent: #2FBBA8;
-    --accent-soft: #163330;
-    --accent-ink: #8FE3D3;
+    --accent: #D4AF37;
+    --accent-soft: #332A14;
+    --accent-ink: #F0D998;
+    --accent-hover: #B8922C;
   }
 
   *{ box-sizing: border-box; }
@@ -350,6 +352,38 @@
     font-size: 13px;
   }
 
+  /* ---------- tab switcher (pinned, doesn't scroll) ---------- */
+  .tab-switcher{
+    flex: none;
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .tab-btn{
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Each tab's cards need the same flex-column/gap main{} gave them directly
+     before they were split into two panels. */
+  .tab-panel{
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  /* Author display:flex above beats the UA [hidden]{display:none} rule on
+     specificity ties, so it has to be overridden explicitly here. */
+  .tab-panel[hidden]{
+    display: none;
+  }
+
   /* ---------- preview footer ---------- */
   footer{
     flex: none;
@@ -429,7 +463,7 @@
   }
 
   .btn-copy:hover:not(:disabled){
-    background: #0B5B56;
+    background: var(--accent-hover);
   }
 
   .btn-copy:active:not(:disabled){
@@ -495,11 +529,18 @@
   </button>
   <div class="title-block">
     <span class="eyebrow">Optometry Charting</span>
-    <h1>Anterior Segment Note Builder</h1>
+    <h1>Anterior &amp; Posterior Segment Note Builder</h1>
   </div>
 </header>
 
+<nav class="tab-switcher">
+  <button type="button" class="chip chip-preset tab-btn is-active" data-type="tab" data-tab="anterior">Anterior</button>
+  <button type="button" class="chip chip-preset tab-btn" data-type="tab" data-tab="posterior">Posterior</button>
+</nav>
+
 <main id="app">
+
+  <div class="tab-panel" data-tab-panel="anterior">
 
   <section class="card" id="section-lids">
     <div class="card-head">
@@ -558,12 +599,84 @@
     </div>
   </section>
 
+  </div>
+
+  <div class="tab-panel" data-tab-panel="posterior" hidden>
+
+  <section class="card" id="section-imaging">
+    <div class="card-head">
+      <h2>Imaging</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="optos">OPTOS</button>
+      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="oct">OCT</button>
+      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="drs">DRS</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-vit">
+    <div class="card-head">
+      <h2>Vitreous</h2>
+    </div>
+    <div class="eyes-grid" data-post-eyes-grid="vit"></div>
+  </section>
+
+  <section class="card" id="section-onh">
+    <div class="card-head">
+      <h2>ONH</h2>
+    </div>
+    <div class="eyes-grid" data-onh-grid></div>
+  </section>
+
+  <section class="card" id="section-cdr">
+    <div class="card-head">
+      <h2>CDR</h2>
+    </div>
+    <div class="vh-grid" data-cdr-grid></div>
+  </section>
+
+  <section class="card" id="section-macula">
+    <div class="card-head">
+      <h2>Macula</h2>
+    </div>
+    <div class="eyes-grid" data-post-eyes-grid="macula"></div>
+  </section>
+
+  <section class="card" id="section-arcades">
+    <div class="card-head">
+      <h2>Arcades</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="arcades">arcades clear OU</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-bv">
+    <div class="card-head">
+      <h2>BV</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="bv">BV 2:3, non-tort, oblique crossings OU</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-periphery">
+    <div class="card-head">
+      <h2>Periphery</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="periphery">mid periphery clear undilated 90D</button>
+    </div>
+  </section>
+
+  </div>
+
 </main>
 
 <footer>
   <div class="preview-wrap">
     <div class="preview-head">
-      <span class="preview-eyebrow">Note preview</span>
+      <span class="preview-eyebrow" id="previewEyebrow">Anterior note preview</span>
       <div class="preview-actions">
         <button type="button" class="btn-ghost" data-type="reset">Reset to defaults</button>
         <button type="button" class="btn-copy" data-type="copy" id="copyBtn">Copy note</button>
@@ -579,6 +692,7 @@
   "use strict";
 
   var VH_VALUES = ["0.1","0.3","0.5","0.7","1.0"];
+  var CDR_VALUES = ["0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8"];
 
   var LID_CONDITIONS = [
     { key: "MGD",   label: "MGD",   grades: true },
@@ -599,6 +713,23 @@
   var CONDITIONS_MAP = { lids: LID_CONDITIONS, conj: CONJ_CONDITIONS, lens: LENS_CONDITIONS };
   // Labels as they appear in the pasted note (distinct from the card headers in the UI).
   var OUTPUT_LABELS = { lids: "lid/lashes", conj: "conj", lens: "lens" };
+
+  // Posterior segment is a second, fully independent note builder on the same page
+  // (own state, own preview, own copy/reset). Vit/macula reuse the same per-eye
+  // clear+conditions system as conj, but findings on the same eye join with ", "
+  // here (not a space) and macula's "clear" fallback is a descriptive phrase.
+  // weissRing's output text ("weiss ring seen") differs from its button label.
+  var VIT_CONDITIONS = [
+    { key: "floaters",  label: "floaters" },
+    { key: "weissRing", label: "weiss ring", text: "weiss ring seen" }
+  ];
+  // Order matches the one confirmed reference note ("R ERM, dry AMD").
+  var MACULA_CONDITIONS = [
+    { key: "ERM",          label: "ERM" },
+    { key: "dryAMD",       label: "dry AMD" },
+    { key: "mildMottling", label: "mild mottling" }
+  ];
+  var POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITIONS };
 
   // ---------- state ----------
 
@@ -646,9 +777,44 @@
 
   var state = defaultState();
 
+  // ---------- posterior state (fully independent second note) ----------
+
+  function freshPosteriorState(){
+    return {
+      imaging: { optos: false, oct: false, drs: false },
+      vit: freshSectionState(VIT_CONDITIONS),
+      onh: { R: { PPA: false }, L: { PPA: false } },
+      cdr: { R: "0.3", L: "0.3" },
+      macula: freshSectionState(MACULA_CONDITIONS),
+      arcades: false,
+      bv: false,
+      periphery: false
+    };
+  }
+
+  function defaultPosteriorState(){
+    var p = freshPosteriorState();
+    p.imaging.optos = true;
+    p.vit.R.clear = true;
+    p.vit.L.clear = true;
+    p.macula.R.clear = true;
+    p.macula.L.clear = true;
+    p.arcades = true;
+    p.bv = true;
+    p.periphery = true;
+    return p;
+  }
+
+  var posteriorState = defaultPosteriorState();
+
   // ---------- render (build DOM once) ----------
 
-  function conditionRowHTML(sectionKey, eye, c){
+  // scope disambiguates posterior's vit/macula (which share this exact per-eye
+  // clear+conditions markup) from anterior's lids/conj/lens via the data-type
+  // value, so one delegated click handler can tell which state bag to mutate
+  // without the two note builders' sections colliding on selector lookups.
+  function conditionRowHTML(sectionKey, eye, c, scope){
+    var boolType = scope ? scope + "Bool" : "bool";
     if (c.grades){
       var chips = [1,2,3,4].map(function(g){
         return '<button type="button" class="chip chip-grade" data-type="grade" data-section="' + sectionKey +
@@ -663,15 +829,16 @@
       }).join("");
       return '<div class="cond-row"><span class="cond-label">' + c.label + '</span><div class="grade-chips">' + choiceChips + '</div></div>';
     }
-    return '<div class="cond-row cond-row-bool"><button type="button" class="chip chip-bool" data-type="bool" data-section="' +
+    return '<div class="cond-row cond-row-bool"><button type="button" class="chip chip-bool" data-type="' + boolType + '" data-section="' +
       sectionKey + '" data-eye="' + eye + '" data-cond="' + c.key + '">' + c.label + '</button></div>';
   }
 
-  function eyeGroupHTML(sectionKey, eye, conditions){
-    var rows = conditions.map(function(c){ return conditionRowHTML(sectionKey, eye, c); }).join("");
+  function eyeGroupHTML(sectionKey, eye, conditions, scope){
+    var clearType = scope ? scope + "EyeClear" : "eyeClear";
+    var rows = conditions.map(function(c){ return conditionRowHTML(sectionKey, eye, c, scope); }).join("");
     return '<div class="eye-group">' +
       '<div class="eye-group-head"><span class="eye-label">' + eye + '</span>' +
-      '<button type="button" class="chip chip-clear" data-type="eyeClear" data-section="' + sectionKey + '" data-eye="' + eye + '">clear</button>' +
+      '<button type="button" class="chip chip-clear" data-type="' + clearType + '" data-section="' + sectionKey + '" data-eye="' + eye + '">clear</button>' +
       '</div><div class="cond-rows">' + rows + '</div></div>';
   }
 
@@ -680,6 +847,14 @@
       var grid = document.querySelector('[data-eyes-grid="' + sectionKey + '"]');
       var conditions = CONDITIONS_MAP[sectionKey];
       grid.innerHTML = eyeGroupHTML(sectionKey, "R", conditions) + eyeGroupHTML(sectionKey, "L", conditions);
+    });
+  }
+
+  function renderPosteriorEyeSections(){
+    ["vit", "macula"].forEach(function(sectionKey){
+      var grid = document.querySelector('[data-post-eyes-grid="' + sectionKey + '"]');
+      var conditions = POSTERIOR_CONDITIONS_MAP[sectionKey];
+      grid.innerHTML = eyeGroupHTML(sectionKey, "R", conditions, "posterior") + eyeGroupHTML(sectionKey, "L", conditions, "posterior");
     });
   }
 
@@ -699,6 +874,19 @@
     document.querySelector('[data-vh-grid]').innerHTML = vhEyeBlockHTML("R") + vhEyeBlockHTML("L");
   }
 
+  // Same shape as vhEyeBlockHTML but one value-slot per eye (no slash/second slot) -
+  // CDR is a single reading per eye, always shown, never OU-compacted.
+  function cdrEyeBlockHTML(eye){
+    var chips = CDR_VALUES.map(function(v){
+      return '<button type="button" class="chip chip-vh" data-type="cdr" data-eye="' + eye + '" data-value="' + v + '">' + v + '</button>';
+    }).join("");
+    return '<div class="vh-eye"><span class="eye-label">' + eye + '</span><div class="vh-slot">' + chips + '</div></div>';
+  }
+
+  function renderCdr(){
+    document.querySelector('[data-cdr-grid]').innerHTML = cdrEyeBlockHTML("R") + cdrEyeBlockHTML("L");
+  }
+
   // Pterygium is cornea-specific and per-eye, but unlike lids/conj/lens it has no
   // eye-level "clear" concept of its own (overall cornea clarity is the clear/arcus
   // preset above) - so it gets its own minimal render/state rather than joining
@@ -715,6 +903,20 @@
 
   function renderPterygium(){
     document.querySelector('[data-pterygium-grid]').innerHTML = pterygiumEyeHTML("R") + pterygiumEyeHTML("L");
+  }
+
+  // ONH's baseline phrase is always present (not a per-eye clear flag) and PPA is
+  // additive on top of it rather than replacing it - no clear button needed here,
+  // same reasoning as pterygium.
+  function onhEyeHTML(eye){
+    return '<div class="eye-group"><div class="eye-group-head"><span class="eye-label">' + eye + '</span></div>' +
+      '<div class="cond-rows"><div class="cond-row cond-row-bool">' +
+      '<button type="button" class="chip chip-bool" data-type="onh" data-eye="' + eye + '">PPA</button>' +
+      '</div></div></div>';
+  }
+
+  function renderOnh(){
+    document.querySelector('[data-onh-grid]').innerHTML = onhEyeHTML("R") + onhEyeHTML("L");
   }
 
   // ---------- refresh (sync button states to model) ----------
@@ -750,6 +952,23 @@
     });
   }
 
+  function refreshPosteriorEyeSection(sectionKey){
+    var sectionState = posteriorState[sectionKey];
+    var conditions = POSTERIOR_CONDITIONS_MAP[sectionKey];
+
+    ["R", "L"].forEach(function(eye){
+      var eyeState = sectionState[eye];
+      var clearBtn = document.querySelector('[data-type="posteriorEyeClear"][data-section="' + sectionKey + '"][data-eye="' + eye + '"]');
+      clearBtn.classList.toggle("is-active", !!eyeState.clear);
+
+      conditions.forEach(function(c){
+        var boolBtn = document.querySelector('[data-type="posteriorBool"][data-section="' + sectionKey + '"][data-eye="' + eye +
+          '"][data-cond="' + c.key + '"]');
+        boolBtn.classList.toggle("is-active", !!eyeState[c.key]);
+      });
+    });
+  }
+
   function refreshCornea(){
     document.querySelectorAll('[data-type="cornea"]').forEach(function(btn){
       btn.classList.toggle("is-active", state.cornea === btn.dataset.value);
@@ -765,6 +984,13 @@
     });
   }
 
+  function refreshOnh(){
+    ["R", "L"].forEach(function(eye){
+      var btn = document.querySelector('[data-type="onh"][data-eye="' + eye + '"]');
+      btn.classList.toggle("is-active", !!posteriorState.onh[eye].PPA);
+    });
+  }
+
   function refreshVH(){
     ["Rtop", "Rbottom", "Ltop", "Lbottom"].forEach(function(slot){
       document.querySelectorAll('[data-type="vh"][data-slot="' + slot + '"]').forEach(function(btn){
@@ -773,9 +999,27 @@
     });
   }
 
+  function refreshCdr(){
+    ["R", "L"].forEach(function(eye){
+      document.querySelectorAll('[data-type="cdr"][data-eye="' + eye + '"]').forEach(function(btn){
+        btn.classList.toggle("is-active", posteriorState.cdr[eye] === btn.dataset.value);
+      });
+    });
+  }
+
   function refreshSingle(sectionKey){
     var btn = document.querySelector('[data-type="single"][data-section="' + sectionKey + '"]');
     btn.classList.toggle("is-active", !!state[sectionKey]);
+  }
+
+  // Covers all six flat posterior booleans: imaging.optos/oct/drs plus the
+  // top-level arcades/bv/periphery flags - each is just a canned-text on/off
+  // toggle, same mechanism as irisT/ac but keyed by data-field instead of
+  // data-section since imaging's fields live nested under `imaging`.
+  function refreshPosteriorToggle(field){
+    var btn = document.querySelector('[data-type="posteriorToggle"][data-field="' + field + '"]');
+    var value = field === "optos" || field === "oct" || field === "drs" ? posteriorState.imaging[field] : posteriorState[field];
+    btn.classList.toggle("is-active", !!value);
   }
 
   function refreshAll(){
@@ -787,7 +1031,14 @@
     refreshVH();
     refreshSingle("irisT");
     refreshSingle("ac");
-    updatePreview();
+  }
+
+  function refreshPosteriorAll(){
+    ["optos", "oct", "drs", "arcades", "bv", "periphery"].forEach(refreshPosteriorToggle);
+    refreshPosteriorEyeSection("vit");
+    refreshPosteriorEyeSection("macula");
+    refreshOnh();
+    refreshCdr();
   }
 
   // ---------- note text ----------
@@ -813,7 +1064,7 @@
       } else if (c.choices){
         if (eyeState[c.key]) out.push({ key: c.key, text: c.label + " " + eyeState[c.key] });
       } else {
-        if (eyeState[c.key]) out.push({ key: c.key, text: c.label });
+        if (eyeState[c.key]) out.push({ key: c.key, text: c.text || c.label });
       }
     });
     return out;
@@ -840,13 +1091,18 @@
     return { common: common, rLeft: rLeft, lLeft: lLeft };
   }
 
-  function formatEyeSegments(compacted, rClear, lClear){
+  // joiner/clearLabel let posterior sections (comma-joined multi-condition eyes,
+  // a descriptive "clear" fallback phrase instead of the literal word) reuse this
+  // unchanged for anterior, which calls it with neither and gets identical output.
+  function formatEyeSegments(compacted, rClear, lClear, joiner, clearLabel){
+    joiner = joiner || " ";
+    clearLabel = clearLabel || "clear";
     var segments = [];
     if (compacted.common.length) segments.push(compacted.common.map(function(c){ return c + " OU"; }).join(", "));
-    if (compacted.rLeft.length) segments.push("R " + compacted.rLeft.join(" "));
-    else if (rClear) segments.push("R clear");
-    if (compacted.lLeft.length) segments.push("L " + compacted.lLeft.join(" "));
-    else if (lClear) segments.push("L clear");
+    if (compacted.rLeft.length) segments.push("R " + compacted.rLeft.join(joiner));
+    else if (rClear) segments.push("R " + clearLabel);
+    if (compacted.lLeft.length) segments.push("L " + compacted.lLeft.join(joiner));
+    else if (lClear) segments.push("L " + clearLabel);
     return segments.length ? segments.join(" ") : null;
   }
 
@@ -861,6 +1117,20 @@
     var lClauses = buildClauses(s.L, sectionKey, conditions);
 
     return formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear);
+  }
+
+  // Shared by posterior's vit/macula: same clear+conditions shape as sectionText,
+  // but with a configurable comma-joiner (posterior joins multi-condition eyes
+  // with ", " not a space) and a configurable "clear" fallback phrase (macula's
+  // is a descriptive baseline, not the literal word "clear").
+  function posteriorEyeSectionText(sectionState, sectionKey, conditions, clearLabel, joiner){
+    var rClear = sectionState.R.clear, lClear = sectionState.L.clear;
+    if (rClear && lClear) return clearLabel + " OU";
+
+    var rClauses = buildClauses(sectionState.R, sectionKey, conditions);
+    var lClauses = buildClauses(sectionState.L, sectionKey, conditions);
+
+    return formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear, joiner, clearLabel);
   }
 
   // Same nasal/temporal -> N+T combination as conj's ping, but pterygium has no
@@ -886,6 +1156,23 @@
     if (!vh.Rtop && !vh.Rbottom && !vh.Ltop && !vh.Lbottom) return null;
     var f = function(v){ return v || "\u2013"; };
     return "R " + f(vh.Rtop) + "/" + f(vh.Rbottom) + " L " + f(vh.Ltop) + "/" + f(vh.Lbottom);
+  }
+
+  // ONH's baseline is always present for both eyes (so it always OU-compacts on
+  // its own), with any PPA leftover(s) prefixed before it, comma-joined - the
+  // reverse order/joiner from formatEyeSegments' common-first/space-join, so this
+  // doesn't fit that helper. No reference example has PPA on both eyes at once;
+  // this joins them with a space if it happens (untested - see CLAUDE.md).
+  function onhText(){
+    var baseline = "distinct margins, evenly perfused";
+    var pieces = [];
+    if (posteriorState.onh.R.PPA) pieces.push("R PPA");
+    if (posteriorState.onh.L.PPA) pieces.push("L PPA");
+    return pieces.length ? pieces.join(" ") + ", " + baseline + " OU" : baseline + " OU";
+  }
+
+  function cdrText(){
+    return "R" + posteriorState.cdr.R + " L" + posteriorState.cdr.L;
   }
 
   function buildNote(){
@@ -918,15 +1205,39 @@
     return parts.join(" | ");
   }
 
+  function buildPosteriorNote(){
+    var parts = [];
+    var img = posteriorState.imaging;
+
+    ["optos", "oct", "drs"].forEach(function(field){
+      if (img[field]) parts.push(field.toUpperCase());
+    });
+
+    var vitTxt = posteriorEyeSectionText(posteriorState.vit, "vit", VIT_CONDITIONS, "clear", ", ");
+    if (vitTxt) parts.push("vit " + vitTxt);
+    parts.push("ONH " + onhText());
+    parts.push("CDR " + cdrText());
+    var maculaTxt = posteriorEyeSectionText(posteriorState.macula, "macula", MACULA_CONDITIONS, "flat, even pigmentation, clear reflex", ", ");
+    if (maculaTxt) parts.push("macula " + maculaTxt);
+
+    if (posteriorState.arcades) parts.push("arcades clear OU");
+    if (posteriorState.bv) parts.push("BV 2:3, non-tort, oblique crossings OU");
+    if (posteriorState.periphery) parts.push("mid periphery clear undilated 90D");
+
+    return parts.join(" | ");
+  }
+
   // ---------- preview / copy ----------
 
   var previewEl = document.getElementById("preview");
   var copyBtn = document.getElementById("copyBtn");
+  var previewEyebrowEl = document.getElementById("previewEyebrow");
 
-  // Any button click regenerates the textarea from current selections (overwriting
-  // manual edits). Typing directly in the textarea is preserved until the next click.
-  function updatePreview(){
-    previewEl.value = buildNote();
+  // The footer is shared by both notes - it always shows whichever note the
+  // active tab points to, so switching tabs re-renders it via setActiveTab()
+  // and every click re-renders it via this same call at the end of handleClick.
+  function updateActivePreview(){
+    previewEl.value = activeTab === "anterior" ? buildNote() : buildPosteriorNote();
     syncCopyState();
   }
 
@@ -970,8 +1281,25 @@
     state[sectionKey][eye] = freshEyeState(CONDITIONS_MAP[sectionKey]);
   }
 
+  var activeTab = "anterior";
+
+  // Switching tabs never touches state - it's purely which panel is visible and
+  // which note the shared footer currently reflects.
+  function setActiveTab(tab){
+    activeTab = tab;
+    document.querySelectorAll(".tab-btn").forEach(function(btn){
+      btn.classList.toggle("is-active", btn.dataset.tab === tab);
+    });
+    document.querySelectorAll(".tab-panel").forEach(function(panel){
+      panel.hidden = panel.dataset.tabPanel !== tab;
+    });
+    previewEyebrowEl.textContent = (tab === "anterior" ? "Anterior" : "Posterior") + " note preview";
+    updateActivePreview();
+  }
+
   document.getElementById("app").addEventListener("click", handleClick);
   document.querySelector("footer").addEventListener("click", handleClick);
+  document.querySelector(".tab-switcher").addEventListener("click", handleClick);
 
   function handleClick(e){
     var btn = e.target.closest("button[data-type]");
@@ -1028,16 +1356,56 @@
         break;
       }
       case "reset": {
-        state = defaultState();
+        if (activeTab === "anterior") state = defaultState();
+        else posteriorState = defaultPosteriorState();
         break;
       }
       case "copy": {
         copyNote();
         return;
       }
+      case "tab": {
+        setActiveTab(btn.dataset.tab);
+        return;
+      }
+      case "posteriorEyeClear": {
+        var pcSec = btn.dataset.section, pcEye = btn.dataset.eye;
+        var pcTurningOn = !posteriorState[pcSec][pcEye].clear;
+        posteriorState[pcSec][pcEye] = freshEyeState(POSTERIOR_CONDITIONS_MAP[pcSec]);
+        posteriorState[pcSec][pcEye].clear = pcTurningOn;
+        break;
+      }
+      case "posteriorBool": {
+        var pbSec = btn.dataset.section, pbEye = btn.dataset.eye, pbCond = btn.dataset.cond;
+        var pbEyeState = posteriorState[pbSec][pbEye];
+        pbEyeState[pbCond] = !pbEyeState[pbCond];
+        if (pbEyeState[pbCond]) pbEyeState.clear = false;
+        break;
+      }
+      case "onh": {
+        var onhEye = btn.dataset.eye;
+        posteriorState.onh[onhEye].PPA = !posteriorState.onh[onhEye].PPA;
+        break;
+      }
+      case "cdr": {
+        var cdrEye = btn.dataset.eye, cdrVal = btn.dataset.value;
+        posteriorState.cdr[cdrEye] = cdrVal;
+        break;
+      }
+      case "posteriorToggle": {
+        var ptField = btn.dataset.field;
+        if (ptField === "optos" || ptField === "oct" || ptField === "drs"){
+          posteriorState.imaging[ptField] = !posteriorState.imaging[ptField];
+        } else {
+          posteriorState[ptField] = !posteriorState[ptField];
+        }
+        break;
+      }
     }
 
     refreshAll();
+    refreshPosteriorAll();
+    updateActivePreview();
   }
 
   // ---------- theme ----------
@@ -1067,6 +1435,11 @@
   renderPterygium();
   renderVH();
   refreshAll();
+  renderPosteriorEyeSections();
+  renderOnh();
+  renderCdr();
+  refreshPosteriorAll();
+  setActiveTab("anterior");
 
 })();
 </script>

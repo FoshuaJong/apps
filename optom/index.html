@@ -537,7 +537,7 @@
 
   var CONDITIONS_MAP = { lids: LID_CONDITIONS, conj: CONJ_CONDITIONS, lens: LENS_CONDITIONS };
   // Labels as they appear in the pasted note (distinct from the card headers in the UI).
-  var OUTPUT_LABELS = { lids: "lid/lashes", conj: "conj", lens: "Lens" };
+  var OUTPUT_LABELS = { lids: "lid/lashes", conj: "conj", lens: "`lens" };
 
   // ---------- state ----------
 
@@ -769,7 +769,7 @@
     if (state.ac) parts.push("AC deep and Q OU");
 
     if (parts.length === 0) return "";
-    return parts.join(" | ") + ".";
+    return parts.join(" | ");
   }
 
   // ---------- preview / copy ----------

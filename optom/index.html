@@ -442,7 +442,6 @@
   <section class="card" id="section-lids">
     <div class="card-head">
       <h2>Lids/lashes</h2>
-      <button type="button" class="chip chip-preset" data-type="clearOU" data-section="lids">clear OU</button>
     </div>
     <div class="eyes-grid" data-eyes-grid="lids"></div>
   </section>
@@ -450,7 +449,6 @@
   <section class="card" id="section-conj">
     <div class="card-head">
       <h2>Conj</h2>
-      <button type="button" class="chip chip-preset" data-type="clearOU" data-section="conj">clear OU</button>
     </div>
     <div class="eyes-grid" data-eyes-grid="conj"></div>
   </section>
@@ -475,7 +473,6 @@
   <section class="card" id="section-lens">
     <div class="card-head">
       <h2>Lens</h2>
-      <button type="button" class="chip chip-preset" data-type="clearOU" data-section="lens">clear OU</button>
     </div>
     <div class="eyes-grid" data-eyes-grid="lens"></div>
   </section>
@@ -548,7 +545,7 @@
   }
 
   function freshSectionState(conditions){
-    return { clearOU: false, R: freshEyeState(conditions), L: freshEyeState(conditions) };
+    return { R: freshEyeState(conditions), L: freshEyeState(conditions) };
   }
 
   function freshState(){
@@ -565,11 +562,14 @@
 
   function defaultState(){
     var s = freshState();
-    s.lids.clearOU = true;
-    s.conj.clearOU = true;
+    s.lids.R.clear = true;
+    s.lids.L.clear = true;
+    s.conj.R.clear = true;
+    s.conj.L.clear = true;
     s.cornea = "clear";
     s.vh = { Rtop: "1.0", Rbottom: "1.0", Ltop: "1.0", Lbottom: "1.0" };
-    s.lens.clearOU = true;
+    s.lens.R.clear = true;
+    s.lens.L.clear = true;
     s.irisT = true;
     s.ac = true;
     return s;
@@ -629,9 +629,6 @@
     var sectionState = state[sectionKey];
     var conditions = CONDITIONS_MAP[sectionKey];
 
-    var clearOUBtn = document.querySelector('[data-type="clearOU"][data-section="' + sectionKey + '"]');
-    clearOUBtn.classList.toggle("is-active", !!sectionState.clearOU);
-
     ["R", "L"].forEach(function(eye){
       var eyeState = sectionState[eye];
       var clearBtn = document.querySelector('[data-type="eyeClear"][data-section="' + sectionKey + '"][data-eye="' + eye + '"]');
@@ -685,33 +682,29 @@
 
   // ---------- note text ----------
 
-  // Builds the ordered list of clause strings ("cortical gd1", "hyperaemia", "ping N+T"...)
-  // active for one eye. Conj gets special handling to combine nasal+temporal ping into "N+T".
+  // Builds the ordered list of clause objects ({key, text}) active for one eye.
+  // "key" identifies the underlying finding so the other eye's matching clause can
+  // be detected even when the two eyes' clause lists aren't identical overall.
+  // Conj gets special handling to combine nasal+temporal ping into "N+T".
   function buildClauses(eyeState, sectionKey, conditions){
     if (sectionKey === "conj"){
       var clauses = [];
-      if (eyeState.hyperaemia) clauses.push("hyperaemia");
+      if (eyeState.hyperaemia) clauses.push({ key: "hyperaemia", text: "hyperaemia" });
       var n = eyeState.nasalPing, t = eyeState.temporalPing;
-      if (n && t) clauses.push("ping N+T");
-      else if (n) clauses.push("nasal ping");
-      else if (t) clauses.push("temporal ping");
+      if (n && t) clauses.push({ key: "ping", text: "ping N+T" });
+      else if (n) clauses.push({ key: "ping", text: "nasal ping" });
+      else if (t) clauses.push({ key: "ping", text: "temporal ping" });
       return clauses;
     }
     var out = [];
     conditions.forEach(function(c){
       if (c.grades){
-        if (eyeState[c.key]) out.push(c.label + " gd" + eyeState[c.key]);
+        if (eyeState[c.key]) out.push({ key: c.key, text: c.label + " gd" + eyeState[c.key] });
       } else {
-        if (eyeState[c.key]) out.push(c.label);
+        if (eyeState[c.key]) out.push({ key: c.key, text: c.label });
       }
     });
     return out;
-  }
-
-  function clausesEqual(a, b){
-    if (a.length !== b.length) return false;
-    for (var i = 0; i < a.length; i++){ if (a[i] !== b[i]) return false; }
-    return true;
   }
 
   function sectionText(sectionKey){
@@ -719,24 +712,36 @@
     var conditions = CONDITIONS_MAP[sectionKey];
 
     var rClear = s.R.clear, lClear = s.L.clear;
-    if (s.clearOU || (rClear && lClear)) return "clear OU";
+    if (rClear && lClear) return "clear OU";
 
     var rClauses = buildClauses(s.R, sectionKey, conditions);
     var lClauses = buildClauses(s.L, sectionKey, conditions);
 
-    // Same finding(s) on both eyes -> compact to "{clause} OU, {clause} OU"
-    if (rClauses.length > 0 && clausesEqual(rClauses, lClauses)){
-      return rClauses.map(function(c){ return c + " OU"; }).join(", ");
-    }
+    // Match clauses shared by both eyes (same finding, same grade) -> "{clause} OU".
+    // Whatever's left on either eye - including findings the other eye doesn't have -
+    // stays under that eye's own "R"/"L" prefix instead of breaking OU-compaction entirely.
+    var lUsed = lClauses.map(function(){ return false; });
+    var common = [];
+    var rLeft = [];
+    rClauses.forEach(function(rc){
+      var idx = lClauses.findIndex(function(lc, i){ return !lUsed[i] && lc.key === rc.key && lc.text === rc.text; });
+      if (idx === -1){
+        rLeft.push(rc.text);
+      } else {
+        common.push(rc.text);
+        lUsed[idx] = true;
+      }
+    });
+    var lLeft = lClauses.filter(function(lc, i){ return !lUsed[i]; }).map(function(lc){ return lc.text; });
 
-    var parts = [];
-    if (rClauses.length) parts.push("R " + rClauses.join(" "));
-    else if (rClear) parts.push("R clear");
+    var segments = [];
+    if (common.length) segments.push(common.map(function(c){ return c + " OU"; }).join(", "));
+    if (rLeft.length) segments.push("R " + rLeft.join(" "));
+    else if (rClear) segments.push("R clear");
+    if (lLeft.length) segments.push("L " + lLeft.join(" "));
+    else if (lClear) segments.push("L clear");
 
-    if (lClauses.length) parts.push("L " + lClauses.join(" "));
-    else if (lClear) parts.push("L clear");
-
-    return parts.length ? parts.join(" ") : null;
+    return segments.length ? segments.join(" ") : null;
   }
 
   function vhText(){
@@ -820,10 +825,6 @@
 
   // ---------- interaction ----------
 
-  function resetSection(sectionKey){
-    state[sectionKey] = freshSectionState(CONDITIONS_MAP[sectionKey]);
-  }
-
   function resetEye(sectionKey, eye){
     state[sectionKey][eye] = freshEyeState(CONDITIONS_MAP[sectionKey]);
   }
@@ -837,19 +838,11 @@
     var type = btn.dataset.type;
 
     switch (type){
-      case "clearOU": {
-        var sec = btn.dataset.section;
-        var turningOn = !state[sec].clearOU;
-        resetSection(sec);
-        state[sec].clearOU = turningOn;
-        break;
-      }
       case "eyeClear": {
         var sec2 = btn.dataset.section, eye2 = btn.dataset.eye;
         var turningOn2 = !state[sec2][eye2].clear;
         resetEye(sec2, eye2);
         state[sec2][eye2].clear = turningOn2;
-        state[sec2].clearOU = false;
         break;
       }
       case "grade": {
@@ -857,7 +850,6 @@
         var eyeState3 = state[sec3][eye3];
         eyeState3[cond3] = (eyeState3[cond3] === grade3) ? null : grade3;
         eyeState3.clear = false;
-        state[sec3].clearOU = false;
         break;
       }
       case "bool": {
@@ -865,7 +857,6 @@
         var eyeState4 = state[sec4][eye4];
         eyeState4[cond4] = !eyeState4[cond4];
         if (eyeState4[cond4]) eyeState4.clear = false;
-        state[sec4].clearOU = false;
         break;
       }
       case "cornea": {

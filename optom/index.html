@@ -772,6 +772,8 @@
     conditions.forEach(function(c){
       if (c.grades){
         if (eyeState[c.key]) out.push({ key: c.key, text: c.label + " gd" + eyeState[c.key] });
+      } else if (c.choices){
+        if (eyeState[c.key]) out.push({ key: c.key, text: c.label + " " + eyeState[c.key] });
       } else {
         if (eyeState[c.key]) out.push({ key: c.key, text: c.label });
       }
@@ -817,27 +819,10 @@
     var rClear = s.R.clear, lClear = s.L.clear;
     if (rClear && lClear) return "clear OU";
 
-    // Choice-based conditions (e.g. Lens PSC) are reported as their own labeled
-    // sub-clause - "PSC R on axis" - rather than folding into the main R/L clause
-    // list, so they're excluded here and handled separately below.
-    var mainConditions = conditions.filter(function(c){ return !c.choices; });
-    var rClauses = buildClauses(s.R, sectionKey, mainConditions);
-    var lClauses = buildClauses(s.L, sectionKey, mainConditions);
+    var rClauses = buildClauses(s.R, sectionKey, conditions);
+    var lClauses = buildClauses(s.L, sectionKey, conditions);
 
-    var segments = [];
-    var mainText = formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear);
-    if (mainText) segments.push(mainText);
-
-    conditions.filter(function(c){ return c.choices; }).forEach(function(c){
-      var rVal = s.R[c.key], lVal = s.L[c.key];
-      if (!rVal && !lVal) return;
-      var rChoiceClauses = rVal ? [{ key: c.key, text: rVal }] : [];
-      var lChoiceClauses = lVal ? [{ key: c.key, text: lVal }] : [];
-      var choiceText = formatEyeSegments(compactEyeClauses(rChoiceClauses, lChoiceClauses), false, false);
-      if (choiceText) segments.push(c.label + " " + choiceText);
-    });
-
-    return segments.length ? segments.join(" ") : null;
+    return formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear);
   }
 
   function vhText(){

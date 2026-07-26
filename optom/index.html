@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anterior Segment Note Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EDF1F0;
+    --paper: #FFFFFF;
+    --ink: #142127;
+    --ink-soft: #52616B;
+    --line: #D6DEDB;
+    --accent: #0E6E68;
+    --accent-soft: #E3F0EE;
+    --accent-ink: #08403C;
+    --warn: #A2452F;
+    --warn-soft: #F5E4DE;
+    --radius: 10px;
+    --pill: 999px;
+    --gap: 14px;
+    font-size: 16px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    height: 100%;
+    margin: 0;
+  }
+
+  body{
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button{
+    font-family: inherit;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    padding: 22px 20px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .eye-mark{
+    flex: none;
+    width: 34px;
+    height: 34px;
+  }
+
+  header .title-block{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  header h1{
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- layout ---------- */
+  main{
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 18px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .card{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px 16px 18px;
+  }
+
+  .card-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .card-head h2{
+    margin: 0;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* ---------- chips (buttons) ---------- */
+  .chip{
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: var(--pill);
+    padding: 6px 13px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .chip:hover{
+    border-color: var(--accent);
+  }
+
+  .chip:active{
+    transform: scale(0.96);
+  }
+
+  .chip:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .chip.is-active{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .chip-preset{
+    font-weight: 600;
+    background: var(--accent-soft);
+    border-color: var(--accent-soft);
+    color: var(--accent-ink);
+  }
+
+  .chip-preset:hover{
+    border-color: var(--accent);
+  }
+
+  .chip-preset.is-active{
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .chip-clear{
+    font-size: 12px;
+    padding: 4px 11px;
+    color: var(--ink-soft);
+  }
+
+  .chip-grade{
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  .chip-vh{
+    min-width: 34px;
+    padding: 5px 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* ---------- eye groups ---------- */
+  .eyes-grid{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  @media (min-width: 620px){
+    .eyes-grid{
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .eye-group{
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px 12px;
+    background: #FBFCFB;
+  }
+
+  .eye-group-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .eye-label{
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    color: var(--ink-soft);
+  }
+
+  .cond-rows{
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .cond-row{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cond-label{
+    font-size: 13px;
+    font-weight: 500;
+    width: 58px;
+    flex: none;
+    color: var(--ink-soft);
+  }
+
+  .grade-chips{
+    display: flex;
+    gap: 6px;
+  }
+
+  .cond-row-bool .chip-bool{
+    width: 100%;
+    text-align: left;
+  }
+
+  .preset-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ---------- VH ---------- */
+  .vh-grid{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .vh-eye{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .vh-slot{
+    display: flex;
+    gap: 5px;
+  }
+
+  .vh-slash{
+    color: var(--ink-soft);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  /* ---------- preview footer ---------- */
+  footer{
+    flex: none;
+    background: var(--ink);
+    border-top: 3px dashed #3A4750;
+    position: relative;
+  }
+
+  footer::before{
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: repeating-linear-gradient(90deg, var(--bg) 0 6px, transparent 6px 12px);
+  }
+
+  .preview-wrap{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 12px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .preview-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .preview-eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #8FA6A2;
+  }
+
+  .preview-actions{
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-ghost{
+    appearance: none;
+    background: transparent;
+    border: 1px solid #3A4750;
+    color: #C7D2D0;
+    border-radius: var(--pill);
+    padding: 6px 13px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+  }
+
+  .btn-ghost:hover{
+    border-color: var(--warn);
+    color: #F0C9BC;
+  }
+
+  .btn-copy{
+    appearance: none;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #fff;
+    border-radius: var(--pill);
+    padding: 6px 16px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.06s ease;
+  }
+
+  .btn-copy:hover:not(:disabled){
+    background: #0B5B56;
+  }
+
+  .btn-copy:active:not(:disabled){
+    transform: scale(0.97);
+  }
+
+  .btn-copy:disabled{
+    background: #3A4750;
+    border-color: #3A4750;
+    color: #7C8B8A;
+    cursor: not-allowed;
+  }
+
+  .btn-copy.is-copied{
+    background: var(--accent-ink);
+  }
+
+  #preview{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #EAF1EF;
+    background: transparent;
+    border: 1px solid #3A4750;
+    border-radius: 8px;
+    padding: 10px 12px;
+    resize: vertical;
+    width: 100%;
+    max-height: 32vh;
+    min-height: 3.6em;
+  }
+
+  #preview:focus{
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  #preview::placeholder{
+    color: #6E7E7C;
+  }
+
+  .preview-hint{
+    font-size: 11px;
+    color: #6E7E7C;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg class="eye-mark" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M2 17C2 17 8 6 17 6C26 6 32 17 32 17C32 17 26 28 17 28C8 28 2 17 2 17Z" stroke="#0E6E68" stroke-width="2"/>
+    <circle cx="17" cy="17" r="6" stroke="#0E6E68" stroke-width="2"/>
+    <circle cx="17" cy="17" r="2" fill="#0E6E68"/>
+  </svg>
+  <div class="title-block">
+    <span class="eyebrow">Optometry Charting</span>
+    <h1>Anterior Segment Note Builder</h1>
+  </div>
+</header>
+
+<main id="app">
+
+  <section class="card" id="section-lids">
+    <div class="card-head">
+      <h2>Lids/lashes</h2>
+      <button type="button" class="chip chip-preset" data-type="clearOU" data-section="lids">clear OU</button>
+    </div>
+    <div class="eyes-grid" data-eyes-grid="lids"></div>
+  </section>
+
+  <section class="card" id="section-conj">
+    <div class="card-head">
+      <h2>Conj</h2>
+      <button type="button" class="chip chip-preset" data-type="clearOU" data-section="conj">clear OU</button>
+    </div>
+    <div class="eyes-grid" data-eyes-grid="conj"></div>
+  </section>
+
+  <section class="card" id="section-cornea">
+    <div class="card-head">
+      <h2>Cornea</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="cornea" data-value="clear">clear OU</button>
+      <button type="button" class="chip chip-preset" data-type="cornea" data-value="arcus">Arcus OU otherwise clear OU</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-vh">
+    <div class="card-head">
+      <h2>VH</h2>
+    </div>
+    <div class="vh-grid" data-vh-grid></div>
+  </section>
+
+  <section class="card" id="section-lens">
+    <div class="card-head">
+      <h2>Lens</h2>
+      <button type="button" class="chip chip-preset" data-type="clearOU" data-section="lens">clear OU</button>
+    </div>
+    <div class="eyes-grid" data-eyes-grid="lens"></div>
+  </section>
+
+  <section class="card" id="section-irisT">
+    <div class="card-head">
+      <h2>IrisT</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="single" data-section="irisT">no IrisT OU</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-ac">
+    <div class="card-head">
+      <h2>AC</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="single" data-section="ac">AC deep and Q OU</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="preview-wrap">
+    <div class="preview-head">
+      <span class="preview-eyebrow">Note preview</span>
+      <div class="preview-actions">
+        <button type="button" class="btn-ghost" data-type="reset">Reset to defaults</button>
+        <button type="button" class="btn-copy" data-type="copy" id="copyBtn">Copy note</button>
+      </div>
+    </div>
+    <textarea id="preview" rows="3" spellcheck="false" placeholder="Nothing selected yet…"></textarea>
+    <span class="preview-hint">Editable — tweak wording here before copying if needed.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var VH_VALUES = ["0.1","0.3","0.5","0.7","1.0"];
+
+  var LID_CONDITIONS = [
+    { key: "MGD",   label: "MGD",   grades: true },
+    { key: "bleph", label: "bleph", grades: true }
+  ];
+  var CONJ_CONDITIONS = [
+    { key: "hyperaemia",    label: "hyperaemia",    grades: false },
+    { key: "nasalPing",     label: "nasal ping",    grades: false },
+    { key: "temporalPing",  label: "temporal ping", grades: false }
+  ];
+  // Cortical listed before NS to match current clinic note convention.
+  var LENS_CONDITIONS = [
+    { key: "Cortical", label: "cortical", grades: true },
+    { key: "NS",       label: "NS",       grades: true }
+  ];
+
+  var CONDITIONS_MAP = { lids: LID_CONDITIONS, conj: CONJ_CONDITIONS, lens: LENS_CONDITIONS };
+  // Labels as they appear in the pasted note (distinct from the card headers in the UI).
+  var OUTPUT_LABELS = { lids: "lid/lashes", conj: "conj", lens: "Lens" };
+
+  // ---------- state ----------
+
+  function freshEyeState(conditions){
+    var o = { clear: false };
+    conditions.forEach(function(c){ o[c.key] = c.grades ? null : false; });
+    return o;
+  }
+
+  function freshSectionState(conditions){
+    return { clearOU: false, R: freshEyeState(conditions), L: freshEyeState(conditions) };
+  }
+
+  function freshState(){
+    return {
+      lids: freshSectionState(LID_CONDITIONS),
+      conj: freshSectionState(CONJ_CONDITIONS),
+      cornea: null,
+      vh: { Rtop: null, Rbottom: null, Ltop: null, Lbottom: null },
+      lens: freshSectionState(LENS_CONDITIONS),
+      irisT: false,
+      ac: false
+    };
+  }
+
+  function defaultState(){
+    var s = freshState();
+    s.lids.clearOU = true;
+    s.conj.clearOU = true;
+    s.cornea = "clear";
+    s.vh = { Rtop: "1.0", Rbottom: "1.0", Ltop: "1.0", Lbottom: "1.0" };
+    s.lens.clearOU = true;
+    s.irisT = true;
+    s.ac = true;
+    return s;
+  }
+
+  var state = defaultState();
+
+  // ---------- render (build DOM once) ----------
+
+  function conditionRowHTML(sectionKey, eye, c){
+    if (c.grades){
+      var chips = [1,2,3,4].map(function(g){
+        return '<button type="button" class="chip chip-grade" data-type="grade" data-section="' + sectionKey +
+          '" data-eye="' + eye + '" data-cond="' + c.key + '" data-grade="' + g + '">' + g + '</button>';
+      }).join("");
+      return '<div class="cond-row"><span class="cond-label">' + c.label + '</span><div class="grade-chips">' + chips + '</div></div>';
+    }
+    return '<div class="cond-row cond-row-bool"><button type="button" class="chip chip-bool" data-type="bool" data-section="' +
+      sectionKey + '" data-eye="' + eye + '" data-cond="' + c.key + '">' + c.label + '</button></div>';
+  }
+
+  function eyeGroupHTML(sectionKey, eye, conditions){
+    var rows = conditions.map(function(c){ return conditionRowHTML(sectionKey, eye, c); }).join("");
+    return '<div class="eye-group">' +
+      '<div class="eye-group-head"><span class="eye-label">' + eye + '</span>' +
+      '<button type="button" class="chip chip-clear" data-type="eyeClear" data-section="' + sectionKey + '" data-eye="' + eye + '">clear</button>' +
+      '</div><div class="cond-rows">' + rows + '</div></div>';
+  }
+
+  function renderEyeSections(){
+    ["lids", "conj", "lens"].forEach(function(sectionKey){
+      var grid = document.querySelector('[data-eyes-grid="' + sectionKey + '"]');
+      var conditions = CONDITIONS_MAP[sectionKey];
+      grid.innerHTML = eyeGroupHTML(sectionKey, "R", conditions) + eyeGroupHTML(sectionKey, "L", conditions);
+    });
+  }
+
+  function vhEyeBlockHTML(eye){
+    function slotHTML(slotKey){
+      return VH_VALUES.map(function(v){
+        return '<button type="button" class="chip chip-vh" data-type="vh" data-slot="' + slotKey + '" data-value="' + v + '">' + v + '</button>';
+      }).join("");
+    }
+    return '<div class="vh-eye"><span class="eye-label">' + eye + '</span>' +
+      '<div class="vh-slot">' + slotHTML(eye + "top") + '</div>' +
+      '<span class="vh-slash">/</span>' +
+      '<div class="vh-slot">' + slotHTML(eye + "bottom") + '</div></div>';
+  }
+
+  function renderVH(){
+    document.querySelector('[data-vh-grid]').innerHTML = vhEyeBlockHTML("R") + vhEyeBlockHTML("L");
+  }
+
+  // ---------- refresh (sync button states to model) ----------
+
+  function refreshEyeSection(sectionKey){
+    var sectionState = state[sectionKey];
+    var conditions = CONDITIONS_MAP[sectionKey];
+
+    var clearOUBtn = document.querySelector('[data-type="clearOU"][data-section="' + sectionKey + '"]');
+    clearOUBtn.classList.toggle("is-active", !!sectionState.clearOU);
+
+    ["R", "L"].forEach(function(eye){
+      var eyeState = sectionState[eye];
+      var clearBtn = document.querySelector('[data-type="eyeClear"][data-section="' + sectionKey + '"][data-eye="' + eye + '"]');
+      clearBtn.classList.toggle("is-active", !!eyeState.clear);
+
+      conditions.forEach(function(c){
+        if (c.grades){
+          [1,2,3,4].forEach(function(g){
+            var btn = document.querySelector('[data-type="grade"][data-section="' + sectionKey + '"][data-eye="' + eye +
+              '"][data-cond="' + c.key + '"][data-grade="' + g + '"]');
+            btn.classList.toggle("is-active", eyeState[c.key] === g);
+          });
+        } else {
+          var boolBtn = document.querySelector('[data-type="bool"][data-section="' + sectionKey + '"][data-eye="' + eye +
+            '"][data-cond="' + c.key + '"]');
+          boolBtn.classList.toggle("is-active", !!eyeState[c.key]);
+        }
+      });
+    });
+  }
+
+  function refreshCornea(){
+    document.querySelectorAll('[data-type="cornea"]').forEach(function(btn){
+      btn.classList.toggle("is-active", state.cornea === btn.dataset.value);
+    });
+  }
+
+  function refreshVH(){
+    ["Rtop", "Rbottom", "Ltop", "Lbottom"].forEach(function(slot){
+      document.querySelectorAll('[data-type="vh"][data-slot="' + slot + '"]').forEach(function(btn){
+        btn.classList.toggle("is-active", state.vh[slot] === btn.dataset.value);
+      });
+    });
+  }
+
+  function refreshSingle(sectionKey){
+    var btn = document.querySelector('[data-type="single"][data-section="' + sectionKey + '"]');
+    btn.classList.toggle("is-active", !!state[sectionKey]);
+  }
+
+  function refreshAll(){
+    refreshEyeSection("lids");
+    refreshEyeSection("conj");
+    refreshEyeSection("lens");
+    refreshCornea();
+    refreshVH();
+    refreshSingle("irisT");
+    refreshSingle("ac");
+    updatePreview();
+  }
+
+  // ---------- note text ----------
+
+  // Builds the ordered list of clause strings ("cortical gd1", "hyperaemia", "ping N+T"...)
+  // active for one eye. Conj gets special handling to combine nasal+temporal ping into "N+T".
+  function buildClauses(eyeState, sectionKey, conditions){
+    if (sectionKey === "conj"){
+      var clauses = [];
+      if (eyeState.hyperaemia) clauses.push("hyperaemia");
+      var n = eyeState.nasalPing, t = eyeState.temporalPing;
+      if (n && t) clauses.push("ping N+T");
+      else if (n) clauses.push("nasal ping");
+      else if (t) clauses.push("temporal ping");
+      return clauses;
+    }
+    var out = [];
+    conditions.forEach(function(c){
+      if (c.grades){
+        if (eyeState[c.key]) out.push(c.label + " gd" + eyeState[c.key]);
+      } else {
+        if (eyeState[c.key]) out.push(c.label);
+      }
+    });
+    return out;
+  }
+
+  function clausesEqual(a, b){
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++){ if (a[i] !== b[i]) return false; }
+    return true;
+  }
+
+  function sectionText(sectionKey){
+    var s = state[sectionKey];
+    var conditions = CONDITIONS_MAP[sectionKey];
+
+    var rClear = s.R.clear, lClear = s.L.clear;
+    if (s.clearOU || (rClear && lClear)) return "clear OU";
+
+    var rClauses = buildClauses(s.R, sectionKey, conditions);
+    var lClauses = buildClauses(s.L, sectionKey, conditions);
+
+    // Same finding(s) on both eyes -> compact to "{clause} OU, {clause} OU"
+    if (rClauses.length > 0 && clausesEqual(rClauses, lClauses)){
+      return rClauses.map(function(c){ return c + " OU"; }).join(", ");
+    }
+
+    var parts = [];
+    if (rClauses.length) parts.push("R " + rClauses.join(" "));
+    else if (rClear) parts.push("R clear");
+
+    if (lClauses.length) parts.push("L " + lClauses.join(" "));
+    else if (lClear) parts.push("L clear");
+
+    return parts.length ? parts.join(" ") : null;
+  }
+
+  function vhText(){
+    var vh = state.vh;
+    if (!vh.Rtop && !vh.Rbottom && !vh.Ltop && !vh.Lbottom) return null;
+    var f = function(v){ return v || "\u2013"; };
+    return "R " + f(vh.Rtop) + "/" + f(vh.Rbottom) + " L " + f(vh.Ltop) + "/" + f(vh.Lbottom);
+  }
+
+  function buildNote(){
+    var parts = [];
+
+    var lidsTxt = sectionText("lids");
+    if (lidsTxt) parts.push(OUTPUT_LABELS.lids + " " + lidsTxt);
+
+    var conjTxt = sectionText("conj");
+    if (conjTxt) parts.push(OUTPUT_LABELS.conj + " " + conjTxt);
+
+    if (state.cornea){
+      parts.push("cornea " + (state.cornea === "clear" ? "clear OU" : "arcus OU otherwise clear OU"));
+    }
+
+    var vhTxt = vhText();
+    if (vhTxt) parts.push("VH " + vhTxt);
+
+    var lensTxt = sectionText("lens");
+    if (lensTxt) parts.push(OUTPUT_LABELS.lens + " " + lensTxt);
+
+    if (state.irisT) parts.push("no IrisT OU");
+    if (state.ac) parts.push("AC deep and Q OU");
+
+    if (parts.length === 0) return "";
+    return parts.join(" | ") + ".";
+  }
+
+  // ---------- preview / copy ----------
+
+  var previewEl = document.getElementById("preview");
+  var copyBtn = document.getElementById("copyBtn");
+
+  // Any button click regenerates the textarea from current selections (overwriting
+  // manual edits). Typing directly in the textarea is preserved until the next click.
+  function updatePreview(){
+    previewEl.value = buildNote();
+    syncCopyState();
+  }
+
+  function syncCopyState(){
+    copyBtn.disabled = !previewEl.value.trim();
+  }
+
+  previewEl.addEventListener("input", syncCopyState);
+
+  function flashCopied(){
+    var original = "Copy note";
+    copyBtn.textContent = "Copied!";
+    copyBtn.classList.add("is-copied");
+    setTimeout(function(){
+      copyBtn.textContent = original;
+      copyBtn.classList.remove("is-copied");
+    }, 1400);
+  }
+
+  // Copies exactly what's in the textarea, respecting any manual tweaks the user made.
+  function copyNote(){
+    var note = previewEl.value;
+    if (!note.trim()) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(note).then(flashCopied).catch(function(){ fallbackCopy(); });
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  function fallbackCopy(){
+    previewEl.select();
+    try { document.execCommand("copy"); } catch (e) { /* no-op */ }
+    flashCopied();
+  }
+
+  // ---------- interaction ----------
+
+  function resetSection(sectionKey){
+    state[sectionKey] = freshSectionState(CONDITIONS_MAP[sectionKey]);
+  }
+
+  function resetEye(sectionKey, eye){
+    state[sectionKey][eye] = freshEyeState(CONDITIONS_MAP[sectionKey]);
+  }
+
+  document.getElementById("app").addEventListener("click", handleClick);
+  document.querySelector("footer").addEventListener("click", handleClick);
+
+  function handleClick(e){
+    var btn = e.target.closest("button[data-type]");
+    if (!btn) return;
+    var type = btn.dataset.type;
+
+    switch (type){
+      case "clearOU": {
+        var sec = btn.dataset.section;
+        var turningOn = !state[sec].clearOU;
+        resetSection(sec);
+        state[sec].clearOU = turningOn;
+        break;
+      }
+      case "eyeClear": {
+        var sec2 = btn.dataset.section, eye2 = btn.dataset.eye;
+        var turningOn2 = !state[sec2][eye2].clear;
+        resetEye(sec2, eye2);
+        state[sec2][eye2].clear = turningOn2;
+        state[sec2].clearOU = false;
+        break;
+      }
+      case "grade": {
+        var sec3 = btn.dataset.section, eye3 = btn.dataset.eye, cond3 = btn.dataset.cond, grade3 = Number(btn.dataset.grade);
+        var eyeState3 = state[sec3][eye3];
+        eyeState3[cond3] = (eyeState3[cond3] === grade3) ? null : grade3;
+        eyeState3.clear = false;
+        state[sec3].clearOU = false;
+        break;
+      }
+      case "bool": {
+        var sec4 = btn.dataset.section, eye4 = btn.dataset.eye, cond4 = btn.dataset.cond;
+        var eyeState4 = state[sec4][eye4];
+        eyeState4[cond4] = !eyeState4[cond4];
+        if (eyeState4[cond4]) eyeState4.clear = false;
+        state[sec4].clearOU = false;
+        break;
+      }
+      case "cornea": {
+        var val = btn.dataset.value;
+        state.cornea = (state.cornea === val) ? null : val;
+        break;
+      }
+      case "vh": {
+        var slot = btn.dataset.slot, val2 = btn.dataset.value;
+        state.vh[slot] = (state.vh[slot] === val2) ? null : val2;
+        break;
+      }
+      case "single": {
+        var sec5 = btn.dataset.section;
+        state[sec5] = !state[sec5];
+        break;
+      }
+      case "reset": {
+        state = defaultState();
+        break;
+      }
+      case "copy": {
+        copyNote();
+        return;
+      }
+    }
+
+    refreshAll();
+  }
+
+  // ---------- init ----------
+
+  renderEyeSections();
+  renderVH();
+  refreshAll();
+
+})();
+</script>
+
+</body>
+</html>

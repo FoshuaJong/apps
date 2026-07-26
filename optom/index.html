@@ -519,6 +519,7 @@
       <button type="button" class="chip chip-preset" data-type="cornea" data-value="clear">clear OU</button>
       <button type="button" class="chip chip-preset" data-type="cornea" data-value="arcus">Arcus OU otherwise clear OU</button>
     </div>
+    <div class="eyes-grid" data-pterygium-grid></div>
   </section>
 
   <section class="card" id="section-vh">
@@ -607,11 +608,16 @@
     return { R: freshEyeState(conditions), L: freshEyeState(conditions) };
   }
 
+  function freshPterygiumState(){
+    return { R: { nasal: false, temporal: false }, L: { nasal: false, temporal: false } };
+  }
+
   function freshState(){
     return {
       lids: freshSectionState(LID_CONDITIONS),
       conj: freshSectionState(CONJ_CONDITIONS),
       cornea: null,
+      pterygium: freshPterygiumState(),
       vh: { Rtop: null, Rbottom: null, Ltop: null, Lbottom: null },
       lens: freshSectionState(LENS_CONDITIONS),
       irisT: false,
@@ -689,6 +695,24 @@
     document.querySelector('[data-vh-grid]').innerHTML = vhEyeBlockHTML("R") + vhEyeBlockHTML("L");
   }
 
+  // Pterygium is cornea-specific and per-eye, but unlike lids/conj/lens it has no
+  // eye-level "clear" concept of its own (overall cornea clarity is the clear/arcus
+  // preset above) - so it gets its own minimal render/state rather than joining
+  // CONDITIONS_MAP.
+  function pterygiumEyeHTML(eye){
+    return '<div class="eye-group"><div class="eye-group-head"><span class="eye-label">' + eye + '</span></div>' +
+      '<div class="cond-rows">' +
+      '<div class="cond-row cond-row-bool"><button type="button" class="chip chip-bool" data-type="pterygium" data-eye="' +
+        eye + '" data-side="nasal">nasal pterygium</button></div>' +
+      '<div class="cond-row cond-row-bool"><button type="button" class="chip chip-bool" data-type="pterygium" data-eye="' +
+        eye + '" data-side="temporal">temporal pterygium</button></div>' +
+      '</div></div>';
+  }
+
+  function renderPterygium(){
+    document.querySelector('[data-pterygium-grid]').innerHTML = pterygiumEyeHTML("R") + pterygiumEyeHTML("L");
+  }
+
   // ---------- refresh (sync button states to model) ----------
 
   function refreshEyeSection(sectionKey){
@@ -728,6 +752,15 @@
     });
   }
 
+  function refreshPterygium(){
+    ["R", "L"].forEach(function(eye){
+      ["nasal", "temporal"].forEach(function(side){
+        var btn = document.querySelector('[data-type="pterygium"][data-eye="' + eye + '"][data-side="' + side + '"]');
+        btn.classList.toggle("is-active", !!state.pterygium[eye][side]);
+      });
+    });
+  }
+
   function refreshVH(){
     ["Rtop", "Rbottom", "Ltop", "Lbottom"].forEach(function(slot){
       document.querySelectorAll('[data-type="vh"][data-slot="' + slot + '"]').forEach(function(btn){
@@ -746,6 +779,7 @@
     refreshEyeSection("conj");
     refreshEyeSection("lens");
     refreshCornea();
+    refreshPterygium();
     refreshVH();
     refreshSingle("irisT");
     refreshSingle("ac");
@@ -825,6 +859,24 @@
     return formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear);
   }
 
+  // Same nasal/temporal -> N+T combination as conj's ping, but pterygium has no
+  // section-level "clear OU" fallback of its own - an eye with neither side marked
+  // simply contributes nothing, since overall cornea clarity is the clear/arcus preset.
+  function pterygiumClauses(eyeState){
+    var clauses = [];
+    if (eyeState.nasal && eyeState.temporal) clauses.push({ key: "pterygium", text: "pterygium N+T" });
+    else if (eyeState.nasal) clauses.push({ key: "pterygium", text: "nasal pterygium" });
+    else if (eyeState.temporal) clauses.push({ key: "pterygium", text: "temporal pterygium" });
+    return clauses;
+  }
+
+  function pterygiumText(){
+    var rClauses = pterygiumClauses(state.pterygium.R);
+    var lClauses = pterygiumClauses(state.pterygium.L);
+    if (!rClauses.length && !lClauses.length) return null;
+    return formatEyeSegments(compactEyeClauses(rClauses, lClauses), false, false);
+  }
+
   function vhText(){
     var vh = state.vh;
     if (!vh.Rtop && !vh.Rbottom && !vh.Ltop && !vh.Lbottom) return null;
@@ -841,8 +893,12 @@
     var conjTxt = sectionText("conj");
     if (conjTxt) parts.push(OUTPUT_LABELS.conj + " " + conjTxt);
 
-    if (state.cornea){
-      parts.push("cornea " + (state.cornea === "clear" ? "clear OU" : "arcus OU otherwise clear OU"));
+    var pterygiumTxt = pterygiumText();
+    if (state.cornea || pterygiumTxt){
+      var corneaPieces = [];
+      if (state.cornea) corneaPieces.push(state.cornea === "clear" ? "clear OU" : "arcus OU otherwise clear OU");
+      if (pterygiumTxt) corneaPieces.push(pterygiumTxt);
+      parts.push("cornea " + corneaPieces.join(", "));
     }
 
     var vhTxt = vhText();
@@ -952,6 +1008,11 @@
         state.cornea = (state.cornea === val) ? null : val;
         break;
       }
+      case "pterygium": {
+        var pEye = btn.dataset.eye, pSide = btn.dataset.side;
+        state.pterygium[pEye][pSide] = !state.pterygium[pEye][pSide];
+        break;
+      }
       case "vh": {
         var slot = btn.dataset.slot, val2 = btn.dataset.value;
         state.vh[slot] = (state.vh[slot] === val2) ? null : val2;
@@ -999,6 +1060,7 @@
 
   initTheme();
   renderEyeSections();
+  renderPterygium();
   renderVH();
   refreshAll();
 

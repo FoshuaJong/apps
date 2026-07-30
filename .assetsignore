@@ -1,0 +1,13 @@
+.git
+.wrangler
+.assetsignore
+.gitignore
+node_modules
+worker
+wrangler.jsonc
+wrangler.test.jsonc
+.claude
+CLAUDE.md
+.mcp.json
+.dev.vars*
+.env*

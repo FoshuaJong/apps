@@ -207,6 +207,10 @@
   transition: opacity 0.15s ease;
 }
 
+.chart-point-group[hidden] {
+  display: none;
+}
+
 .chart-point-group.is-dimmed {
   opacity: 0.18;
 }

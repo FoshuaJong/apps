@@ -11,10 +11,28 @@ export async function handleAramMetaApiRequest(request, env) {
     return handleGetData(env);
   }
 
+  // TEMPORARY: lets the first deploy populate KV without waiting for the
+  // 6-hour cron. Remove this route once the cron has run at least once.
+  if (url.pathname === '/aram_meta/api/debug-scrape' && request.method === 'GET') {
+    return handleDebugScrape(env);
+  }
+
   return new Response(JSON.stringify({ error: 'Not found' }), {
     status: 404,
     headers: JSON_HEADERS,
   });
+}
+
+async function handleDebugScrape(env) {
+  try {
+    const data = await scrapeAramMeta(env);
+    return new Response(JSON.stringify(data), { headers: JSON_HEADERS });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: JSON_HEADERS,
+    });
+  }
 }
 
 async function handleGetData(env) {

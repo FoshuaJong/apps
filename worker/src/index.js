@@ -4,6 +4,7 @@ import { handleEdhApiRequest, EDHClock } from './edh_api.js';
 import { handleLinkedinApiRequest } from './linkedin_api.js';
 import { handleStaticRequest } from './static_proxy.js';
 import { handleDraculaApiRequest } from './dracula_flow_api.js';
+import { handleAramMetaApiRequest, scrapeAramMeta } from './aram_meta_api.js';
 
 // Named export required by Wrangler for Durable Object class resolution
 export { EDHClock };
@@ -25,11 +26,17 @@ export async function handleRequest(request, env, ctx) {
   if (url.pathname.startsWith('/dracula/api/')) {
     return handleDraculaApiRequest(request, env);
   }
+  if (url.pathname.startsWith('/aram_meta/api/')) {
+    return handleAramMetaApiRequest(request, env);
+  }
   return handleStaticRequest(request, env, ctx);
 }
 
 export default {
   async fetch(request, env, ctx) {
     return handleRequest(request, env, ctx);
+  },
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(scrapeAramMeta(env));
   },
 };

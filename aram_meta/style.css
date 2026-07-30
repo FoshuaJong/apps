@@ -202,18 +202,31 @@
   --tier-other: var(--text-muted);
 }
 
-.chart-point {
+.chart-point-group {
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
 
-.chart-point.is-dimmed {
+.chart-point-group.is-dimmed {
   opacity: 0.18;
 }
 
-.chart-point.is-emphasized {
+.chart-point-group.is-emphasized .chart-point {
   stroke: var(--text-primary);
   stroke-width: 1.5;
+}
+
+.chart-portrait-image {
+  pointer-events: none;
+}
+
+.chart-portrait-ring {
+  transition: stroke-width 0.15s ease;
+}
+
+.chart-point-group.is-emphasized .chart-portrait-ring {
+  stroke: var(--text-primary);
+  stroke-width: 2.5;
 }
 
 .chart-point-hit {

@@ -22,9 +22,7 @@
 		},
 		{
 			"binding": "ARAM_META_KV",
-			// TODO: replace with the real namespace id before deploying —
-			// run `npx wrangler kv namespace create ARAM_META_KV` and paste the id here.
-			"id": "REPLACE_WITH_REAL_KV_NAMESPACE_ID",
+			"id": "9b8a2a2a76cf4c848faa3ac1d700d0ae",
 			"remote": true
 		}
 	],

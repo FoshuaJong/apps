@@ -333,14 +333,18 @@
     els.chartSvg.appendChild(defs);
 
     const pointsGroup = svgEl('g', { class: 'chart-points' });
-    const searchActive = !!state.searchTerm;
+    const searchTerms = state.searchTerm
+      ? state.searchTerm.split(',').map((t) => t.trim()).filter(Boolean)
+      : [];
+    const searchActive = searchTerms.length > 0;
 
     champs.forEach((c) => {
       if (c.pickRate == null || c.winRate == null) return;
       const cx = xPos(c.pickRate);
       const cy = yPos(c.winRate);
       const isVisibleTier = state.activeTier === 'all' || c.tier === state.activeTier;
-      const matchesSearch = searchActive && c.name && c.name.toLowerCase().includes(state.searchTerm);
+      const matchesSearch =
+        searchActive && c.name && searchTerms.some((term) => c.name.toLowerCase().includes(term));
 
       const g = svgEl('g', { class: 'chart-point-group' });
       if (!isVisibleTier) g.setAttribute('hidden', 'true');

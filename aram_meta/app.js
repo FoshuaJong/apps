@@ -391,8 +391,8 @@
         r: 12,
         fill: 'transparent',
         tabindex: '0',
-        role: 'img',
-        'aria-label': `${c.name}, tier ${c.tier}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate, ${formatNumber(c.games)} games`,
+        role: 'link',
+        'aria-label': `${c.name}, tier ${c.tier}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate, ${formatNumber(c.games)} games. Opens mayhemmeta.com stats page.`,
       });
       const activate = () => {
         if (!matchesSearch) g.classList.add('is-emphasized');
@@ -402,11 +402,18 @@
         if (!matchesSearch) g.classList.remove('is-emphasized');
         hideTooltip();
       };
+      const openChampionPage = () => {
+        if (c.slug) window.open(`https://mayhemmeta.com/champions/${c.slug}`, '_blank', 'noopener');
+      };
       hit.addEventListener('pointerenter', activate);
       hit.addEventListener('pointermove', () => showTooltip(c, cx, cy));
       hit.addEventListener('pointerleave', deactivate);
       hit.addEventListener('focus', activate);
       hit.addEventListener('blur', deactivate);
+      hit.addEventListener('click', openChampionPage);
+      hit.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') openChampionPage();
+      });
 
       g.appendChild(hit);
       pointsGroup.appendChild(g);

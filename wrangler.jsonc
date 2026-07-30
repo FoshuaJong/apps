@@ -19,8 +19,18 @@
 			"binding": "GLOBE_LINKS",
 			"id": "d5b6ef3c82084c6c8f6bd5e82538cfaf",
 			"remote": true
+		},
+		{
+			"binding": "ARAM_META_KV",
+			// TODO: replace with the real namespace id before deploying —
+			// run `npx wrangler kv namespace create ARAM_META_KV` and paste the id here.
+			"id": "REPLACE_WITH_REAL_KV_NAMESPACE_ID",
+			"remote": true
 		}
 	],
+	"triggers": {
+		"crons": ["0 */6 * * *"]
+	},
 	"durable_objects": {
 		"bindings": [
 			{

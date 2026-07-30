@@ -4,6 +4,7 @@
   const MARGIN = { top: 24, right: 28, bottom: 56, left: 56 };
   const VIEW_W = 960;
   const VIEW_H = 560;
+  const PORTRAIT_R = 9;
   const TIER_ORDER = ['S', 'A', 'B', 'C', 'D'];
   const TIER_COLOR_VAR = { S: '--tier-s', A: '--tier-a', B: '--tier-b', C: '--tier-c', D: '--tier-d' };
 
@@ -325,6 +326,12 @@
     meanLabel.textContent = 'mean pick rate';
     els.chartSvg.appendChild(meanLabel);
 
+    const portraitClip = svgEl('clipPath', { id: 'portraitClip' });
+    portraitClip.appendChild(svgEl('circle', { cx: PORTRAIT_R, cy: PORTRAIT_R, r: PORTRAIT_R }));
+    const defs = svgEl('defs', {});
+    defs.appendChild(portraitClip);
+    els.chartSvg.appendChild(defs);
+
     const pointsGroup = svgEl('g', { class: 'chart-points' });
     const searchActive = !!state.searchTerm;
 
@@ -337,6 +344,7 @@
 
       const g = svgEl('g', { class: 'chart-point-group' });
       if (!isVisibleTier) g.setAttribute('hidden', 'true');
+      if (searchActive) g.classList.add(matchesSearch ? 'is-emphasized' : 'is-dimmed');
 
       const dot = svgEl('circle', {
         class: 'chart-point',
@@ -347,7 +355,34 @@
         stroke: 'var(--bg-card)',
         'stroke-width': 2,
       });
-      if (searchActive) dot.classList.add(matchesSearch ? 'is-emphasized' : 'is-dimmed');
+      g.appendChild(dot);
+
+      if (c.iconUrl) {
+        const portrait = svgEl('g', {
+          class: 'chart-portrait',
+          transform: `translate(${cx - PORTRAIT_R}, ${cy - PORTRAIT_R})`,
+        });
+        const image = svgEl('image', {
+          class: 'chart-portrait-image',
+          href: c.iconUrl,
+          width: PORTRAIT_R * 2,
+          height: PORTRAIT_R * 2,
+          'clip-path': 'url(#portraitClip)',
+        });
+        const ring = svgEl('circle', {
+          class: 'chart-portrait-ring',
+          cx: PORTRAIT_R,
+          cy: PORTRAIT_R,
+          r: PORTRAIT_R,
+          fill: 'none',
+          stroke: tierColorVar(c.tier),
+          'stroke-width': 2,
+        });
+        image.addEventListener('error', () => portrait.remove(), { once: true });
+        portrait.appendChild(image);
+        portrait.appendChild(ring);
+        g.appendChild(portrait);
+      }
 
       const hit = svgEl('circle', {
         class: 'chart-point-hit',
@@ -360,11 +395,11 @@
         'aria-label': `${c.name}, tier ${c.tier}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate, ${formatNumber(c.games)} games`,
       });
       const activate = () => {
-        if (!matchesSearch) dot.classList.add('is-emphasized');
+        if (!matchesSearch) g.classList.add('is-emphasized');
         showTooltip(c, cx, cy);
       };
       const deactivate = () => {
-        if (!matchesSearch) dot.classList.remove('is-emphasized');
+        if (!matchesSearch) g.classList.remove('is-emphasized');
         hideTooltip();
       };
       hit.addEventListener('pointerenter', activate);
@@ -373,7 +408,6 @@
       hit.addEventListener('focus', activate);
       hit.addEventListener('blur', deactivate);
 
-      g.appendChild(dot);
       g.appendChild(hit);
       pointsGroup.appendChild(g);
     });

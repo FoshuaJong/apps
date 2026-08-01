@@ -664,9 +664,7 @@
     <div class="card-head">
       <h2>Periphery</h2>
     </div>
-    <div class="preset-row">
-      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="periphery">mid periphery clear undilated 90D</button>
-    </div>
+    <div class="eyes-grid" data-post-eyes-grid="periphery"></div>
   </section>
 
   </div>
@@ -705,6 +703,7 @@
   ];
   // Cortical listed before NS to match current clinic note convention.
   var LENS_CONDITIONS = [
+    { key: "EpicapsularStars", label: "epicapsular stars", grades: false },
     { key: "Cortical", label: "cortical", grades: true },
     { key: "NS",       label: "NS",       grades: true },
     { key: "PSC",       label: "PSC",     choices: ["on axis", "off axis"] }
@@ -729,7 +728,15 @@
     { key: "dryAMD",       label: "dry AMD" },
     { key: "mildMottling", label: "mild mottling" }
   ];
-  var POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITIONS };
+  // Periphery is per-eye like vit/macula (not a section-wide preset) - each eye
+  // can independently be clear or have pigment changes. "text" carries the full
+  // canned phrase (matching weissRing's label-vs-text split) so the button stays
+  // short ("peripheral age related pigment changes") while the note gets the
+  // full clause ("... undilated 90D").
+  var PERIPHERY_CONDITIONS = [
+    { key: "pigmentChanges", label: "peripheral age related pigment changes", text: "peripheral age related pigment changes undilated 90D" }
+  ];
+  var POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITIONS, periphery: PERIPHERY_CONDITIONS };
 
   // ---------- state ----------
 
@@ -788,7 +795,7 @@
       macula: freshSectionState(MACULA_CONDITIONS),
       arcades: false,
       bv: false,
-      periphery: false
+      periphery: freshSectionState(PERIPHERY_CONDITIONS)
     };
   }
 
@@ -801,7 +808,8 @@
     p.macula.L.clear = true;
     p.arcades = true;
     p.bv = true;
-    p.periphery = true;
+    p.periphery.R.clear = true;
+    p.periphery.L.clear = true;
     return p;
   }
 
@@ -851,7 +859,7 @@
   }
 
   function renderPosteriorEyeSections(){
-    ["vit", "macula"].forEach(function(sectionKey){
+    ["vit", "macula", "periphery"].forEach(function(sectionKey){
       var grid = document.querySelector('[data-post-eyes-grid="' + sectionKey + '"]');
       var conditions = POSTERIOR_CONDITIONS_MAP[sectionKey];
       grid.innerHTML = eyeGroupHTML(sectionKey, "R", conditions, "posterior") + eyeGroupHTML(sectionKey, "L", conditions, "posterior");
@@ -1012,8 +1020,8 @@
     btn.classList.toggle("is-active", !!state[sectionKey]);
   }
 
-  // Covers all six flat posterior booleans: imaging.optos/oct/drs plus the
-  // top-level arcades/bv/periphery flags - each is just a canned-text on/off
+  // Covers all five flat posterior booleans: imaging.optos/oct/drs plus the
+  // top-level arcades/bv flags - each is just a canned-text on/off
   // toggle, same mechanism as irisT/ac but keyed by data-field instead of
   // data-section since imaging's fields live nested under `imaging`.
   function refreshPosteriorToggle(field){
@@ -1034,9 +1042,10 @@
   }
 
   function refreshPosteriorAll(){
-    ["optos", "oct", "drs", "arcades", "bv", "periphery"].forEach(refreshPosteriorToggle);
+    ["optos", "oct", "drs", "arcades", "bv"].forEach(refreshPosteriorToggle);
     refreshPosteriorEyeSection("vit");
     refreshPosteriorEyeSection("macula");
+    refreshPosteriorEyeSection("periphery");
     refreshOnh();
     refreshCdr();
   }
@@ -1222,7 +1231,8 @@
 
     if (posteriorState.arcades) parts.push("arcades clear OU");
     if (posteriorState.bv) parts.push("BV 2:3, non-tort, oblique crossings OU");
-    if (posteriorState.periphery) parts.push("mid periphery clear undilated 90D");
+    var peripheryTxt = posteriorEyeSectionText(posteriorState.periphery, "periphery", PERIPHERY_CONDITIONS, "mid periphery clear undilated 90D", ", ");
+    if (peripheryTxt) parts.push(peripheryTxt);
 
     return parts.join(" | ");
   }

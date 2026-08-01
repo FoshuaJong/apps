@@ -697,7 +697,7 @@
     { key: "bleph", label: "bleph", grades: true }
   ];
   var CONJ_CONDITIONS = [
-    { key: "hyperaemia",    label: "hyperaemia",    grades: false },
+    { key: "hyperaemia",    label: "mild hyperaemia", grades: false },
     { key: "nasalPing",     label: "nasal ping",    grades: false },
     { key: "temporalPing",  label: "temporal ping", grades: false }
   ];
@@ -729,12 +729,9 @@
     { key: "mildMottling", label: "mild mottling" }
   ];
   // Periphery is per-eye like vit/macula (not a section-wide preset) - each eye
-  // can independently be clear or have pigment changes. "text" carries the full
-  // canned phrase (matching weissRing's label-vs-text split) so the button stays
-  // short ("peripheral age related pigment changes") while the note gets the
-  // full clause ("... undilated 90D").
+  // can independently be clear or have pigment changes.
   var PERIPHERY_CONDITIONS = [
-    { key: "pigmentChanges", label: "peripheral age related pigment changes", text: "peripheral age related pigment changes undilated 90D" }
+    { key: "pigmentChanges", label: "peripheral age related pigment changes" }
   ];
   var POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITIONS, periphery: PERIPHERY_CONDITIONS };
 
@@ -1059,7 +1056,7 @@
   function buildClauses(eyeState, sectionKey, conditions){
     if (sectionKey === "conj"){
       var clauses = [];
-      if (eyeState.hyperaemia) clauses.push({ key: "hyperaemia", text: "hyperaemia" });
+      if (eyeState.hyperaemia) clauses.push({ key: "hyperaemia", text: "mild hyperaemia" });
       var n = eyeState.nasalPing, t = eyeState.temporalPing;
       if (n && t) clauses.push({ key: "ping", text: "ping N+T" });
       else if (n) clauses.push({ key: "ping", text: "nasal ping" });

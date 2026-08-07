@@ -776,6 +776,9 @@
     <div class="card-head">
       <h2>Macula</h2>
     </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="posteriorToggle" data-field="dimReflex">dim reflex</button>
+    </div>
     <div class="eyes-grid" data-post-eyes-grid="macula"></div>
   </section>
 
@@ -927,6 +930,7 @@
       onh: { R: { PPA: false }, L: { PPA: false } },
       cdr: { R: "0.3", L: "0.3" },
       macula: freshSectionState(MACULA_CONDITIONS),
+      dimReflex: false,
       arcades: false,
       bv: false,
       periphery: freshSectionState(PERIPHERY_CONDITIONS)
@@ -1195,7 +1199,7 @@
   }
 
   function refreshPosteriorAll(){
-    ["optos", "oct", "drs", "arcades", "bv"].forEach(refreshPosteriorToggle);
+    ["optos", "oct", "drs", "dimReflex", "arcades", "bv"].forEach(refreshPosteriorToggle);
     refreshPosteriorEyeSection("vit");
     refreshPosteriorEyeSection("macula");
     refreshPosteriorEyeSection("periphery");
@@ -1412,7 +1416,8 @@
     if (vitTxt) parts.push("vit " + vitTxt);
     parts.push("ONH " + onhText());
     parts.push("CDR " + cdrText());
-    var maculaTxt = posteriorEyeSectionText(posteriorState.macula, "macula", MACULA_CONDITIONS, "flat, even pigmentation, clear reflex", ", ");
+    var maculaClearLabel = "flat, even pigmentation, " + (posteriorState.dimReflex ? "dim reflex" : "clear reflex");
+    var maculaTxt = posteriorEyeSectionText(posteriorState.macula, "macula", MACULA_CONDITIONS, maculaClearLabel, ", ");
     if (maculaTxt) parts.push("macula " + maculaTxt);
 
     if (posteriorState.arcades) parts.push("arcades clear OU");

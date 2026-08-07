@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anterior &amp; Posterior Segment Note Builder</title>
+<title>History, Anterior &amp; Posterior Segment Note Builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -327,6 +327,27 @@
     margin-top: 12px;
   }
 
+  .preset-row + .preset-row{
+    margin-top: 10px;
+  }
+
+  .text-input{
+    width: 100%;
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: var(--radius);
+    padding: 8px 11px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+
+  .text-input:focus{
+    outline: none;
+    border-color: var(--accent);
+  }
+
   /* ---------- VH ---------- */
   .vh-grid{
     display: flex;
@@ -529,18 +550,134 @@
   </button>
   <div class="title-block">
     <span class="eyebrow">Optometry Charting</span>
-    <h1>Anterior &amp; Posterior Segment Note Builder</h1>
+    <h1>History, Anterior &amp; Posterior Segment Note Builder</h1>
   </div>
 </header>
 
 <nav class="tab-switcher">
-  <button type="button" class="chip chip-preset tab-btn is-active" data-type="tab" data-tab="anterior">Anterior</button>
+  <button type="button" class="chip chip-preset tab-btn is-active" data-type="tab" data-tab="history">History</button>
+  <button type="button" class="chip chip-preset tab-btn" data-type="tab" data-tab="anterior">Anterior</button>
   <button type="button" class="chip chip-preset tab-btn" data-type="tab" data-tab="posterior">Posterior</button>
 </nav>
 
 <main id="app">
 
-  <div class="tab-panel" data-tab-panel="anterior">
+  <div class="tab-panel" data-tab-panel="history">
+
+  <section class="card" id="section-reason">
+    <div class="card-head">
+      <h2>Reason for visit</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyReason" data-value="REE">REE (routine eye examination)</button>
+      <button type="button" class="chip chip-preset" data-type="historyReason" data-value="firstExam">First eye exam</button>
+      <button type="button" class="chip chip-preset" data-type="historyReason" data-value="firstOPSM">First time in OPSM</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-lastee">
+    <div class="card-head">
+      <h2>Last EE</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyLastEE" data-value="2025">2025</button>
+      <button type="button" class="chip chip-preset" data-type="historyLastEE" data-value="2024">2024</button>
+      <button type="button" class="chip chip-preset" data-type="historyLastEE" data-value="2023">2023</button>
+      <button type="button" class="chip chip-preset" data-type="historyLastEE" data-value="2022">2022</button>
+      <button type="button" class="chip chip-preset" data-type="historyLastEE" data-value="2021">2021</button>
+      <button type="button" class="chip chip-preset" data-type="historyLastEE" data-value="2020">2020</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-specs">
+    <div class="card-head">
+      <h2>Spectacles / CLs</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyNoSpecs">No specs</button>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historySpecsToggle" data-cond="progs">Progs</button>
+      <button type="button" class="chip chip-preset" data-type="historySpecsToggle" data-cond="svd">SVD</button>
+      <button type="button" class="chip chip-preset" data-type="historySpecsToggle" data-cond="occupational">Occupationals</button>
+      <button type="button" class="chip chip-preset" data-type="historySpecsToggle" data-cond="svn">SVN</button>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyCL" data-value="daily">Daily CLs</button>
+      <button type="button" class="chip chip-preset" data-type="historyCL" data-value="monthly">Monthly CLs</button>
+      <button type="button" class="chip chip-preset" data-type="historyCL" data-value="fortnightly">Fortnightly CLs</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-vision">
+    <div class="card-head">
+      <h2>Vision</h2>
+    </div>
+    <div class="cond-rows">
+      <div class="cond-row">
+        <span class="cond-label">DV</span>
+        <div class="grade-chips">
+          <button type="button" class="chip chip-choice" data-type="historyVision" data-sub="dv" data-value="nochange">no change</button>
+          <button type="button" class="chip chip-choice" data-type="historyVision" data-sub="dv" data-value="blurry">blurry</button>
+        </div>
+      </div>
+      <div class="cond-row">
+        <span class="cond-label">NV</span>
+        <div class="grade-chips">
+          <button type="button" class="chip chip-choice" data-type="historyVision" data-sub="nv" data-value="nochange">no change</button>
+          <button type="button" class="chip chip-choice" data-type="historyVision" data-sub="nv" data-value="blurry">blurry</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="section-ha">
+    <div class="card-head">
+      <h2>HA</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyHA" data-value="noHA">no HA or DIP</button>
+      <button type="button" class="chip chip-preset" data-type="historyHA" data-value="haNoDIP">HA, no DIP</button>
+      <button type="button" class="chip chip-preset" data-type="historyHA" data-value="haDIP">HA, DIP</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-floaters">
+    <div class="card-head">
+      <h2>Floaters</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyFloaters" data-value="noFFs">no FFs</button>
+      <button type="button" class="chip chip-preset" data-type="historyFloaters" data-value="longstanding">longstanding floaters, no changes, no flashes</button>
+      <button type="button" class="chip chip-preset" data-type="historyFloaters" data-value="new">new floaters, flashes</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-ded">
+    <div class="card-head">
+      <h2>DED</h2>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyNoDed">No dry eye symptoms</button>
+    </div>
+    <div class="preset-row">
+      <button type="button" class="chip chip-preset" data-type="historyDedToggle" data-cond="dry">Dry eyes</button>
+      <button type="button" class="chip chip-preset" data-type="historyDedToggle" data-cond="watery">Watery eyes</button>
+      <button type="button" class="chip chip-preset" data-type="historyDedToggle" data-cond="red">Red eyes</button>
+      <button type="button" class="chip chip-preset" data-type="historyDedToggle" data-cond="itchy">Itchy eyes</button>
+    </div>
+  </section>
+
+  <section class="card" id="section-history-notes">
+    <div class="card-head">
+      <h2>Additional notes</h2>
+    </div>
+    <input type="text" class="text-input" id="historyNotesInput" placeholder="e.g. using 3 screens at work">
+  </section>
+
+  </div>
+
+  <div class="tab-panel" data-tab-panel="anterior" hidden>
 
   <section class="card" id="section-lids">
     <div class="card-head">
@@ -812,6 +949,25 @@
 
   var posteriorState = defaultPosteriorState();
 
+  // ---------- history state (third, fully independent note - fixed option
+  // sets rather than per-eye grids, so it skips the eye-group render system
+  // entirely and is built/synced by its own small set of functions below) ----------
+
+  function freshHistoryState(){
+    return {
+      reason: null,
+      lastEE: null,
+      specs: { noSpecs: false, progs: false, svd: false, occupational: false, svn: false, cl: null },
+      vision: { dv: null, nv: null },
+      ha: null,
+      floaters: null,
+      ded: { noSymptoms: false, dry: false, watery: false, red: false, itchy: false },
+      notes: ""
+    };
+  }
+
+  var historyState = freshHistoryState();
+
   // ---------- render (build DOM once) ----------
 
   // scope disambiguates posterior's vit/macula (which share this exact per-eye
@@ -1047,6 +1203,39 @@
     refreshCdr();
   }
 
+  function refreshHistoryAll(){
+    document.querySelectorAll('[data-type="historyReason"]').forEach(function(b){
+      b.classList.toggle("is-active", historyState.reason === b.dataset.value);
+    });
+    document.querySelectorAll('[data-type="historyLastEE"]').forEach(function(b){
+      b.classList.toggle("is-active", historyState.lastEE === b.dataset.value);
+    });
+    document.querySelector('[data-type="historyNoSpecs"]').classList.toggle("is-active", !!historyState.specs.noSpecs);
+    ["progs", "svd", "occupational", "svn"].forEach(function(cond){
+      document.querySelector('[data-type="historySpecsToggle"][data-cond="' + cond + '"]')
+        .classList.toggle("is-active", !!historyState.specs[cond]);
+    });
+    document.querySelectorAll('[data-type="historyCL"]').forEach(function(b){
+      b.classList.toggle("is-active", historyState.specs.cl === b.dataset.value);
+    });
+    ["dv", "nv"].forEach(function(sub){
+      document.querySelectorAll('[data-type="historyVision"][data-sub="' + sub + '"]').forEach(function(b){
+        b.classList.toggle("is-active", historyState.vision[sub] === b.dataset.value);
+      });
+    });
+    document.querySelectorAll('[data-type="historyHA"]').forEach(function(b){
+      b.classList.toggle("is-active", historyState.ha === b.dataset.value);
+    });
+    document.querySelectorAll('[data-type="historyFloaters"]').forEach(function(b){
+      b.classList.toggle("is-active", historyState.floaters === b.dataset.value);
+    });
+    document.querySelector('[data-type="historyNoDed"]').classList.toggle("is-active", !!historyState.ded.noSymptoms);
+    ["dry", "watery", "red", "itchy"].forEach(function(cond){
+      document.querySelector('[data-type="historyDedToggle"][data-cond="' + cond + '"]')
+        .classList.toggle("is-active", !!historyState.ded[cond]);
+    });
+  }
+
   // ---------- note text ----------
 
   // Builds the ordered list of clause objects ({key, text}) active for one eye.
@@ -1234,6 +1423,87 @@
     return parts.join(" | ");
   }
 
+  // ---------- history note text ----------
+
+  var HISTORY_REASON_TEXT = { REE: "REE", firstExam: "First eye exam", firstOPSM: "First time in OPSM" };
+  var HISTORY_HA_TEXT = { noHA: "no HA or DIP", haNoDIP: "HA, no DIP", haDIP: "HA, DIP" };
+  var HISTORY_FLOATERS_TEXT = {
+    noFFs: "no FFs",
+    longstanding: "longstanding floaters, no changes, no flashes",
+    new: "new floaters, flashes"
+  };
+  var HISTORY_CL_TEXT = { daily: "Daily CLs", monthly: "Monthly CLs", fortnightly: "Fortnightly CLs" };
+
+  // "a, b and c" - used for the spectacles wearable list, the one clause where
+  // grammatical "and" reads better than a flat comma list.
+  function grammarJoinAnd(arr){
+    if (!arr.length) return "";
+    if (arr.length === 1) return arr[0];
+    return arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1];
+  }
+
+  function historySpecsText(){
+    var s = historyState.specs;
+    var wearables = [];
+    if (s.progs) wearables.push("progs");
+    if (s.svd) wearables.push("SVD");
+    if (s.occupational) wearables.push("occupationals");
+    if (s.svn) wearables.push("SVN");
+    var clText = s.cl ? HISTORY_CL_TEXT[s.cl] : null;
+
+    if (!wearables.length && !clText) return s.noSpecs ? "no specs or CLs" : null;
+
+    var pieces = [];
+    if (wearables.length) pieces.push("using " + grammarJoinAnd(wearables));
+    if (clText) pieces.push(clText);
+    return pieces.join(", ");
+  }
+
+  function historyVisionText(){
+    var v = historyState.vision;
+    if (!v.dv && !v.nv) return null;
+    if (v.dv === "nochange" && v.nv === "nochange") return "no changes in vision";
+
+    var parts = [];
+    if (v.dv) parts.push(v.dv === "blurry" ? "DV blurry" : "no changes in DV");
+    if (v.nv) parts.push(v.nv === "blurry" ? "NV blurry" : "no changes in NV");
+    return parts.join(", ");
+  }
+
+  function historyDedText(){
+    var d = historyState.ded;
+    var labels = [];
+    if (d.dry) labels.push("dry");
+    if (d.watery) labels.push("watery");
+    if (d.red) labels.push("red");
+    if (d.itchy) labels.push("itchy");
+    if (!labels.length) return d.noSymptoms ? "no dry eye symptoms" : null;
+    return labels.join(", ") + " eyes";
+  }
+
+  function buildHistoryNote(){
+    var parts = [];
+
+    if (historyState.reason) parts.push(HISTORY_REASON_TEXT[historyState.reason]);
+    if (historyState.lastEE) parts.push("last EE " + historyState.lastEE);
+
+    var specsTxt = historySpecsText();
+    if (specsTxt) parts.push(specsTxt);
+
+    var visionTxt = historyVisionText();
+    if (visionTxt) parts.push(visionTxt);
+
+    if (historyState.ha) parts.push(HISTORY_HA_TEXT[historyState.ha]);
+    if (historyState.floaters) parts.push(HISTORY_FLOATERS_TEXT[historyState.floaters]);
+
+    var dedTxt = historyDedText();
+    if (dedTxt) parts.push(dedTxt);
+
+    if (historyState.notes.trim()) parts.push(historyState.notes.trim());
+
+    return parts.join(", ");
+  }
+
   // ---------- preview / copy ----------
 
   var previewEl = document.getElementById("preview");
@@ -1244,7 +1514,8 @@
   // active tab points to, so switching tabs re-renders it via setActiveTab()
   // and every click re-renders it via this same call at the end of handleClick.
   function updateActivePreview(){
-    previewEl.value = activeTab === "anterior" ? buildNote() : buildPosteriorNote();
+    previewEl.value = activeTab === "anterior" ? buildNote() :
+      activeTab === "posterior" ? buildPosteriorNote() : buildHistoryNote();
     syncCopyState();
   }
 
@@ -1288,7 +1559,9 @@
     state[sectionKey][eye] = freshEyeState(CONDITIONS_MAP[sectionKey]);
   }
 
-  var activeTab = "anterior";
+  var activeTab = "history";
+
+  var TAB_LABELS = { history: "History", anterior: "Anterior", posterior: "Posterior" };
 
   // Switching tabs never touches state - it's purely which panel is visible and
   // which note the shared footer currently reflects.
@@ -1300,7 +1573,7 @@
     document.querySelectorAll(".tab-panel").forEach(function(panel){
       panel.hidden = panel.dataset.tabPanel !== tab;
     });
-    previewEyebrowEl.textContent = (tab === "anterior" ? "Anterior" : "Posterior") + " note preview";
+    previewEyebrowEl.textContent = TAB_LABELS[tab] + " note preview";
     updateActivePreview();
   }
 
@@ -1364,7 +1637,11 @@
       }
       case "reset": {
         if (activeTab === "anterior") state = defaultState();
-        else posteriorState = defaultPosteriorState();
+        else if (activeTab === "posterior") posteriorState = defaultPosteriorState();
+        else {
+          historyState = freshHistoryState();
+          document.getElementById("historyNotesInput").value = "";
+        }
         break;
       }
       case "copy": {
@@ -1408,10 +1685,64 @@
         }
         break;
       }
+      case "historyReason": {
+        var hrVal = btn.dataset.value;
+        historyState.reason = (historyState.reason === hrVal) ? null : hrVal;
+        break;
+      }
+      case "historyLastEE": {
+        var hyVal = btn.dataset.value;
+        historyState.lastEE = (historyState.lastEE === hyVal) ? null : hyVal;
+        break;
+      }
+      case "historyNoSpecs": {
+        var turningOnNoSpecs = !historyState.specs.noSpecs;
+        historyState.specs = { noSpecs: turningOnNoSpecs, progs: false, svd: false, occupational: false, svn: false, cl: null };
+        break;
+      }
+      case "historySpecsToggle": {
+        var scCond = btn.dataset.cond;
+        historyState.specs[scCond] = !historyState.specs[scCond];
+        if (historyState.specs[scCond]) historyState.specs.noSpecs = false;
+        break;
+      }
+      case "historyCL": {
+        var hclVal = btn.dataset.value;
+        historyState.specs.cl = (historyState.specs.cl === hclVal) ? null : hclVal;
+        if (historyState.specs.cl) historyState.specs.noSpecs = false;
+        break;
+      }
+      case "historyVision": {
+        var hvSub = btn.dataset.sub, hvVal = btn.dataset.value;
+        historyState.vision[hvSub] = (historyState.vision[hvSub] === hvVal) ? null : hvVal;
+        break;
+      }
+      case "historyHA": {
+        var hhVal = btn.dataset.value;
+        historyState.ha = (historyState.ha === hhVal) ? null : hhVal;
+        break;
+      }
+      case "historyFloaters": {
+        var hfVal = btn.dataset.value;
+        historyState.floaters = (historyState.floaters === hfVal) ? null : hfVal;
+        break;
+      }
+      case "historyNoDed": {
+        var turningOnNoDed = !historyState.ded.noSymptoms;
+        historyState.ded = { noSymptoms: turningOnNoDed, dry: false, watery: false, red: false, itchy: false };
+        break;
+      }
+      case "historyDedToggle": {
+        var hdCond = btn.dataset.cond;
+        historyState.ded[hdCond] = !historyState.ded[hdCond];
+        if (historyState.ded[hdCond]) historyState.ded.noSymptoms = false;
+        break;
+      }
     }
 
     refreshAll();
     refreshPosteriorAll();
+    refreshHistoryAll();
     updateActivePreview();
   }
 
@@ -1435,6 +1766,11 @@
     try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* no-op */ }
   });
 
+  document.getElementById("historyNotesInput").addEventListener("input", function(e){
+    historyState.notes = e.target.value;
+    updateActivePreview();
+  });
+
   // ---------- init ----------
 
   initTheme();
@@ -1446,7 +1782,8 @@
   renderOnh();
   renderCdr();
   refreshPosteriorAll();
-  setActiveTab("anterior");
+  refreshHistoryAll();
+  setActiveTab("history");
 
 })();
 </script>

@@ -135,7 +135,7 @@ export const HISTORY_GROUPS = [
   ]}
 ];
 
-// Groups whose combined wording is not just their own text, keyed by the group
-// that owns the resulting clause (see historyClause in notes.js).
+// Lookup by group key, for the click handler and the clause builders that need
+// to reach a specific group (e.g. specsClause combining wearables with cl).
 export const HISTORY_GROUP_BY_KEY = Object.fromEntries(HISTORY_GROUPS.map(g => [g.key, g]));
 

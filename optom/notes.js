@@ -1,22 +1,30 @@
 // Pure state -> note text. No DOM access anywhere in this file, so every
 // function here is directly unit-testable (see notes.test.js).
 
-import { CONDITIONS_MAP, OUTPUT_LABELS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS } from "./schema.js";
+import { CONDITIONS_MAP, OUTPUT_LABELS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, HISTORY_GROUP_BY_KEY as G } from "./schema.js";
 
 // ---------- note text ----------
+
+// A finding that can sit nasally, temporally, or both. Both sides present
+// collapse to "<noun> N+T"; one side reads "nasal <noun>" / "temporal <noun>".
+// Shared by conj ping and corneal pterygium, which word this identically.
+function pairedClause(key, noun, nasal, temporal){
+  if (nasal && temporal) return { key: key, text: noun + " N+T" };
+  if (nasal) return { key: key, text: "nasal " + noun };
+  if (temporal) return { key: key, text: "temporal " + noun };
+  return null;
+}
 
 // Builds the ordered list of clause objects ({key, text}) active for one eye.
 // "key" identifies the underlying finding so the other eye's matching clause can
 // be detected even when the two eyes' clause lists aren't identical overall.
-// Conj gets special handling to combine nasal+temporal ping into "N+T".
+// Conj is the one section whose two ping conditions merge into a single clause.
 function buildClauses(eyeState, sectionKey, conditions){
   if (sectionKey === "conj"){
     var clauses = [];
     if (eyeState.hyperaemia) clauses.push({ key: "hyperaemia", text: "mild hyperaemia" });
-    var n = eyeState.nasalPing, t = eyeState.temporalPing;
-    if (n && t) clauses.push({ key: "ping", text: "ping N+T" });
-    else if (n) clauses.push({ key: "ping", text: "nasal ping" });
-    else if (t) clauses.push({ key: "ping", text: "temporal ping" });
+    var ping = pairedClause("ping", "ping", eyeState.nasalPing, eyeState.temporalPing);
+    if (ping) clauses.push(ping);
     return clauses;
   }
   var out = [];
@@ -95,15 +103,12 @@ function posteriorEyeSectionText(sectionState, sectionKey, conditions, clearLabe
   return formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear, joiner, clearLabel);
 }
 
-// Same nasal/temporal -> N+T combination as conj's ping, but pterygium has no
-// section-level "clear OU" fallback of its own - an eye with neither side marked
-// simply contributes nothing, since overall cornea clarity is the clear/arcus preset.
+// Unlike conj, pterygium has no section-level "clear OU" fallback of its own -
+// an eye with neither side marked simply contributes nothing, since overall
+// cornea clarity is the clear/arcus preset.
 function pterygiumClauses(eyeState){
-  var clauses = [];
-  if (eyeState.nasal && eyeState.temporal) clauses.push({ key: "pterygium", text: "pterygium N+T" });
-  else if (eyeState.nasal) clauses.push({ key: "pterygium", text: "nasal pterygium" });
-  else if (eyeState.temporal) clauses.push({ key: "pterygium", text: "temporal pterygium" });
-  return clauses;
+  var clause = pairedClause("pterygium", "pterygium", eyeState.nasal, eyeState.temporal);
+  return clause ? [clause] : [];
 }
 
 function pterygiumText(state){
@@ -124,7 +129,8 @@ function vhText(state){
 // its own), with any PPA leftover(s) prefixed before it, comma-joined - the
 // reverse order/joiner from formatEyeSegments' common-first/space-join, so this
 // doesn't fit that helper. No reference example has PPA on both eyes at once;
-// this joins them with a space if it happens (untested - see CLAUDE.md).
+// this joins them with a space if it happens (untested - see CLAUDE.md
+// "Known gaps").
 function onhText(posteriorState){
   var baseline = "distinct margins, evenly perfused";
   var pieces = [];
@@ -193,82 +199,70 @@ export function buildPosteriorNote(posteriorState){
 
 // ---------- history note text ----------
 
-var HISTORY_REASON_TEXT = { REE: "REE", firstExam: "First eye exam", firstOPSM: "First time in OPSM" };
-var HISTORY_HA_TEXT = { noHA: "no HA or DIP", haNoDIP: "HA, no DIP", haDIP: "HA, DIP" };
-var HISTORY_FLOATERS_TEXT = {
-  noFFs: "no FFs",
-  longstanding: "longstanding floaters, no changes, no flashes",
-  new: "new floaters, flashes"
-};
-var HISTORY_CL_TEXT = { daily: "Daily CLs", monthly: "Monthly CLs", fortnightly: "Fortnightly CLs" };
-
 // "a, b and c" - used for the spectacles wearable list, the one clause where
 // grammatical "and" reads better than a flat comma list.
 function grammarJoinAnd(arr){
-  if (!arr.length) return "";
-  if (arr.length === 1) return arr[0];
+  if (arr.length < 2) return arr.join("");
   return arr.slice(0, -1).join(", ") + " and " + arr[arr.length - 1];
 }
 
-function historySpecsText(historyState){
-  var s = historyState.specs;
-  var wearables = [];
-  if (s.progs) wearables.push("progs");
-  if (s.svd) wearables.push("SVD");
-  if (s.occupational) wearables.push("occupationals");
-  if (s.svn) wearables.push("SVN");
-  var clText = s.cl ? HISTORY_CL_TEXT[s.cl] : null;
-
-  if (!wearables.length && !clText) return s.noSpecs ? "no specs or CLs" : null;
-
-  var pieces = [];
-  if (wearables.length) pieces.push("using " + grammarJoinAnd(wearables));
-  if (clText) pieces.push(clText);
-  return pieces.join(", ");
+function optionText(group, value){
+  var opt = group.options.find(function(o){ return o.value === value; });
+  return opt ? (opt.text !== undefined ? opt.text : opt.label) : null;
 }
 
-function historyVisionText(historyState){
-  var v = historyState.vision;
-  if (!v.dv && !v.nv) return null;
-  if (v.dv === "nochange" && v.nv === "nochange") return "no changes in vision";
+// One group's contribution to the note, or null if it is switched off entirely.
+// Everything about the wording - which options exist, how they read, how they
+// join - comes from the group's entry in HISTORY_GROUPS.
+export function groupText(group, historyState){
+  var value = historyState[group.key];
+  var body;
 
-  var parts = [];
-  if (v.dv) parts.push(v.dv === "blurry" ? "DV blurry" : "no changes in DV");
-  if (v.nv) parts.push(v.nv === "blurry" ? "NV blurry" : "no changes in NV");
-  return parts.join(", ");
+  if (group.kind === "flag"){
+    if (!value) return null;
+    body = group.text;
+  } else if (group.kind === "multi"){
+    var picked = group.options
+      .filter(function(o){ return value[o.value]; })
+      .map(function(o){ return o.text !== undefined ? o.text : o.label; });
+    if (!picked.length) return null;
+    body = group.join === "and" ? grammarJoinAnd(picked) : picked.join(", ");
+  } else {
+    if (!value) return null;
+    body = optionText(group, value);
+  }
+
+  return (group.prefix || "") + body + (group.suffix || "");
 }
 
-function historyDedText(historyState){
-  var d = historyState.ded;
-  var labels = [];
-  if (d.dry) labels.push("dry");
-  if (d.watery) labels.push("watery");
-  if (d.red) labels.push("red");
-  if (d.itchy) labels.push("itchy");
-  if (!labels.length) return d.noSymptoms ? "no dry eye symptoms" : null;
-  return labels.join(", ") + " eyes";
+// Groups that read better merged than listed separately. Each returns one
+// clause; everything else in the note is a plain groupText call.
+function specsClause(h){
+  var pieces = [groupText(G.wearables, h), groupText(G.cl, h)].filter(Boolean);
+  return pieces.length ? pieces.join(", ") : groupText(G.specsNone, h);
+}
+
+function visionClause(h){
+  if (h.dv === "nochange" && h.nv === "nochange") return "no changes in vision";
+  var pieces = [groupText(G.dv, h), groupText(G.nv, h)].filter(Boolean);
+  return pieces.length ? pieces.join(", ") : null;
+}
+
+function dedClause(h){
+  return groupText(G.ded, h) || groupText(G.dedNone, h);
 }
 
 export function buildHistoryNote(historyState){
-  var parts = [];
-
-  if (historyState.reason) parts.push(HISTORY_REASON_TEXT[historyState.reason]);
-  if (historyState.lastEE) parts.push("last EE " + historyState.lastEE);
-
-  var specsTxt = historySpecsText(historyState);
-  if (specsTxt) parts.push(specsTxt);
-
-  var visionTxt = historyVisionText(historyState);
-  if (visionTxt) parts.push(visionTxt);
-
-  if (historyState.ha) parts.push(HISTORY_HA_TEXT[historyState.ha]);
-  if (historyState.floaters) parts.push(HISTORY_FLOATERS_TEXT[historyState.floaters]);
-
-  var dedTxt = historyDedText(historyState);
-  if (dedTxt) parts.push(dedTxt);
-
-  if (historyState.notes.trim()) parts.push(historyState.notes.trim());
-
-  return parts.join(", ");
+  var h = historyState;
+  return [
+    groupText(G.reason, h),
+    groupText(G.lastEE, h),
+    specsClause(h),
+    visionClause(h),
+    groupText(G.ha, h),
+    groupText(G.floaters, h),
+    dedClause(h),
+    h.notes.trim() || null
+  ].filter(Boolean).join(", ");
 }
 

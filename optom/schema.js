@@ -48,3 +48,94 @@ export const PERIPHERY_CONDITIONS = [
 ];
 export const POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITIONS, periphery: PERIPHERY_CONDITIONS };
 
+// Flat on/off toggles on the posterior tab. `path` is where the boolean lives in
+// posteriorState; spelling it out here is what keeps the nested imaging.* fields
+// from needing a special case in both the click and the refresh paths.
+export const POSTERIOR_TOGGLES = [
+  { field: "optos",     path: ["imaging", "optos"] },
+  { field: "oct",       path: ["imaging", "oct"] },
+  { field: "drs",       path: ["imaging", "drs"] },
+  { field: "dimReflex", path: ["dimReflex"] },
+  { field: "arcades",   path: ["arcades"] },
+  { field: "bv",        path: ["bv"] }
+];
+
+// ---------- History tab ----------
+//
+// Each entry is one row of chips. Consecutive entries sharing a `card` render
+// into the same card. State, markup, button highlighting and note text are ALL
+// derived from this table, so adding an option is a one-line edit here.
+//
+//   kind "single" - pick one; clicking the active chip clears it.  state[key] = value | null
+//   kind "multi"  - independent on/off options.                    state[key] = { [value]: bool }
+//   kind "flag"   - a lone "nothing abnormal" chip.                state[key] = bool
+//                   `clears` names the groups it switches off, and which switch it back off.
+//
+// Per option, `text` defaults to `label`. Per group, `prefix`/`suffix` wrap the
+// joined result, and `join: "and"` uses "a, b and c" instead of a plain comma list.
+// `row` renders the group as a labelled row instead of a free-flowing chip row.
+export const HISTORY_GROUPS = [
+  { key: "reason", card: "Reason for visit", kind: "single", options: [
+    { value: "REE",       label: "REE (routine eye examination)", text: "REE" },
+    { value: "firstExam", label: "First eye exam" },
+    { value: "firstOPSM", label: "First time in OPSM" }
+  ]},
+
+  { key: "lastEE", card: "Last EE", kind: "single", prefix: "last EE ", options: [
+    { value: "2025", label: "2025" },
+    { value: "2024", label: "2024" },
+    { value: "2023", label: "2023" },
+    { value: "2022", label: "2022" },
+    { value: "2021", label: "2021" },
+    { value: "2020", label: "2020" }
+  ]},
+
+  { key: "specsNone", card: "Spectacles / CLs", kind: "flag",
+    label: "No specs", text: "no specs or CLs", clears: ["wearables", "cl"] },
+  { key: "wearables", card: "Spectacles / CLs", kind: "multi", prefix: "using ", join: "and", options: [
+    { value: "progs",        label: "Progs",         text: "progs" },
+    { value: "svd",          label: "SVD" },
+    { value: "occupational", label: "Occupationals", text: "occupationals" },
+    { value: "svn",          label: "SVN" }
+  ]},
+  { key: "cl", card: "Spectacles / CLs", kind: "single", options: [
+    { value: "daily",       label: "Daily CLs" },
+    { value: "monthly",     label: "Monthly CLs" },
+    { value: "fortnightly", label: "Fortnightly CLs" }
+  ]},
+
+  { key: "dv", card: "Vision", row: "DV", kind: "single", options: [
+    { value: "nochange", label: "no change", text: "no changes in DV" },
+    { value: "blurry",   label: "blurry",    text: "DV blurry" }
+  ]},
+  { key: "nv", card: "Vision", row: "NV", kind: "single", options: [
+    { value: "nochange", label: "no change", text: "no changes in NV" },
+    { value: "blurry",   label: "blurry",    text: "NV blurry" }
+  ]},
+
+  { key: "ha", card: "HA", kind: "single", options: [
+    { value: "noHA",    label: "no HA or DIP" },
+    { value: "haNoDIP", label: "HA, no DIP" },
+    { value: "haDIP",   label: "HA, DIP" }
+  ]},
+
+  { key: "floaters", card: "Floaters", kind: "single", options: [
+    { value: "noFFs",        label: "no FFs" },
+    { value: "longstanding", label: "longstanding floaters, no changes, no flashes" },
+    { value: "new",          label: "new floaters, flashes" }
+  ]},
+
+  { key: "dedNone", card: "DED", kind: "flag",
+    label: "No dry eye symptoms", text: "no dry eye symptoms", clears: ["ded"] },
+  { key: "ded", card: "DED", kind: "multi", suffix: " eyes", options: [
+    { value: "dry",    label: "Dry eyes",    text: "dry" },
+    { value: "watery", label: "Watery eyes", text: "watery" },
+    { value: "red",    label: "Red eyes",    text: "red" },
+    { value: "itchy",  label: "Itchy eyes",  text: "itchy" }
+  ]}
+];
+
+// Groups whose combined wording is not just their own text, keyed by the group
+// that owns the resulting clause (see historyClause in notes.js).
+export const HISTORY_GROUP_BY_KEY = Object.fromEntries(HISTORY_GROUPS.map(g => [g.key, g]));
+

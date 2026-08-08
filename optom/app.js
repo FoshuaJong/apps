@@ -1,7 +1,7 @@
 // DOM layer: renders the chip UI, syncs button state to the model, and wires
 // clicks. All note wording lives in notes.js; all option tables in schema.js.
 
-import { VH_VALUES, CDR_VALUES, CONDITIONS_MAP, POSTERIOR_CONDITIONS_MAP } from "./schema.js";
+import { VH_VALUES, CDR_VALUES, CONDITIONS_MAP, POSTERIOR_CONDITIONS_MAP, POSTERIOR_TOGGLES, HISTORY_GROUPS, HISTORY_GROUP_BY_KEY } from "./schema.js";
 import { freshEyeState, defaultState, defaultPosteriorState, freshHistoryState } from "./state.js";
 import { buildNote, buildPosteriorNote, buildHistoryNote } from "./notes.js";
 
@@ -122,6 +122,47 @@ function renderOnh(){
   document.querySelector('[data-onh-grid]').innerHTML = onhEyeHTML("R") + onhEyeHTML("L");
 }
 
+// History cards are generated from HISTORY_GROUPS rather than written out in
+// index.html, so a new option needs no markup. Consecutive groups sharing a
+// `card` are emitted into the same card, in schema order.
+function historyChipHTML(group, option, chipClass){
+  return '<button type="button" class="chip ' + chipClass + '" data-type="historyChip" data-group="' +
+    group.key + '" data-value="' + option.value + '">' + option.label + '</button>';
+}
+
+function historyGroupHTML(group){
+  if (group.kind === "flag"){
+    return '<div class="preset-row">' +
+      historyChipHTML(group, { value: group.key, label: group.label }, "chip-preset") + '</div>';
+  }
+  // `row` groups (DV/NV) sit on a labelled line together; the rest flow freely.
+  if (group.row){
+    return '<div class="cond-row"><span class="cond-label">' + group.row + '</span><div class="grade-chips">' +
+      group.options.map(function(o){ return historyChipHTML(group, o, "chip-choice"); }).join("") +
+      '</div></div>';
+  }
+  return '<div class="preset-row">' +
+    group.options.map(function(o){ return historyChipHTML(group, o, "chip-preset"); }).join("") + '</div>';
+}
+
+function renderHistoryGroups(){
+  var html = "";
+  HISTORY_GROUPS.forEach(function(g, i){
+    var prev = HISTORY_GROUPS[i - 1];
+    var next = HISTORY_GROUPS[i + 1];
+    if (!prev || prev.card !== g.card){
+      html += '<section class="card"><div class="card-head"><h2>' + g.card + '</h2></div>';
+      if (g.row) html += '<div class="cond-rows">';
+    }
+    html += historyGroupHTML(g);
+    if (!next || next.card !== g.card){
+      if (g.row) html += '</div>';
+      html += '</section>';
+    }
+  });
+  document.querySelector("[data-history-groups]").innerHTML = html;
+}
+
 // ---------- refresh (sync button states to model) ----------
 
 function refreshEyeSection(sectionKey){
@@ -215,14 +256,19 @@ function refreshSingle(sectionKey){
   btn.classList.toggle("is-active", !!state[sectionKey]);
 }
 
-// Covers all five flat posterior booleans: imaging.optos/oct/drs plus the
-// top-level arcades/bv flags - each is just a canned-text on/off
-// toggle, same mechanism as irisT/ac but keyed by data-field instead of
-// data-section since imaging's fields live nested under `imaging`.
-function refreshPosteriorToggle(field){
-  var btn = document.querySelector('[data-type="posteriorToggle"][data-field="' + field + '"]');
-  var value = field === "optos" || field === "oct" || field === "drs" ? posteriorState.imaging[field] : posteriorState[field];
-  btn.classList.toggle("is-active", !!value);
+// Flat posterior booleans (imaging.optos/oct/drs, dimReflex, arcades, bv). The
+// state location comes from the toggle's `path` in schema.js, so nested and
+// top-level fields read and write the same way.
+function toggleTarget(path){
+  var obj = posteriorState;
+  for (var i = 0; i < path.length - 1; i++) obj = obj[path[i]];
+  return { obj: obj, prop: path[path.length - 1] };
+}
+
+function refreshPosteriorToggle(toggle){
+  var t = toggleTarget(toggle.path);
+  document.querySelector('[data-type="posteriorToggle"][data-field="' + toggle.field + '"]')
+    .classList.toggle("is-active", !!t.obj[t.prop]);
 }
 
 function refreshAll(){
@@ -237,7 +283,7 @@ function refreshAll(){
 }
 
 function refreshPosteriorAll(){
-  ["optos", "oct", "drs", "dimReflex", "arcades", "bv"].forEach(refreshPosteriorToggle);
+  POSTERIOR_TOGGLES.forEach(refreshPosteriorToggle);
   refreshPosteriorEyeSection("vit");
   refreshPosteriorEyeSection("macula");
   refreshPosteriorEyeSection("periphery");
@@ -245,36 +291,17 @@ function refreshPosteriorAll(){
   refreshCdr();
 }
 
+// Every history chip carries data-group/data-value, so one pass over
+// HISTORY_GROUPS highlights the whole tab regardless of how many options exist.
 function refreshHistoryAll(){
-  document.querySelectorAll('[data-type="historyReason"]').forEach(function(b){
-    b.classList.toggle("is-active", historyState.reason === b.dataset.value);
-  });
-  document.querySelectorAll('[data-type="historyLastEE"]').forEach(function(b){
-    b.classList.toggle("is-active", historyState.lastEE === b.dataset.value);
-  });
-  document.querySelector('[data-type="historyNoSpecs"]').classList.toggle("is-active", !!historyState.specs.noSpecs);
-  ["progs", "svd", "occupational", "svn"].forEach(function(cond){
-    document.querySelector('[data-type="historySpecsToggle"][data-cond="' + cond + '"]')
-      .classList.toggle("is-active", !!historyState.specs[cond]);
-  });
-  document.querySelectorAll('[data-type="historyCL"]').forEach(function(b){
-    b.classList.toggle("is-active", historyState.specs.cl === b.dataset.value);
-  });
-  ["dv", "nv"].forEach(function(sub){
-    document.querySelectorAll('[data-type="historyVision"][data-sub="' + sub + '"]').forEach(function(b){
-      b.classList.toggle("is-active", historyState.vision[sub] === b.dataset.value);
+  HISTORY_GROUPS.forEach(function(g){
+    var value = historyState[g.key];
+    document.querySelectorAll('[data-type="historyChip"][data-group="' + g.key + '"]').forEach(function(btn){
+      var on = g.kind === "flag" ? !!value
+             : g.kind === "multi" ? !!value[btn.dataset.value]
+             : value === btn.dataset.value;
+      btn.classList.toggle("is-active", on);
     });
-  });
-  document.querySelectorAll('[data-type="historyHA"]').forEach(function(b){
-    b.classList.toggle("is-active", historyState.ha === b.dataset.value);
-  });
-  document.querySelectorAll('[data-type="historyFloaters"]').forEach(function(b){
-    b.classList.toggle("is-active", historyState.floaters === b.dataset.value);
-  });
-  document.querySelector('[data-type="historyNoDed"]').classList.toggle("is-active", !!historyState.ded.noSymptoms);
-  ["dry", "watery", "red", "itchy"].forEach(function(cond){
-    document.querySelector('[data-type="historyDedToggle"][data-cond="' + cond + '"]')
-      .classList.toggle("is-active", !!historyState.ded[cond]);
   });
 }
 
@@ -334,6 +361,35 @@ function resetEye(sectionKey, eye){
   state[sectionKey][eye] = freshEyeState(CONDITIONS_MAP[sectionKey]);
 }
 
+function clearHistoryGroup(group){
+  if (group.kind === "multi") Object.keys(historyState[group.key]).forEach(function(v){ historyState[group.key][v] = false; });
+  else historyState[group.key] = group.kind === "flag" ? false : null;
+}
+
+function historyGroupIsOn(group){
+  var value = historyState[group.key];
+  return group.kind === "multi" ? Object.keys(value).some(function(v){ return value[v]; }) : !!value;
+}
+
+// A "flag" group ("No specs", "No dry eye symptoms") and the groups it `clears`
+// are mutually exclusive: switching one on switches the other side off.
+function historyChipClicked(group, value){
+  if (group.kind === "flag"){
+    var turningOn = !historyState[group.key];
+    group.clears.forEach(function(key){ clearHistoryGroup(HISTORY_GROUP_BY_KEY[key]); });
+    historyState[group.key] = turningOn;
+    return;
+  }
+
+  if (group.kind === "multi") historyState[group.key][value] = !historyState[group.key][value];
+  else historyState[group.key] = historyState[group.key] === value ? null : value;
+
+  if (!historyGroupIsOn(group)) return;
+  HISTORY_GROUPS.forEach(function(f){
+    if (f.kind === "flag" && f.clears.indexOf(group.key) !== -1) historyState[f.key] = false;
+  });
+}
+
 var activeTab = "history";
 
 var TAB_LABELS = { history: "History", anterior: "Anterior", posterior: "Posterior" };
@@ -356,164 +412,96 @@ document.getElementById("app").addEventListener("click", handleClick);
 document.querySelector("footer").addEventListener("click", handleClick);
 document.querySelector(".tab-switcher").addEventListener("click", handleClick);
 
+// One handler per data-type, each taking the button's dataset. Handlers that
+// return true have already dealt with the redraw and skip the refresh below.
+var HANDLERS = {
+  // ---- anterior ----
+  eyeClear: function(d){
+    var turningOn = !state[d.section][d.eye].clear;
+    resetEye(d.section, d.eye);
+    state[d.section][d.eye].clear = turningOn;
+  },
+  grade: function(d){
+    var eye = state[d.section][d.eye], grade = Number(d.grade);
+    eye[d.cond] = eye[d.cond] === grade ? null : grade;
+    eye.clear = false;
+  },
+  bool: function(d){
+    var eye = state[d.section][d.eye];
+    eye[d.cond] = !eye[d.cond];
+    if (eye[d.cond]) eye.clear = false;
+  },
+  choice: function(d){
+    var eye = state[d.section][d.eye];
+    eye[d.cond] = eye[d.cond] === d.value ? null : d.value;
+    eye.clear = false;
+  },
+  cornea: function(d){
+    state.cornea = state.cornea === d.value ? null : d.value;
+  },
+  pterygium: function(d){
+    state.pterygium[d.eye][d.side] = !state.pterygium[d.eye][d.side];
+  },
+  vh: function(d){
+    state.vh[d.slot] = state.vh[d.slot] === d.value ? null : d.value;
+  },
+  single: function(d){
+    state[d.section] = !state[d.section];
+  },
+
+  // ---- posterior ----
+  posteriorEyeClear: function(d){
+    var turningOn = !posteriorState[d.section][d.eye].clear;
+    posteriorState[d.section][d.eye] = freshEyeState(POSTERIOR_CONDITIONS_MAP[d.section]);
+    posteriorState[d.section][d.eye].clear = turningOn;
+  },
+  posteriorBool: function(d){
+    var eye = posteriorState[d.section][d.eye];
+    eye[d.cond] = !eye[d.cond];
+    if (eye[d.cond]) eye.clear = false;
+  },
+  onh: function(d){
+    posteriorState.onh[d.eye].PPA = !posteriorState.onh[d.eye].PPA;
+  },
+  cdr: function(d){
+    posteriorState.cdr[d.eye] = d.value;
+  },
+  posteriorToggle: function(d){
+    var toggle = POSTERIOR_TOGGLES.find(function(t){ return t.field === d.field; });
+    var target = toggleTarget(toggle.path);
+    target.obj[target.prop] = !target.obj[target.prop];
+  },
+
+  // ---- history: one handler for every chip on the tab, since which group a
+  // chip belongs to and how it behaves both come from schema.js ----
+  historyChip: function(d){
+    historyChipClicked(HISTORY_GROUP_BY_KEY[d.group], d.value);
+  },
+
+  // ---- shared footer / tabs ----
+  reset: function(){
+    if (activeTab === "anterior") state = defaultState();
+    else if (activeTab === "posterior") posteriorState = defaultPosteriorState();
+    else {
+      historyState = freshHistoryState();
+      document.getElementById("historyNotesInput").value = "";
+    }
+  },
+  copy: function(){
+    copyNote();
+    return true;
+  },
+  tab: function(d){
+    setActiveTab(d.tab);
+    return true;
+  }
+};
+
 function handleClick(e){
   var btn = e.target.closest("button[data-type]");
   if (!btn) return;
-  var type = btn.dataset.type;
-
-  switch (type){
-    case "eyeClear": {
-      var sec2 = btn.dataset.section, eye2 = btn.dataset.eye;
-      var turningOn2 = !state[sec2][eye2].clear;
-      resetEye(sec2, eye2);
-      state[sec2][eye2].clear = turningOn2;
-      break;
-    }
-    case "grade": {
-      var sec3 = btn.dataset.section, eye3 = btn.dataset.eye, cond3 = btn.dataset.cond, grade3 = Number(btn.dataset.grade);
-      var eyeState3 = state[sec3][eye3];
-      eyeState3[cond3] = (eyeState3[cond3] === grade3) ? null : grade3;
-      eyeState3.clear = false;
-      break;
-    }
-    case "bool": {
-      var sec4 = btn.dataset.section, eye4 = btn.dataset.eye, cond4 = btn.dataset.cond;
-      var eyeState4 = state[sec4][eye4];
-      eyeState4[cond4] = !eyeState4[cond4];
-      if (eyeState4[cond4]) eyeState4.clear = false;
-      break;
-    }
-    case "choice": {
-      var sec6 = btn.dataset.section, eye6 = btn.dataset.eye, cond6 = btn.dataset.cond, value6 = btn.dataset.value;
-      var eyeState6 = state[sec6][eye6];
-      eyeState6[cond6] = (eyeState6[cond6] === value6) ? null : value6;
-      eyeState6.clear = false;
-      break;
-    }
-    case "cornea": {
-      var val = btn.dataset.value;
-      state.cornea = (state.cornea === val) ? null : val;
-      break;
-    }
-    case "pterygium": {
-      var pEye = btn.dataset.eye, pSide = btn.dataset.side;
-      state.pterygium[pEye][pSide] = !state.pterygium[pEye][pSide];
-      break;
-    }
-    case "vh": {
-      var slot = btn.dataset.slot, val2 = btn.dataset.value;
-      state.vh[slot] = (state.vh[slot] === val2) ? null : val2;
-      break;
-    }
-    case "single": {
-      var sec5 = btn.dataset.section;
-      state[sec5] = !state[sec5];
-      break;
-    }
-    case "reset": {
-      if (activeTab === "anterior") state = defaultState();
-      else if (activeTab === "posterior") posteriorState = defaultPosteriorState();
-      else {
-        historyState = freshHistoryState();
-        document.getElementById("historyNotesInput").value = "";
-      }
-      break;
-    }
-    case "copy": {
-      copyNote();
-      return;
-    }
-    case "tab": {
-      setActiveTab(btn.dataset.tab);
-      return;
-    }
-    case "posteriorEyeClear": {
-      var pcSec = btn.dataset.section, pcEye = btn.dataset.eye;
-      var pcTurningOn = !posteriorState[pcSec][pcEye].clear;
-      posteriorState[pcSec][pcEye] = freshEyeState(POSTERIOR_CONDITIONS_MAP[pcSec]);
-      posteriorState[pcSec][pcEye].clear = pcTurningOn;
-      break;
-    }
-    case "posteriorBool": {
-      var pbSec = btn.dataset.section, pbEye = btn.dataset.eye, pbCond = btn.dataset.cond;
-      var pbEyeState = posteriorState[pbSec][pbEye];
-      pbEyeState[pbCond] = !pbEyeState[pbCond];
-      if (pbEyeState[pbCond]) pbEyeState.clear = false;
-      break;
-    }
-    case "onh": {
-      var onhEye = btn.dataset.eye;
-      posteriorState.onh[onhEye].PPA = !posteriorState.onh[onhEye].PPA;
-      break;
-    }
-    case "cdr": {
-      var cdrEye = btn.dataset.eye, cdrVal = btn.dataset.value;
-      posteriorState.cdr[cdrEye] = cdrVal;
-      break;
-    }
-    case "posteriorToggle": {
-      var ptField = btn.dataset.field;
-      if (ptField === "optos" || ptField === "oct" || ptField === "drs"){
-        posteriorState.imaging[ptField] = !posteriorState.imaging[ptField];
-      } else {
-        posteriorState[ptField] = !posteriorState[ptField];
-      }
-      break;
-    }
-    case "historyReason": {
-      var hrVal = btn.dataset.value;
-      historyState.reason = (historyState.reason === hrVal) ? null : hrVal;
-      break;
-    }
-    case "historyLastEE": {
-      var hyVal = btn.dataset.value;
-      historyState.lastEE = (historyState.lastEE === hyVal) ? null : hyVal;
-      break;
-    }
-    case "historyNoSpecs": {
-      var turningOnNoSpecs = !historyState.specs.noSpecs;
-      historyState.specs = { noSpecs: turningOnNoSpecs, progs: false, svd: false, occupational: false, svn: false, cl: null };
-      break;
-    }
-    case "historySpecsToggle": {
-      var scCond = btn.dataset.cond;
-      historyState.specs[scCond] = !historyState.specs[scCond];
-      if (historyState.specs[scCond]) historyState.specs.noSpecs = false;
-      break;
-    }
-    case "historyCL": {
-      var hclVal = btn.dataset.value;
-      historyState.specs.cl = (historyState.specs.cl === hclVal) ? null : hclVal;
-      if (historyState.specs.cl) historyState.specs.noSpecs = false;
-      break;
-    }
-    case "historyVision": {
-      var hvSub = btn.dataset.sub, hvVal = btn.dataset.value;
-      historyState.vision[hvSub] = (historyState.vision[hvSub] === hvVal) ? null : hvVal;
-      break;
-    }
-    case "historyHA": {
-      var hhVal = btn.dataset.value;
-      historyState.ha = (historyState.ha === hhVal) ? null : hhVal;
-      break;
-    }
-    case "historyFloaters": {
-      var hfVal = btn.dataset.value;
-      historyState.floaters = (historyState.floaters === hfVal) ? null : hfVal;
-      break;
-    }
-    case "historyNoDed": {
-      var turningOnNoDed = !historyState.ded.noSymptoms;
-      historyState.ded = { noSymptoms: turningOnNoDed, dry: false, watery: false, red: false, itchy: false };
-      break;
-    }
-    case "historyDedToggle": {
-      var hdCond = btn.dataset.cond;
-      historyState.ded[hdCond] = !historyState.ded[hdCond];
-      if (historyState.ded[hdCond]) historyState.ded.noSymptoms = false;
-      break;
-    }
-  }
+  var handler = HANDLERS[btn.dataset.type];
+  if (!handler || handler(btn.dataset)) return;
 
   refreshAll();
   refreshPosteriorAll();
@@ -557,6 +545,7 @@ renderPosteriorEyeSections();
 renderOnh();
 renderCdr();
 refreshPosteriorAll();
+renderHistoryGroups();
 refreshHistoryAll();
 setActiveTab("history");
 

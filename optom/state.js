@@ -1,7 +1,7 @@
 // State factories. `fresh*` = everything off; `default*` = the normal-findings
 // baseline the Reset button restores.
 
-import { LID_CONDITIONS, CONJ_CONDITIONS, LENS_CONDITIONS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS } from "./schema.js";
+import { LID_CONDITIONS, CONJ_CONDITIONS, LENS_CONDITIONS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, HISTORY_GROUPS } from "./schema.js";
 
 // ---------- state ----------
 
@@ -79,20 +79,22 @@ export function defaultPosteriorState(){
 }
 
 
-// ---------- history state (third, fully independent note - fixed option
-// sets rather than per-eye grids, so it skips the eye-group render system
-// entirely and is built/synced by its own small set of functions below) ----------
+// ---------- history state ----------
+//
+// Derived entirely from HISTORY_GROUPS, so adding an option to schema.js gives
+// it a state slot automatically. `notes` is the one free-text field and is the
+// only key here not backed by a group.
 
 export function freshHistoryState(){
-  return {
-    reason: null,
-    lastEE: null,
-    specs: { noSpecs: false, progs: false, svd: false, occupational: false, svn: false, cl: null },
-    vision: { dv: null, nv: null },
-    ha: null,
-    floaters: null,
-    ded: { noSymptoms: false, dry: false, watery: false, red: false, itchy: false },
-    notes: ""
-  };
+  var s = { notes: "" };
+  HISTORY_GROUPS.forEach(function(g){
+    if (g.kind === "multi"){
+      s[g.key] = {};
+      g.options.forEach(function(o){ s[g.key][o.value] = false; });
+    } else {
+      s[g.key] = g.kind === "flag" ? false : null;
+    }
+  });
+  return s;
 }
 

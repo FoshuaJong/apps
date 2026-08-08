@@ -91,12 +91,12 @@ const TESTS = [
       const h = freshHistoryState();
       h.reason = "REE";
       h.lastEE = "2024";
-      h.specs.noSpecs = true;
-      h.vision.dv = "nochange";
-      h.vision.nv = "nochange";
+      h.specsNone = true;
+      h.dv = "nochange";
+      h.nv = "nochange";
       h.ha = "noHA";
       h.floaters = "noFFs";
-      h.ded.noSymptoms = true;
+      h.dedNone = true;
       return buildHistoryNote(h);
     },
     expect: "REE, last EE 2024, no specs or CLs, no changes in vision, no HA or DIP, no FFs, no dry eye symptoms"
@@ -107,12 +107,12 @@ const TESTS = [
       const h = freshHistoryState();
       h.reason = "firstOPSM";
       h.lastEE = "2025";
-      h.specs.progs = true;
-      h.specs.svd = true;
-      h.specs.svn = true;
-      h.specs.cl = "daily";
-      h.vision.dv = "blurry";
-      h.vision.nv = "nochange";
+      h.wearables.progs = true;
+      h.wearables.svd = true;
+      h.wearables.svn = true;
+      h.cl = "daily";
+      h.dv = "blurry";
+      h.nv = "nochange";
       h.ha = "haNoDIP";
       h.floaters = "longstanding";
       h.ded.dry = true;

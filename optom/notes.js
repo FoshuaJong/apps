@@ -129,7 +129,7 @@ function vhText(state){
 // its own), with any PPA leftover(s) prefixed before it, comma-joined - the
 // reverse order/joiner from formatEyeSegments' common-first/space-join, so this
 // doesn't fit that helper. No reference example has PPA on both eyes at once;
-// this joins them with a space if it happens (untested - see CLAUDE.md
+// this joins them with a space if it happens (untested - see README.md
 // "Known gaps").
 function onhText(posteriorState){
   var baseline = "distinct margins, evenly perfused";

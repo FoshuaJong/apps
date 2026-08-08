@@ -60,6 +60,18 @@ export async function scrapeAramMeta(env) {
   return data;
 }
 
+/** Decodes the small set of HTML entities lol-html's text() handler leaves raw. */
+function decodeHtmlEntities(str) {
+  return str
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
 /**
  * Parses the champion leaderboard table and summary stat cards out of a
  * mayhemmeta.com HTML response using the Workers runtime's built-in
@@ -92,7 +104,7 @@ export async function parseAramMetaHtml(response) {
       element(el) {
         currentCell = '';
         el.onEndTag(() => {
-          if (currentRow) currentRow.cells.push(currentCell.trim());
+          if (currentRow) currentRow.cells.push(decodeHtmlEntities(currentCell.trim()));
           currentCell = null;
         });
       },
@@ -123,7 +135,7 @@ export async function parseAramMetaHtml(response) {
       element(el) {
         currentPanelChild = '';
         el.onEndTag(() => {
-          if (currentPanel) currentPanel.push(currentPanelChild.trim());
+          if (currentPanel) currentPanel.push(decodeHtmlEntities(currentPanelChild.trim()));
           currentPanelChild = null;
         });
       },
@@ -140,7 +152,7 @@ export async function parseAramMetaHtml(response) {
         currentOption = '';
         el.onEndTag(() => {
           if (currentOption !== null) {
-            patch = currentOption.trim();
+            patch = decodeHtmlEntities(currentOption.trim());
             patchCaptured = true;
           }
           currentOption = null;

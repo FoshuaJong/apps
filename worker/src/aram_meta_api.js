@@ -1,8 +1,10 @@
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
-const SOURCE_URL = 'https://mayhemmeta.com/?sort=win_rate&dir=desc&class=All';
+const BASE_URL = 'https://mayhemmeta.com/?sort=win_rate&dir=desc';
+const SOURCE_URL = `${BASE_URL}&class=All`;
 const KV_KEY = 'latest';
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+const CLASS_ORDER = ['Assassin', 'Fighter', 'Mage', 'Marksman', 'Support', 'Tank'];
 
 export async function handleAramMetaApiRequest(request, env) {
   const url = new URL(request.url);
@@ -55,9 +57,77 @@ export async function scrapeAramMeta(env) {
     throw new Error(`mayhemmeta.com fetch failed: HTTP ${res.status}`);
   }
 
-  const data = await parseAramMetaHtml(res);
+  const [data, classesOf, primaryClassOf] = await Promise.all([
+    parseAramMetaHtml(res),
+    buildClassMap(false),
+    buildClassMap(true),
+  ]);
+
+  data.champions = data.champions.map((c) => ({
+    ...c,
+    classes: classesOf[c.slug] ?? [],
+    primaryClass: primaryClassOf[c.slug] ?? null,
+  }));
+
   await env.ARAM_META_KV.put(KV_KEY, JSON.stringify(data));
   return data;
+}
+
+/**
+ * Builds a slug -> classes map (or slug -> single class when primaryOnly)
+ * from the 6 per-class pages. A single failed class fetch degrades to an
+ * empty result for that class rather than failing the whole scrape — this
+ * is the same class of bug that caused the empty-champion-list outage
+ * (a rigid dependency silently zeroing everything out), so the 12 class
+ * fetches are deliberately isolated from each other and from the main
+ * stats fetch via allSettled.
+ */
+async function buildClassMap(primaryOnly) {
+  const results = await Promise.allSettled(
+    CLASS_ORDER.map((cls) => fetchClassSlugs(cls, primaryOnly))
+  );
+
+  const map = {};
+  results.forEach((result, i) => {
+    const cls = CLASS_ORDER[i];
+    if (result.status !== 'fulfilled') {
+      console.error(
+        `ARAM meta: class fetch failed for ${cls}${primaryOnly ? ' (primary)' : ''}: ${result.reason}`
+      );
+      return;
+    }
+    for (const slug of result.value) {
+      if (primaryOnly) {
+        map[slug] = cls;
+      } else {
+        (map[slug] ??= []).push(cls);
+      }
+    }
+  });
+  return map;
+}
+
+async function fetchClassSlugs(cls, primaryOnly) {
+  const url = `${BASE_URL}&class=${cls}${primaryOnly ? '&primary=1' : ''}`;
+  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT, Accept: 'text/html' } });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return parseSlugsHtml(res);
+}
+
+/** Lighter-weight than parseAramMetaHtml: only pulls champion slugs off a class-filtered page. */
+async function parseSlugsHtml(response) {
+  const slugs = [];
+
+  const rewriter = new HTMLRewriter().on('tbody tr td a[href^="/champions/"]', {
+    element(el) {
+      const href = el.getAttribute('href');
+      const match = href && href.match(/^\/champions\/([^/?]+)/);
+      if (match) slugs.push(match[1]);
+    },
+  });
+
+  await rewriter.transform(response).arrayBuffer();
+  return slugs;
 }
 
 /** Decodes the small set of HTML entities lol-html's text() handler leaves raw. */

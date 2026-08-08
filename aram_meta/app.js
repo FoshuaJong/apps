@@ -396,7 +396,7 @@
         fill: 'transparent',
         tabindex: '0',
         role: 'link',
-        'aria-label': `${c.name}, tier ${c.tier}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate, ${formatNumber(c.games)} games. Opens mayhemmeta.com stats page.`,
+        'aria-label': `${c.name}, tier ${c.tier}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate. Opens mayhemmeta.com stats page.`,
       });
       const activate = () => {
         if (!matchesSearch) g.classList.add('is-emphasized');
@@ -440,7 +440,6 @@
 
     t.appendChild(tooltipRow('Win rate', formatPercent(champ.winRate)));
     t.appendChild(tooltipRow('Pick rate', formatPercent(champ.pickRate)));
-    t.appendChild(tooltipRow('Games', formatNumber(champ.games)));
     if (champ.kills != null && champ.deaths != null && champ.assists != null) {
       t.appendChild(tooltipRow('KDA', `${champ.kills} / ${champ.deaths} / ${champ.assists}`));
     }
@@ -508,7 +507,6 @@
       tr.appendChild(tableCell(c.tier));
       tr.appendChild(tableCell(formatPercent(c.winRate)));
       tr.appendChild(tableCell(formatPercent(c.pickRate)));
-      tr.appendChild(tableCell(formatNumber(c.games)));
       els.dataTableBody.appendChild(tr);
     });
   }
@@ -522,9 +520,5 @@
 
   function formatPercent(n) {
     return n == null ? '—' : `${n.toFixed(1)}%`;
-  }
-
-  function formatNumber(n) {
-    return n == null ? '—' : n.toLocaleString('en-US');
   }
 })();

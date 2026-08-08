@@ -165,7 +165,7 @@ export async function parseAramMetaHtml(response) {
   };
 }
 
-const CHAMPION_COLUMN_COUNT = 14;
+const CHAMPION_COLUMN_COUNT = 13;
 
 function rowToChampion(row) {
   const c = row.cells;
@@ -180,15 +180,14 @@ function rowToChampion(row) {
     tier: c[2],
     winRate: parsePercent(c[3]),
     pickRate: parsePercent(c[4]),
-    games: parseNumber(c[5]),
-    kills: parseNumber(c[6]),
-    deaths: parseNumber(c[7]),
-    assists: parseNumber(c[8]),
-    damage: parseNumber(c[9]),
-    killParticipation: parsePercent(c[10]),
-    minions: parseNumber(c[11]),
-    ccTime: parseSeconds(c[12]),
-    turretDamage: parseNumber(c[13]),
+    kills: parseNumber(c[5]),
+    deaths: parseNumber(c[6]),
+    assists: parseNumber(c[7]),
+    damage: parseNumber(c[8]),
+    killParticipation: parsePercent(c[9]),
+    minions: parseNumber(c[10]),
+    ccTime: parseSeconds(c[11]),
+    turretDamage: parseNumber(c[12]),
   };
 }
 

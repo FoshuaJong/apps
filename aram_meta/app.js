@@ -180,9 +180,13 @@
 
   const SHAPE_SIDES = { square: 4, diamond: 4, triangle: 3, pentagon: 5, hexagon: 6 };
   const SHAPE_ROTATION = { square: 45, diamond: 0, triangle: -90, pentagon: -90, hexagon: 0 };
-  // Polygons read slightly smaller than a circle at equal radius — this is a
-  // first-pass tuning, adjust after seeing it rendered if a shape looks off.
-  const SHAPE_R_SCALE = { circle: 1, square: 1, diamond: 1.15, triangle: 1.2, pentagon: 1.1, hexagon: 1.05 };
+  // Each regular polygon's horizontal bounding-box width varies with vertex
+  // count/rotation even at equal circumradius (a square's flat side sits at
+  // r*cos(45°), a diamond's corner sits at r) — these scale factors correct
+  // each shape's radius so its bounding-box width matches the circle's
+  // diameter (2 * PORTRAIT_R), keeping visual weight consistent across
+  // classes. Verified against the actual rendered SVG geometry.
+  const SHAPE_R_SCALE = { circle: 1, square: 1.4142, diamond: 1, triangle: 1.1547, pentagon: 1.0515, hexagon: 1 };
 
   // Ring outline only (stroke, no fill), reusing the existing
   // .chart-portrait-ring class so hover/emphasis CSS applies unchanged

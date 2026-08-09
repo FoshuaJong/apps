@@ -379,11 +379,14 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-muted);
-  cursor: pointer;
   user-select: none;
 }
 
-.data-table th:hover {
+.data-table th[data-sort] {
+  cursor: pointer;
+}
+
+.data-table th[data-sort]:hover {
   color: var(--text-primary);
 }
 

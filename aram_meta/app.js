@@ -434,7 +434,7 @@
         fill: 'transparent',
         tabindex: '0',
         role: 'link',
-        'aria-label': `${c.name}, tier ${c.tier}, ${(c.classes || []).join('/')}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate. Opens mayhemmeta.com stats page.`,
+        'aria-label': `${c.name}, tier ${c.tier}, ${c.classes && c.classes.length ? c.classes.join('/') : '—'}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate. Opens mayhemmeta.com stats page.`,
       });
       const activate = () => {
         if (!matchesSearch) g.classList.add('is-emphasized');
@@ -513,7 +513,11 @@
     CLASS_ORDER.forEach((cls) => {
       const swatch = document.createElement('span');
       swatch.className = 'legend-swatch';
-      const svg = svgEl('svg', { class: 'legend-shape', viewBox: '0 0 20 20', width: '14', height: '14' });
+      // viewBox has a 2-unit margin beyond the 20x20 shape area so the
+      // triangle's miter join (which slightly overshoots its vertex at
+      // this stroke-width) doesn't get clipped by the svg's default
+      // overflow:hidden.
+      const svg = svgEl('svg', { class: 'legend-shape', viewBox: '-2 -2 24 24', width: '14', height: '14' });
       svg.appendChild(ringShapeEl(CLASS_SHAPE[cls], 10, 10, 8));
       swatch.appendChild(svg);
       const label = document.createElement('span');

@@ -3,16 +3,23 @@
 Three independent note builders on one page (History / Anterior / Posterior),
 sharing a single preview footer. No build step, no dependencies.
 
+Open `index.html` however is convenient — double-clicking it off disk works as
+well as serving it. That is why the four source files are **plain scripts, not
+ES modules**: browsers block module scripts over `file://`, which silently
+leaves every generated section (the whole History tab included) empty. Each
+file defines one global and `index.html` loads them in dependency order; keep
+it that way unless the page stops being something people open locally.
+
 ## Files
 
-| File | What lives here |
-|---|---|
-| `schema.js` | **Option tables.** What findings exist and how they are worded. |
-| `state.js` | State factories. `fresh*` = all off, `default*` = what Reset restores. |
-| `notes.js` | Pure state → note text. No DOM, so it is directly testable. |
-| `app.js` | DOM: render, refresh (sync buttons to model), click handlers, theme. |
-| `notes.test.js` | Golden-note assertions. |
-| `index.html` | Markup shell. History cards are generated, not written here. |
+| File | Global | What lives here |
+|---|---|---|
+| `schema.js` | `OptomSchema` | **Option tables.** What findings exist and how they are worded. |
+| `state.js` | `OptomState` | State factories. `fresh*` = all off, `default*` = what Reset restores. |
+| `notes.js` | `OptomNotes` | Pure state → note text. No DOM, so it is directly testable. |
+| `app.js` | — | DOM: render, refresh (sync buttons to model), click handlers, theme. |
+| `notes.test.js` | — | Golden-note assertions. |
+| `index.html` | — | Markup shell. History cards are generated, not written here. |
 
 ## Making a change
 
@@ -58,5 +65,6 @@ if a refactor changes one, that is a bug unless it was the point of the change.
   space (`R PPA L PPA, distinct margins...`); no reference note confirms the
   wording. Check with the clinician before relying on it.
 - The DOM layer has no automated tests — `notes.test.js` covers the note text
-  only. Verify UI changes by loading the page (`python3 -m http.server` from
-  this directory) and clicking through all three tabs.
+  only. Verify UI changes by opening `index.html` and clicking through all
+  three tabs, and check that the History tab still fills with chips when the
+  page is opened from disk rather than served.

@@ -1,9 +1,13 @@
 // DOM layer: renders the chip UI, syncs button state to the model, and wires
 // clicks. All note wording lives in notes.js; all option tables in schema.js.
+//
+// Plain script (see schema.js) - loads last, after the three globals it reads.
 
-import { VH_VALUES, CDR_VALUES, CONDITIONS_MAP, POSTERIOR_CONDITIONS_MAP, POSTERIOR_TOGGLES, HISTORY_GROUPS, HISTORY_GROUP_BY_KEY } from "./schema.js";
-import { freshEyeState, defaultState, defaultPosteriorState, freshHistoryState } from "./state.js";
-import { buildNote, buildPosteriorNote, buildHistoryNote } from "./notes.js";
+(function(){
+
+const { VH_VALUES, CDR_VALUES, CONDITIONS_MAP, POSTERIOR_CONDITIONS_MAP, POSTERIOR_TOGGLES, HISTORY_GROUPS, HISTORY_GROUP_BY_KEY } = OptomSchema;
+const { freshEyeState, defaultState, defaultPosteriorState, freshHistoryState } = OptomState;
+const { buildNote, buildPosteriorNote, buildHistoryNote } = OptomNotes;
 
 // The three notes are independent models sharing one preview footer.
 var state = defaultState();
@@ -548,4 +552,6 @@ refreshPosteriorAll();
 renderHistoryGroups();
 refreshHistoryAll();
 setActiveTab("history");
+
+})();
 

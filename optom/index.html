@@ -194,7 +194,13 @@
   </div>
 </footer>
 
-<script type="module" src="app.js"></script>
+<!-- Plain scripts in dependency order, not modules: module scripts are blocked
+     over file://, and this page is opened straight off disk as often as it is
+     served. Each file defines one global; app.js reads the other three. -->
+<script src="schema.js"></script>
+<script src="state.js"></script>
+<script src="notes.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>

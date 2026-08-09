@@ -1,7 +1,12 @@
 // Pure state -> note text. No DOM access anywhere in this file, so every
 // function here is directly unit-testable (see notes.test.js).
+//
+// Plain script (see schema.js) - depends on the OptomSchema global, so it must
+// load after schema.js.
 
-import { CONDITIONS_MAP, OUTPUT_LABELS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, HISTORY_GROUP_BY_KEY as G } from "./schema.js";
+var OptomNotes = (function(){
+
+const { CONDITIONS_MAP, OUTPUT_LABELS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, HISTORY_GROUP_BY_KEY: G } = OptomSchema;
 
 // ---------- note text ----------
 
@@ -76,7 +81,7 @@ function formatEyeSegments(compacted, rClear, lClear, joiner, clearLabel){
   return segments.length ? segments.join(" ") : null;
 }
 
-export function sectionText(state, sectionKey){
+function sectionText(state, sectionKey){
   var s = state[sectionKey];
   var conditions = CONDITIONS_MAP[sectionKey];
 
@@ -143,7 +148,7 @@ function cdrText(posteriorState){
   return "R" + posteriorState.cdr.R + " L" + posteriorState.cdr.L;
 }
 
-export function buildNote(state){
+function buildNote(state){
   var parts = [];
 
   var lidsTxt = sectionText(state, "lids");
@@ -173,7 +178,7 @@ export function buildNote(state){
   return parts.join(" | ");
 }
 
-export function buildPosteriorNote(posteriorState){
+function buildPosteriorNote(posteriorState){
   var parts = [];
   var img = posteriorState.imaging;
 
@@ -214,7 +219,7 @@ function optionText(group, value){
 // One group's contribution to the note, or null if it is switched off entirely.
 // Everything about the wording - which options exist, how they read, how they
 // join - comes from the group's entry in HISTORY_GROUPS.
-export function groupText(group, historyState){
+function groupText(group, historyState){
   var value = historyState[group.key];
   var body;
 
@@ -252,7 +257,7 @@ function dedClause(h){
   return groupText(G.ded, h) || groupText(G.dedNone, h);
 }
 
-export function buildHistoryNote(historyState){
+function buildHistoryNote(historyState){
   var h = historyState;
   return [
     groupText(G.reason, h),
@@ -266,3 +271,12 @@ export function buildHistoryNote(historyState){
   ].filter(Boolean).join(", ");
 }
 
+return {
+  sectionText: sectionText,
+  groupText: groupText,
+  buildNote: buildNote,
+  buildPosteriorNote: buildPosteriorNote,
+  buildHistoryNote: buildHistoryNote
+};
+
+})();

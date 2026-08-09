@@ -46,8 +46,9 @@ if a refactor changes one, that is a bug unless it was the point of the change.
 
 ## Note format conventions
 
-- Anterior and posterior join their sections with `" | "`. History joins its
-  clauses with `", "`.
+- Anterior and posterior join their sections with `" | "`. History puts each
+  clause on its own line, so its note is pasted as a block rather than a
+  sentence; within a line, the parts of one clause still join with `", "`.
 - A finding present on both eyes with identical wording compacts to
   `<finding> OU`. Anything left over stays under its own `R `/`L ` prefix, so
   one eye can compact while the other spells findings out.

@@ -257,6 +257,8 @@ function dedClause(h){
   return groupText(G.ded, h) || groupText(G.dedNone, h);
 }
 
+// One clause per line, unlike anterior/posterior's " | " runs: history is read
+// down the page in the record rather than as a single sentence.
 function buildHistoryNote(historyState){
   var h = historyState;
   return [
@@ -268,7 +270,7 @@ function buildHistoryNote(historyState){
     groupText(G.floaters, h),
     dedClause(h),
     h.notes.trim() || null
-  ].filter(Boolean).join(", ");
+  ].filter(Boolean).join("\n");
 }
 
 return {

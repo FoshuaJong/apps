@@ -113,7 +113,15 @@ const TESTS = [
       h.dedNone = true;
       return buildHistoryNote(h);
     },
-    expect: "REE, last EE 2024, no specs or CLs, no changes in vision, no HA or DIP, no FFs, no dry eye symptoms"
+    expect: [
+      "REE",
+      "last EE 2024",
+      "no specs or CLs",
+      "no changes in vision",
+      "no HA or DIP",
+      "no FFs",
+      "no dry eye symptoms"
+    ].join("\n")
   },
   {
     name: "history: multiple corrections, split DV/NV, multiple DED symptoms, free text",
@@ -134,7 +142,16 @@ const TESTS = [
       h.notes = "using 3 screens at work";
       return buildHistoryNote(h);
     },
-    expect: "First time in OPSM, last EE 2025, using progs, SVD and SVN, Daily CLs, DV blurry, no changes in NV, HA, no DIP, longstanding floaters, no changes, no flashes, dry, watery eyes, using 3 screens at work"
+    expect: [
+      "First time in OPSM",
+      "last EE 2025",
+      "using progs, SVD and SVN, Daily CLs",
+      "DV blurry, no changes in NV",
+      "HA, no DIP",
+      "longstanding floaters, no changes, no flashes",
+      "dry, watery eyes",
+      "using 3 screens at work"
+    ].join("\n")
   },
   {
     name: "history: empty state produces an empty note",

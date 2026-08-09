@@ -1,25 +1,30 @@
 // State factories. `fresh*` = everything off; `default*` = the normal-findings
 // baseline the Reset button restores.
+//
+// Plain script (see schema.js) - depends on the OptomSchema global, so it must
+// load after schema.js.
 
-import { LID_CONDITIONS, CONJ_CONDITIONS, LENS_CONDITIONS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, HISTORY_GROUPS } from "./schema.js";
+var OptomState = (function(){
+
+const { LID_CONDITIONS, CONJ_CONDITIONS, LENS_CONDITIONS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, HISTORY_GROUPS } = OptomSchema;
 
 // ---------- state ----------
 
-export function freshEyeState(conditions){
+function freshEyeState(conditions){
   var o = { clear: false };
   conditions.forEach(function(c){ o[c.key] = (c.grades || c.choices) ? null : false; });
   return o;
 }
 
-export function freshSectionState(conditions){
+function freshSectionState(conditions){
   return { R: freshEyeState(conditions), L: freshEyeState(conditions) };
 }
 
-export function freshPterygiumState(){
+function freshPterygiumState(){
   return { R: { nasal: false, temporal: false }, L: { nasal: false, temporal: false } };
 }
 
-export function freshState(){
+function freshState(){
   return {
     lids: freshSectionState(LID_CONDITIONS),
     conj: freshSectionState(CONJ_CONDITIONS),
@@ -32,7 +37,7 @@ export function freshState(){
   };
 }
 
-export function defaultState(){
+function defaultState(){
   var s = freshState();
   s.lids.R.clear = true;
   s.lids.L.clear = true;
@@ -50,7 +55,7 @@ export function defaultState(){
 
 // ---------- posterior state (fully independent second note) ----------
 
-export function freshPosteriorState(){
+function freshPosteriorState(){
   return {
     imaging: { optos: false, oct: false, drs: false },
     vit: freshSectionState(VIT_CONDITIONS),
@@ -64,7 +69,7 @@ export function freshPosteriorState(){
   };
 }
 
-export function defaultPosteriorState(){
+function defaultPosteriorState(){
   var p = freshPosteriorState();
   p.imaging.optos = true;
   p.vit.R.clear = true;
@@ -85,7 +90,7 @@ export function defaultPosteriorState(){
 // it a state slot automatically. `notes` is the one free-text field and is the
 // only key here not backed by a group.
 
-export function freshHistoryState(){
+function freshHistoryState(){
   var s = { notes: "" };
   HISTORY_GROUPS.forEach(function(g){
     if (g.kind === "multi"){
@@ -98,3 +103,15 @@ export function freshHistoryState(){
   return s;
 }
 
+return {
+  freshEyeState: freshEyeState,
+  freshSectionState: freshSectionState,
+  freshPterygiumState: freshPterygiumState,
+  freshState: freshState,
+  defaultState: defaultState,
+  freshPosteriorState: freshPosteriorState,
+  defaultPosteriorState: defaultPosteriorState,
+  freshHistoryState: freshHistoryState
+};
+
+})();

@@ -1,57 +1,65 @@
 // Option tables for all three notes. This is the single source of truth for
 // what findings exist and how they are worded - prefer editing this file over
 // touching render/refresh/note-building logic.
+//
+// Plain script, not an ES module: browsers refuse to load module scripts over
+// file://, and this page is opened straight off disk as often as it is served.
+// A top-level `var` is a global in the browser and under node's
+// vm.runInThisContext (how notes.test.js loads this file), so `OptomSchema` is
+// the seam the other files import through.
 
-export const VH_VALUES = ["0.1","0.3","0.5","0.7","1.0"];
-export const CDR_VALUES = ["0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8"];
+var OptomSchema = (function(){
 
-export const LID_CONDITIONS = [
+const VH_VALUES = ["0.1","0.3","0.5","0.7","1.0"];
+const CDR_VALUES = ["0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8"];
+
+const LID_CONDITIONS = [
   { key: "MGD",   label: "MGD",   grades: true },
   { key: "bleph", label: "bleph", grades: true }
 ];
-export const CONJ_CONDITIONS = [
+const CONJ_CONDITIONS = [
   { key: "hyperaemia",    label: "mild hyperaemia", grades: false },
   { key: "nasalPing",     label: "nasal ping",    grades: false },
   { key: "temporalPing",  label: "temporal ping", grades: false }
 ];
 // Cortical listed before NS to match current clinic note convention.
-export const LENS_CONDITIONS = [
+const LENS_CONDITIONS = [
   { key: "EpicapsularStars", label: "epicapsular stars", grades: false },
   { key: "Cortical", label: "cortical", grades: true },
   { key: "NS",       label: "NS",       grades: true },
   { key: "PSC",       label: "PSC",     choices: ["on axis", "off axis"] }
 ];
 
-export const CONDITIONS_MAP = { lids: LID_CONDITIONS, conj: CONJ_CONDITIONS, lens: LENS_CONDITIONS };
+const CONDITIONS_MAP = { lids: LID_CONDITIONS, conj: CONJ_CONDITIONS, lens: LENS_CONDITIONS };
 // Labels as they appear in the pasted note (distinct from the card headers in the UI).
-export const OUTPUT_LABELS = { lids: "lid/lashes", conj: "conj", lens: "lens" };
+const OUTPUT_LABELS = { lids: "lid/lashes", conj: "conj", lens: "lens" };
 
 // Posterior segment is a second, fully independent note builder on the same page
 // (own state, own preview, own copy/reset). Vit/macula reuse the same per-eye
 // clear+conditions system as conj, but findings on the same eye join with ", "
 // here (not a space) and macula's "clear" fallback is a descriptive phrase.
 // weissRing's output text ("weiss ring seen") differs from its button label.
-export const VIT_CONDITIONS = [
+const VIT_CONDITIONS = [
   { key: "floaters",  label: "floaters" },
   { key: "weissRing", label: "weiss ring", text: "weiss ring seen" }
 ];
 // Order matches the one confirmed reference note ("R ERM, dry AMD").
-export const MACULA_CONDITIONS = [
+const MACULA_CONDITIONS = [
   { key: "ERM",          label: "ERM" },
   { key: "dryAMD",       label: "dry AMD" },
   { key: "mildMottling", label: "mild mottling" }
 ];
 // Periphery is per-eye like vit/macula (not a section-wide preset) - each eye
 // can independently be clear or have pigment changes.
-export const PERIPHERY_CONDITIONS = [
+const PERIPHERY_CONDITIONS = [
   { key: "pigmentChanges", label: "peripheral age related pigment changes" }
 ];
-export const POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITIONS, periphery: PERIPHERY_CONDITIONS };
+const POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITIONS, periphery: PERIPHERY_CONDITIONS };
 
 // Flat on/off toggles on the posterior tab. `path` is where the boolean lives in
 // posteriorState; spelling it out here is what keeps the nested imaging.* fields
 // from needing a special case in both the click and the refresh paths.
-export const POSTERIOR_TOGGLES = [
+const POSTERIOR_TOGGLES = [
   { field: "optos",     path: ["imaging", "optos"] },
   { field: "oct",       path: ["imaging", "oct"] },
   { field: "drs",       path: ["imaging", "drs"] },
@@ -74,7 +82,7 @@ export const POSTERIOR_TOGGLES = [
 // Per option, `text` defaults to `label`. Per group, `prefix`/`suffix` wrap the
 // joined result, and `join: "and"` uses "a, b and c" instead of a plain comma list.
 // `row` renders the group as a labelled row instead of a free-flowing chip row.
-export const HISTORY_GROUPS = [
+const HISTORY_GROUPS = [
   { key: "reason", card: "Reason for visit", kind: "single", options: [
     { value: "REE",       label: "REE (routine eye examination)", text: "REE" },
     { value: "firstExam", label: "First eye exam" },
@@ -137,5 +145,23 @@ export const HISTORY_GROUPS = [
 
 // Lookup by group key, for the click handler and the clause builders that need
 // to reach a specific group (e.g. specsClause combining wearables with cl).
-export const HISTORY_GROUP_BY_KEY = Object.fromEntries(HISTORY_GROUPS.map(g => [g.key, g]));
+const HISTORY_GROUP_BY_KEY = Object.fromEntries(HISTORY_GROUPS.map(g => [g.key, g]));
 
+return {
+  VH_VALUES: VH_VALUES,
+  CDR_VALUES: CDR_VALUES,
+  LID_CONDITIONS: LID_CONDITIONS,
+  CONJ_CONDITIONS: CONJ_CONDITIONS,
+  LENS_CONDITIONS: LENS_CONDITIONS,
+  CONDITIONS_MAP: CONDITIONS_MAP,
+  OUTPUT_LABELS: OUTPUT_LABELS,
+  VIT_CONDITIONS: VIT_CONDITIONS,
+  MACULA_CONDITIONS: MACULA_CONDITIONS,
+  PERIPHERY_CONDITIONS: PERIPHERY_CONDITIONS,
+  POSTERIOR_CONDITIONS_MAP: POSTERIOR_CONDITIONS_MAP,
+  POSTERIOR_TOGGLES: POSTERIOR_TOGGLES,
+  HISTORY_GROUPS: HISTORY_GROUPS,
+  HISTORY_GROUP_BY_KEY: HISTORY_GROUP_BY_KEY
+};
+
+})();

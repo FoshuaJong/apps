@@ -6,8 +6,22 @@
 // refactor that changes wording fails loudly. To add a case, add an entry to
 // TESTS below; `build` receives a fresh state and returns the note.
 
-import { buildNote, buildPosteriorNote, buildHistoryNote } from "./notes.js";
-import { defaultState, defaultPosteriorState, freshHistoryState } from "./state.js";
+// The app files are plain scripts rather than ES modules (so the page also works
+// when opened over file:// - see schema.js), so load them the way a browser
+// would: run each in this context, in dependency order, and pick the globals
+// they define back off globalThis.
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { runInThisContext } from "node:vm";
+
+const here = dirname(fileURLToPath(import.meta.url));
+for (const file of ["schema.js", "state.js", "notes.js"]) {
+  runInThisContext(readFileSync(join(here, file), "utf8"), { filename: file });
+}
+
+const { buildNote, buildPosteriorNote, buildHistoryNote } = globalThis.OptomNotes;
+const { defaultState, defaultPosteriorState, freshHistoryState } = globalThis.OptomState;
 
 const TESTS = [
   // ---------- anterior ----------

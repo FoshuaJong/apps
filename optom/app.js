@@ -327,6 +327,15 @@ function updateActivePreview(){
 
 function syncCopyState(){
   copyBtn.disabled = !previewEl.value.trim();
+  autosizePreview();
+}
+
+// The history note is one clause per line, so the box has to grow with it
+// rather than sit at its 3-row default. CSS caps the growth (max-height) and
+// keeps a floor for the empty state (min-height).
+function autosizePreview(){
+  previewEl.style.height = "auto";
+  previewEl.style.height = (previewEl.scrollHeight + previewEl.offsetHeight - previewEl.clientHeight) + "px";
 }
 
 previewEl.addEventListener("input", syncCopyState);

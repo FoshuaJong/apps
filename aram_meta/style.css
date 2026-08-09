@@ -92,12 +92,12 @@
   margin-bottom: 1.5rem;
 }
 
-.tier-filters {
+.class-filters {
   display: flex;
   gap: 0.4rem;
 }
 
-.tier-btn {
+.class-btn {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.05em;
@@ -109,12 +109,12 @@
   transition: all 0.2s ease;
 }
 
-.tier-btn:hover {
+.class-btn:hover {
   border-color: var(--text-muted);
   color: var(--text-primary);
 }
 
-.tier-btn.is-active {
+.class-btn.is-active {
   background: var(--accent-surface);
   border-color: var(--accent-border-hover);
   color: var(--accent);
@@ -187,19 +187,6 @@
   display: block;
   width: 100%;
   height: auto;
-}
-
-/* Tier ordinal ramp — one hue (blue), monotone lightness. S = brightest/most
-   prominent on the dark surface, D = darkest/most receded. Validated with
-   dataviz skill's validate_palette.js --ordinal against this app's --bg-card
-   surface (#1A1A20): all checks pass. */
-.chart-wrap {
-  --tier-s: #cde2fb;
-  --tier-a: #86b6ef;
-  --tier-b: #3987e5;
-  --tier-c: #256abf;
-  --tier-d: #184f95;
-  --tier-other: var(--text-muted);
 }
 
 .chart-point-group {
@@ -315,10 +302,7 @@
   color: var(--text-secondary);
 }
 
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.legend-shape {
   flex-shrink: 0;
 }
 
@@ -423,7 +407,7 @@
     align-items: stretch;
   }
 
-  .tier-filters {
+  .class-filters {
     flex-wrap: wrap;
   }
 }

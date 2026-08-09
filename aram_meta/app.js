@@ -5,12 +5,19 @@
   const VIEW_W = 960;
   const VIEW_H = 560;
   const PORTRAIT_R = 9;
-  const TIER_ORDER = ['S', 'A', 'B', 'C', 'D'];
-  const TIER_COLOR_VAR = { S: '--tier-s', A: '--tier-a', B: '--tier-b', C: '--tier-c', D: '--tier-d' };
+  const CLASS_ORDER = ['Assassin', 'Fighter', 'Mage', 'Marksman', 'Support', 'Tank'];
+  const CLASS_SHAPE = {
+    Assassin: 'circle',
+    Fighter: 'square',
+    Mage: 'diamond',
+    Marksman: 'triangle',
+    Support: 'pentagon',
+    Tank: 'hexagon',
+  };
 
   const state = {
     champions: [],
-    activeTier: 'all',
+    activeClass: 'all',
     searchTerm: '',
     sortKey: 'winRate',
     sortDir: 'desc',
@@ -32,7 +39,7 @@
     chartLegend: document.getElementById('chartLegend'),
     legendScale: document.getElementById('legendScale'),
     tooltip: document.getElementById('tooltip'),
-    tierFilters: document.getElementById('tierFilters'),
+    classFilters: document.getElementById('classFilters'),
     searchInput: document.getElementById('searchInput'),
     tableToggle: document.getElementById('tableToggle'),
     tableWrap: document.getElementById('tableWrap'),
@@ -111,11 +118,11 @@
 
   // --- Controls ---
   function bindControls() {
-    els.tierFilters.addEventListener('click', (e) => {
-      const btn = e.target.closest('.tier-btn');
+    els.classFilters.addEventListener('click', (e) => {
+      const btn = e.target.closest('.class-btn');
       if (!btn) return;
-      state.activeTier = btn.dataset.tier;
-      [...els.tierFilters.querySelectorAll('.tier-btn')].forEach((b) =>
+      state.activeClass = btn.dataset.class;
+      [...els.classFilters.querySelectorAll('.class-btn')].forEach((b) =>
         b.classList.toggle('is-active', b === btn)
       );
       if (state.champions.length) {
@@ -152,14 +159,49 @@
     });
   }
 
-  function tierColorVar(tier) {
-    return `var(${TIER_COLOR_VAR[tier] || '--tier-other'})`;
+  function hasClass(c, cls) {
+    return Array.isArray(c.classes) && c.classes.includes(cls);
   }
 
   function visibleChampions() {
     return state.champions.filter(
-      (c) => state.activeTier === 'all' || c.tier === state.activeTier
+      (c) => state.activeClass === 'all' || hasClass(c, state.activeClass)
     );
+  }
+
+  function polygonPoints(cx, cy, r, sides, rotationDeg) {
+    const points = [];
+    for (let i = 0; i < sides; i++) {
+      const angle = ((360 / sides) * i + rotationDeg) * (Math.PI / 180);
+      points.push(`${(cx + r * Math.cos(angle)).toFixed(2)},${(cy + r * Math.sin(angle)).toFixed(2)}`);
+    }
+    return points.join(' ');
+  }
+
+  const SHAPE_SIDES = { square: 4, diamond: 4, triangle: 3, pentagon: 5, hexagon: 6 };
+  const SHAPE_ROTATION = { square: 45, diamond: 0, triangle: -90, pentagon: -90, hexagon: 0 };
+  // Polygons read slightly smaller than a circle at equal radius — this is a
+  // first-pass tuning, adjust after seeing it rendered if a shape looks off.
+  const SHAPE_R_SCALE = { circle: 1, square: 1, diamond: 1.15, triangle: 1.2, pentagon: 1.1, hexagon: 1.05 };
+
+  // Ring outline only (stroke, no fill), reusing the existing
+  // .chart-portrait-ring class so hover/emphasis CSS applies unchanged
+  // regardless of whether this renders a <circle> or a <polygon>.
+  function ringShapeEl(shape, cx, cy, r) {
+    const scaledR = r * (SHAPE_R_SCALE[shape] ?? 1);
+    const attrs = {
+      class: 'chart-portrait-ring',
+      fill: 'none',
+      stroke: 'var(--accent)',
+      'stroke-width': 2,
+    };
+    if (!shape || shape === 'circle') {
+      return svgEl('circle', { ...attrs, cx, cy, r: scaledR });
+    }
+    return svgEl('polygon', {
+      ...attrs,
+      points: polygonPoints(cx, cy, scaledR, SHAPE_SIDES[shape], SHAPE_ROTATION[shape]),
+    });
   }
 
   // --- Scales ---
@@ -342,12 +384,12 @@
       if (c.pickRate == null || c.winRate == null) return;
       const cx = xPos(c.pickRate);
       const cy = yPos(c.winRate);
-      const isVisibleTier = state.activeTier === 'all' || c.tier === state.activeTier;
+      const isVisible = state.activeClass === 'all' || hasClass(c, state.activeClass);
       const matchesSearch =
         searchActive && c.name && searchTerms.some((term) => c.name.toLowerCase().includes(term));
 
       const g = svgEl('g', { class: 'chart-point-group' });
-      if (!isVisibleTier) g.setAttribute('hidden', 'true');
+      if (!isVisible) g.setAttribute('hidden', 'true');
       if (searchActive) g.classList.add(matchesSearch ? 'is-emphasized' : 'is-dimmed');
 
       const dot = svgEl('circle', {
@@ -355,7 +397,7 @@
         cx,
         cy,
         r: 5,
-        fill: tierColorVar(c.tier),
+        fill: 'var(--accent)',
         stroke: 'var(--bg-card)',
         'stroke-width': 2,
       });
@@ -373,15 +415,7 @@
           height: PORTRAIT_R * 2,
           'clip-path': 'url(#portraitClip)',
         });
-        const ring = svgEl('circle', {
-          class: 'chart-portrait-ring',
-          cx: PORTRAIT_R,
-          cy: PORTRAIT_R,
-          r: PORTRAIT_R,
-          fill: 'none',
-          stroke: tierColorVar(c.tier),
-          'stroke-width': 2,
-        });
+        const ring = ringShapeEl(CLASS_SHAPE[c.primaryClass], PORTRAIT_R, PORTRAIT_R, PORTRAIT_R);
         image.addEventListener('error', () => portrait.remove(), { once: true });
         portrait.appendChild(image);
         portrait.appendChild(ring);
@@ -396,7 +430,7 @@
         fill: 'transparent',
         tabindex: '0',
         role: 'link',
-        'aria-label': `${c.name}, tier ${c.tier}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate. Opens mayhemmeta.com stats page.`,
+        'aria-label': `${c.name}, tier ${c.tier}, ${(c.classes || []).join('/')}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate. Opens mayhemmeta.com stats page.`,
       });
       const activate = () => {
         if (!matchesSearch) g.classList.add('is-emphasized');
@@ -440,6 +474,7 @@
 
     t.appendChild(tooltipRow('Win rate', formatPercent(champ.winRate)));
     t.appendChild(tooltipRow('Pick rate', formatPercent(champ.pickRate)));
+    t.appendChild(tooltipRow('Classes', champ.classes && champ.classes.length ? champ.classes.join(', ') : '—'));
     if (champ.kills != null && champ.deaths != null && champ.assists != null) {
       t.appendChild(tooltipRow('KDA', `${champ.kills} / ${champ.deaths} / ${champ.assists}`));
     }
@@ -471,15 +506,14 @@
 
   function renderLegend() {
     els.legendScale.replaceChildren();
-    TIER_ORDER.forEach((tier) => {
+    CLASS_ORDER.forEach((cls) => {
       const swatch = document.createElement('span');
       swatch.className = 'legend-swatch';
-      const dot = document.createElement('span');
-      dot.className = 'legend-dot';
-      dot.style.background = tierColorVar(tier);
-      swatch.appendChild(dot);
+      const svg = svgEl('svg', { class: 'legend-shape', viewBox: '0 0 20 20', width: '14', height: '14' });
+      svg.appendChild(ringShapeEl(CLASS_SHAPE[cls], 10, 10, 8));
+      swatch.appendChild(svg);
       const label = document.createElement('span');
-      label.textContent = tier;
+      label.textContent = cls;
       swatch.appendChild(label);
       els.legendScale.appendChild(swatch);
     });
@@ -505,6 +539,7 @@
       const tr = document.createElement('tr');
       tr.appendChild(tableCell(c.name, 'col-name'));
       tr.appendChild(tableCell(c.tier));
+      tr.appendChild(tableCell(c.classes && c.classes.length ? c.classes.join(', ') : null));
       tr.appendChild(tableCell(formatPercent(c.winRate)));
       tr.appendChild(tableCell(formatPercent(c.pickRate)));
       els.dataTableBody.appendChild(tr);

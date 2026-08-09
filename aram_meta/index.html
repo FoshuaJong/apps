@@ -39,7 +39,7 @@
       <h1 class="hero-title">Pick rate vs win rate</h1>
       <p class="hero-sub">Every champion's pick rate plotted against win rate, scraped from
         <a href="https://mayhemmeta.com" target="_blank" rel="noopener noreferrer">mayhemmeta.com</a>
-        on a schedule. Brighter dots are higher tier.</p>
+        on a schedule. Shape marks class.</p>
       <p class="meta-line" id="metaLine" aria-live="polite">Loading latest data…</p>
     </div>
   </section>
@@ -72,13 +72,14 @@
   <section class="chart-section">
     <div class="container">
       <div class="filter-row">
-        <div class="tier-filters" id="tierFilters" role="group" aria-label="Filter by tier">
-          <button class="tier-btn is-active" data-tier="all" type="button">All</button>
-          <button class="tier-btn" data-tier="S" type="button">S</button>
-          <button class="tier-btn" data-tier="A" type="button">A</button>
-          <button class="tier-btn" data-tier="B" type="button">B</button>
-          <button class="tier-btn" data-tier="C" type="button">C</button>
-          <button class="tier-btn" data-tier="D" type="button">D</button>
+        <div class="class-filters" id="classFilters" role="group" aria-label="Filter by class">
+          <button class="class-btn is-active" data-class="all" type="button">All</button>
+          <button class="class-btn" data-class="Assassin" type="button">Assassin</button>
+          <button class="class-btn" data-class="Fighter" type="button">Fighter</button>
+          <button class="class-btn" data-class="Mage" type="button">Mage</button>
+          <button class="class-btn" data-class="Marksman" type="button">Marksman</button>
+          <button class="class-btn" data-class="Support" type="button">Support</button>
+          <button class="class-btn" data-class="Tank" type="button">Tank</button>
         </div>
         <div class="search-box">
           <input type="text" id="searchInput" placeholder="Highlight champions (comma-separated)…" aria-label="Highlight champions, comma-separated">
@@ -90,7 +91,7 @@
         <p class="chart-status" id="chartStatus">Loading chart…</p>
         <svg id="chartSvg" class="chart-svg" viewBox="0 0 960 560" role="img" aria-label="Scatter plot of champion pick rate versus win rate" hidden></svg>
         <div class="chart-legend" id="chartLegend" hidden>
-          <span class="legend-label">Tier</span>
+          <span class="legend-label">Class</span>
           <span class="legend-scale" id="legendScale"></span>
         </div>
         <div class="tooltip" id="tooltip" hidden></div>
@@ -102,6 +103,7 @@
             <tr>
               <th data-sort="name">Champion</th>
               <th data-sort="tier">Tier</th>
+              <th>Classes</th>
               <th data-sort="winRate">Win rate</th>
               <th data-sort="pickRate">Pick rate</th>
             </tr>

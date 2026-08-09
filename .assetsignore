@@ -11,3 +11,5 @@ CLAUDE.md
 .mcp.json
 .dev.vars*
 .env*
+.worktrees
+docs

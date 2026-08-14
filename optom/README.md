@@ -57,8 +57,9 @@ if a refactor changes one, that is a bug unless it was the point of the change.
   `<noun> N+T`; a single side reads `nasal <noun>` / `temporal <noun>`.
 - Some sections have an always-present baseline rather than a clear/not-clear
   flag: ONH (`distinct margins, evenly perfused`), macula (`flat, even
-  pigmentation, clear reflex`, or `dim reflex` when that toggle is on), and
-  periphery (`mid periphery clear undilated 90D`).
+  pigmentation, clear`, with the trailing word replaced by `dim reflex` or
+  `clear reflex` when one of those chips is picked), and periphery (`mid
+  periphery clear undilated 90D`).
 
 ## Known gaps
 

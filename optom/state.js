@@ -62,7 +62,7 @@ function freshPosteriorState(){
     onh: { R: { PPA: false }, L: { PPA: false } },
     cdr: { R: "0.3", L: "0.3" },
     macula: freshSectionState(MACULA_CONDITIONS),
-    dimReflex: false,
+    maculaReflex: null,
     arcades: false,
     bv: false,
     periphery: freshSectionState(PERIPHERY_CONDITIONS)

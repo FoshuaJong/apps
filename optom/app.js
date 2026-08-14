@@ -5,7 +5,7 @@
 
 (function(){
 
-const { VH_VALUES, CDR_VALUES, CONDITIONS_MAP, POSTERIOR_CONDITIONS_MAP, POSTERIOR_TOGGLES, HISTORY_GROUPS, HISTORY_GROUP_BY_KEY } = OptomSchema;
+const { VH_VALUES, CDR_VALUES, CONDITIONS_MAP, POSTERIOR_CONDITIONS_MAP, POSTERIOR_TOGGLES, MACULA_REFLEX_OPTIONS, HISTORY_GROUPS, HISTORY_GROUP_BY_KEY } = OptomSchema;
 const { freshEyeState, defaultState, defaultPosteriorState, freshHistoryState } = OptomState;
 const { buildNote, buildPosteriorNote, buildHistoryNote } = OptomNotes;
 
@@ -92,6 +92,13 @@ function cdrEyeBlockHTML(eye){
 
 function renderCdr(){
   document.querySelector('[data-cdr-grid]').innerHTML = cdrEyeBlockHTML("R") + cdrEyeBlockHTML("L");
+}
+
+// Pick-one preset chips rather than independent toggles - see MACULA_REFLEX_OPTIONS.
+function renderMaculaReflex(){
+  document.querySelector('[data-macula-reflex]').innerHTML = MACULA_REFLEX_OPTIONS.map(function(o){
+    return '<button type="button" class="chip chip-preset" data-type="maculaReflex" data-value="' + o.value + '">' + o.text + '</button>';
+  }).join("");
 }
 
 // Pterygium is cornea-specific and per-eye, but unlike lids/conj/lens it has no
@@ -286,8 +293,15 @@ function refreshAll(){
   refreshSingle("ac");
 }
 
+function refreshMaculaReflex(){
+  document.querySelectorAll('[data-type="maculaReflex"]').forEach(function(btn){
+    btn.classList.toggle("is-active", posteriorState.maculaReflex === btn.dataset.value);
+  });
+}
+
 function refreshPosteriorAll(){
   POSTERIOR_TOGGLES.forEach(refreshPosteriorToggle);
+  refreshMaculaReflex();
   refreshPosteriorEyeSection("vit");
   refreshPosteriorEyeSection("macula");
   refreshPosteriorEyeSection("periphery");
@@ -484,6 +498,10 @@ var HANDLERS = {
     var target = toggleTarget(toggle.path);
     target.obj[target.prop] = !target.obj[target.prop];
   },
+  // Clicking the active chip clears back to the plain "clear" baseline.
+  maculaReflex: function(d){
+    posteriorState.maculaReflex = posteriorState.maculaReflex === d.value ? null : d.value;
+  },
 
   // ---- history: one handler for every chip on the tab, since which group a
   // chip belongs to and how it behaves both come from schema.js ----
@@ -557,6 +575,7 @@ refreshAll();
 renderPosteriorEyeSections();
 renderOnh();
 renderCdr();
+renderMaculaReflex();
 refreshPosteriorAll();
 renderHistoryGroups();
 refreshHistoryAll();

@@ -66,22 +66,31 @@ const TESTS = [
   {
     name: "posterior: defaults",
     run: () => buildPosteriorNote(defaultPosteriorState()),
-    expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+    expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
   {
     name: "posterior: dim reflex swaps the macula baseline phrase",
     run: () => {
       const p = defaultPosteriorState();
-      p.dimReflex = true;
+      p.maculaReflex = "dim";
       return buildPosteriorNote(p);
     },
     expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, dim reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
   {
+    name: "posterior: clear reflex swaps the macula baseline phrase",
+    run: () => {
+      const p = defaultPosteriorState();
+      p.maculaReflex = "clear";
+      return buildPosteriorNote(p);
+    },
+    expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+  },
+  {
     name: "posterior: dim reflex still applies to the fellow eye when one eye has a finding",
     run: () => {
       const p = defaultPosteriorState();
-      p.dimReflex = true;
+      p.maculaReflex = "dim";
       p.macula.R.clear = false;
       p.macula.R.ERM = true;
       return buildPosteriorNote(p);
@@ -95,7 +104,7 @@ const TESTS = [
       p.onh.R.PPA = true;
       return buildPosteriorNote(p);
     },
-    expect: "OPTOS | vit clear OU | ONH R PPA, distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+    expect: "OPTOS | vit clear OU | ONH R PPA, distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
 
   // ---------- history ----------

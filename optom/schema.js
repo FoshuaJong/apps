@@ -60,12 +60,20 @@ const POSTERIOR_CONDITIONS_MAP = { vit: VIT_CONDITIONS, macula: MACULA_CONDITION
 // posteriorState; spelling it out here is what keeps the nested imaging.* fields
 // from needing a special case in both the click and the refresh paths.
 const POSTERIOR_TOGGLES = [
-  { field: "optos",     path: ["imaging", "optos"] },
-  { field: "oct",       path: ["imaging", "oct"] },
-  { field: "drs",       path: ["imaging", "drs"] },
-  { field: "dimReflex", path: ["dimReflex"] },
-  { field: "arcades",   path: ["arcades"] },
-  { field: "bv",        path: ["bv"] }
+  { field: "optos",   path: ["imaging", "optos"] },
+  { field: "oct",     path: ["imaging", "oct"] },
+  { field: "drs",     path: ["imaging", "drs"] },
+  { field: "arcades", path: ["arcades"] },
+  { field: "bv",      path: ["bv"] }
+];
+
+// The optional foveal reflex descriptor, replacing the trailing "clear" in the
+// macula baseline phrase. Pick-one, not toggles - an eye cannot read both dim
+// and clear - so posteriorState.maculaReflex holds one value or null. The chip
+// label doubles as the note wording, which is why one table drives both.
+const MACULA_REFLEX_OPTIONS = [
+  { value: "dim",   text: "dim reflex" },
+  { value: "clear", text: "clear reflex" }
 ];
 
 // ---------- History tab ----------
@@ -160,6 +168,7 @@ return {
   PERIPHERY_CONDITIONS: PERIPHERY_CONDITIONS,
   POSTERIOR_CONDITIONS_MAP: POSTERIOR_CONDITIONS_MAP,
   POSTERIOR_TOGGLES: POSTERIOR_TOGGLES,
+  MACULA_REFLEX_OPTIONS: MACULA_REFLEX_OPTIONS,
   HISTORY_GROUPS: HISTORY_GROUPS,
   HISTORY_GROUP_BY_KEY: HISTORY_GROUP_BY_KEY
 };

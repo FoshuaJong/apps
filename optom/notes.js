@@ -6,7 +6,7 @@
 
 var OptomNotes = (function(){
 
-const { CONDITIONS_MAP, OUTPUT_LABELS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, HISTORY_GROUP_BY_KEY: G } = OptomSchema;
+const { CONDITIONS_MAP, OUTPUT_LABELS, VIT_CONDITIONS, MACULA_CONDITIONS, PERIPHERY_CONDITIONS, MACULA_REFLEX_OPTIONS, HISTORY_GROUP_BY_KEY: G } = OptomSchema;
 
 // ---------- note text ----------
 
@@ -190,7 +190,10 @@ function buildPosteriorNote(posteriorState){
   if (vitTxt) parts.push("vit " + vitTxt);
   parts.push("ONH " + onhText(posteriorState));
   parts.push("CDR " + cdrText(posteriorState));
-  var maculaClearLabel = "flat, even pigmentation, " + (posteriorState.dimReflex ? "dim reflex" : "clear reflex");
+  // No reflex picked reads as a plain "clear"; picking one substitutes that
+  // last word for the chosen descriptor rather than appending to it.
+  var reflex = MACULA_REFLEX_OPTIONS.find(function(o){ return o.value === posteriorState.maculaReflex; });
+  var maculaClearLabel = "flat, even pigmentation, " + (reflex ? reflex.text : "clear");
   var maculaTxt = posteriorEyeSectionText(posteriorState.macula, "macula", MACULA_CONDITIONS, maculaClearLabel, ", ");
   if (maculaTxt) parts.push("macula " + maculaTxt);
 

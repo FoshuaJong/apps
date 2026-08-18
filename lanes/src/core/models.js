@@ -44,6 +44,22 @@ export function rankToLanes(byRank, values) {
 }
 
 /**
+ * Mean standard deviation of the player's per-lane commitments.
+ *
+ * Used to size the insurance an opponent buys when bidding. A player who
+ * commits the same amount every round needs no insuring against; an erratic one
+ * does. Returns a high default on thin data so opponents hedge while ignorant.
+ */
+export function predictionSpread(history) {
+  if (history.length < 2) return 3;
+  const deviations = Array.from({ length: LANES }, (_, i) => {
+    const mean = history.reduce((a, r) => a + r.you[i], 0) / history.length;
+    return Math.sqrt(history.reduce((a, r) => a + (r.you[i] - mean) ** 2, 0) / history.length);
+  });
+  return sum(deviations) / LANES;
+}
+
+/**
  * Temper a raw estimate before acting on it.
  *
  * Two corrections, both of which exist to stop opponents from being uncannily

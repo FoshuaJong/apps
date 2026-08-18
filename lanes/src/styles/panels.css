@@ -16,6 +16,10 @@
 .readout__value { font-family: var(--mono); font-size: 32px; font-weight: 600; line-height: 1; color: var(--oxblood); }
 .readout__caption { font-size: 12px; color: var(--dim); }
 
+.readout--secondary { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.readout--secondary .readout__value { font-size: 24px; color: var(--phosphor); }
+.readout--secondary .readout__caption span { color: var(--oxblood); }
+
 .meter { height: 8px; background: var(--rule); margin: 8px 0 4px; position: relative; }
 .meter__fill { display: block; height: 100%; background: var(--oxblood); transition: width .4s ease; }
 /* Marker at 1-in-3 — the score a model with no information would get. */

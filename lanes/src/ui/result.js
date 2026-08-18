@@ -1,7 +1,7 @@
 /** Post-match report, and the between-opponents screen during a Gauntlet run. */
 
 import { ROSTER } from "../core/opponents.js";
-import { readability, leak, findings } from "../core/metrics.js";
+import { readability, leak, economy, findings } from "../core/metrics.js";
 import { byId } from "./dom.js";
 import { renderFindings } from "./dossier.js";
 
@@ -45,6 +45,7 @@ export function renderGauntletAdvance(match, cleared, { onContinue, onBank }) {
 export function renderResult(match, won, { onAgain, onHome }) {
   const read = readability(match.history);
   const lk = leak(match.history);
+  const eco = economy(match.history);
 
   const heading = won ? (match.gauntlet ? "Roster cleared" : "Match won") : "Match lost";
   const blurb = won
@@ -61,6 +62,7 @@ export function renderResult(match, won, { onAgain, onHome }) {
       ${stat("Rounds", match.history.length)}
       ${stat("Readability", formatRead(read))}
       ${stat("Leak", formatLeak(lk))}
+      ${stat("Economy", eco ? `${eco.you.toFixed(2)} / ${eco.them.toFixed(2)}` : "—")}
     </div>
 
     <div class="panel">
@@ -71,6 +73,8 @@ export function renderResult(match, won, { onAgain, onHome }) {
       <p class="muted" style="font-size:12.5px;margin:14px 0 0">
         Leak is how many points per round a perfect reader would gain over one playing blind.
         Under +0.4 you are genuinely hard to model. Above +1.2 the higher tiers will eat you.
+        Economy is points taken per supply committed, yours against theirs — you can be
+        completely readable and still win if being read costs them more than it earns them.
       </p>
     </div>
 

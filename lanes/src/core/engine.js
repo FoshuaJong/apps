@@ -53,6 +53,10 @@ export function commitRound(match) {
       values: match.values,
       bank: match.them.bank,
       history: match.history,
+      // Race context, so the opponent can drop its price on supply when the
+      // match is one board away from being decided either way.
+      scores: { them: match.them.score, you: match.you.score },
+      playerBank: match.you.bank,
     }),
     match.them.bank);
 

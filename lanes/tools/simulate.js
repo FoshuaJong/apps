@@ -17,7 +17,7 @@
  */
 
 import { LANES, INCOME, BANK_CAP, TARGET } from "../src/core/config.js";
-import { sum, argmax, randInt } from "../src/core/util.js";
+import { sum, argmax, randInt, laneOrderByValue } from "../src/core/util.js";
 import { proportional, mixedShape, affordable } from "../src/core/solver.js";
 import { ROSTER, chooseMove } from "../src/core/opponents.js";
 import { rollBoard } from "../src/core/engine.js";
@@ -44,6 +44,36 @@ const POLICIES = {
   proportional: (values, bank) => proportional(values, bank, 0.8),
   /** Shape-mixing with no attempt to read the opponent back. */
   mixed: (values, bank) => mixedShape(values, bank),
+
+  /**
+   * REGRESSION CASE. Found by a playtester, and it beat the whole ladder.
+   *
+   * Commit exactly 1 supply to every lane regardless of value. Each chip costs 1
+   * and forces a p+1 responder to pay 2, so it drains the opponent at 2:1 while
+   * banking +2 a round. Once the bank is full, spike the rich lanes with a
+   * supply advantage the opponent can no longer match.
+   *
+   * The strategy never reads the opponent at all, so no amount of modelling
+   * defeats it — it beats a *myopic* opponent, one that maximises this round's
+   * points with no price on future supply. See CLAUDE.md, "Supply pricing".
+   *
+   * This policy must not win more than ~50% against Tier 2 and above.
+   */
+  chipAndSpike: (values, bank) => {
+    const alloc = new Array(LANES).fill(0);
+
+    // Accumulation phase: minimum viable contest, maximum banking.
+    if (bank < 11) {
+      if (bank >= LANES) for (let i = 0; i < LANES; i++) alloc[i] = 1;
+      return alloc;
+    }
+
+    // Spike phase: buy the two richest lanes outright with the bank advantage.
+    const [first, second] = laneOrderByValue(values);
+    alloc[first] = Math.ceil(bank * 0.6);
+    alloc[second] = bank - alloc[first];
+    return alloc;
+  },
 };
 
 function playMatch(botIndex, policy) {
@@ -55,7 +85,10 @@ function playMatch(botIndex, policy) {
   while (you.score < TARGET && them.score < TARGET && history.length < MAX_ROUNDS) {
     const values = rollBoard();
     const yours = affordable(policy(values, you.bank, history), you.bank);
-    const theirs = affordable(chooseMove(opponent, { values, bank: them.bank, history }), them.bank);
+    const theirs = affordable(chooseMove(opponent, {
+      values, bank: them.bank, history,
+      scores: { them: them.score, you: you.score }, playerBank: you.bank,
+    }), them.bank);
 
     for (let i = 0; i < LANES; i++) {
       if (yours[i] > theirs[i]) you.score += values[i];
@@ -86,8 +119,14 @@ function duel(aIndex, bIndex) {
 
   while (you.score < TARGET && them.score < TARGET && rounds < MAX_ROUNDS) {
     const values = rollBoard();
-    const yours = affordable(chooseMove(a, { values, bank: you.bank, history: historyA }), you.bank);
-    const theirs = affordable(chooseMove(b, { values, bank: them.bank, history: historyB }), them.bank);
+    const yours = affordable(chooseMove(a, {
+      values, bank: you.bank, history: historyA,
+      scores: { them: you.score, you: them.score }, playerBank: them.bank,
+    }), you.bank);
+    const theirs = affordable(chooseMove(b, {
+      values, bank: them.bank, history: historyB,
+      scores: { them: them.score, you: you.score }, playerBank: you.bank,
+    }), them.bank);
 
     for (let i = 0; i < LANES; i++) {
       if (yours[i] > theirs[i]) you.score += values[i];

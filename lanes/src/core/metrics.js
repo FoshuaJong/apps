@@ -69,6 +69,36 @@ export function leak(history) {
 }
 
 /**
+ * Points won per supply committed, for both sides.
+ *
+ * Readability alone is not enough. A player can be perfectly predictable and
+ * still win, if being predicted costs the opponent more than it gains them —
+ * committing 1 supply to every lane is fully readable and forces a bidding
+ * opponent to overpay for every lane it takes. Economy is what catches that:
+ * a player winning on efficiency shows a high ratio while readable.
+ *
+ * @returns {{you:number, them:number, ratio:number}|null} ratio > 1 means the
+ *          player is converting supply into points better than the opponent
+ */
+export function economy(history) {
+  if (history.length < 3) return null;
+
+  let yourPoints = 0, yourSpend = 0, theirPoints = 0, theirSpend = 0;
+  for (const round of history) {
+    yourSpend += sum(round.you);
+    theirSpend += sum(round.them);
+    for (let i = 0; i < LANES; i++) {
+      if (round.you[i] > round.them[i]) yourPoints += round.values[i];
+      else if (round.them[i] > round.you[i]) theirPoints += round.values[i];
+    }
+  }
+
+  const you = yourSpend ? yourPoints / yourSpend : 0;
+  const them = theirSpend ? theirPoints / theirSpend : 0;
+  return { you, them, ratio: them ? you / them : (you ? Infinity : 1) };
+}
+
+/**
  * Human-readable observations, derived from the same numbers the opponents use.
  * Returns HTML fragments; the emphasised figure is wrapped in a <span>.
  */
@@ -105,6 +135,18 @@ export function findings(history) {
 
   const everSpread = history.some((r) => r.you.filter((x) => x > 0).length === LANES);
   if (history.length >= 4 && !everSpread) out.push("Never spreads across all three lanes");
+
+  // Chip bidding: minimum-viable commitments that force the opponent to overpay.
+  const contested = history.flatMap((r) => r.you.filter((x) => x > 0));
+  const chips = contested.filter((x) => x <= 2).length;
+  if (contested.length >= 6 && chips / contested.length > 0.6) {
+    out.push(`Chip bids · <span>${Math.round(chips / contested.length * 100)}%</span> of your commitments are 1–2 supply`);
+  }
+
+  const eco = economy(history);
+  if (eco && eco.ratio > 1.3) {
+    out.push(`Overpaying · you take <span>${eco.you.toFixed(2)}</span> points per supply against our ${eco.them.toFixed(2)}`);
+  }
 
   return out;
 }

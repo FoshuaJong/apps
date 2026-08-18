@@ -10,19 +10,29 @@ import { LANES } from "./config.js";
 import { randInt, sum, clamp } from "./util.js";
 
 /**
- * The cheapest way to take the most valuable set of lanes, assuming the
- * opponent commits `prediction`. With three lanes there are only eight subsets,
- * so this enumerates rather than doing anything clever.
+ * The best set of lanes to take, assuming the opponent commits `prediction`.
+ * With three lanes there are only eight subsets, so this enumerates.
  *
- * @param {number[]} prediction  expected opponent commitment per lane
- * @param {number[]} values      points each lane is worth this round
- * @param {number}   budget      supply available to spend
- * @param {number}   margin      extra supply committed above the prediction, as
- *                               insurance against the prediction being low
- * @returns {number[]} allocation, or all zeroes if nothing is affordable
+ * `price` is a shadow price on supply, in points per supply. The objective is
+ * `gain - price * cost` rather than `gain`, which is what stops an opponent from
+ * paying 6 supply for 6 points every round against an opponent who is paying 3.
+ *
+ * At price 0 this is a myopic maximiser and is exploitable by chip bids — a
+ * player who commits 1 to every lane forces a p+1 responder to pay 2 per lane,
+ * draining them at 2:1 while banking the difference. See CLAUDE.md.
+ *
+ * The empty subset is always a candidate, so declining to contest is a real
+ * option rather than a fallback.
+ *
+ * @param {number[]} prediction expected opponent commitment per lane
+ * @param {number[]} values     points each lane is worth this round
+ * @param {number}   budget     supply available to spend
+ * @param {number}   margin     extra supply above the prediction, as insurance
+ * @param {number}   price      points per supply; 0 restores myopic behaviour
+ * @returns {number[]} allocation, possibly all zeroes if banking scores best
  */
-export function bestResponse(prediction, values, budget, margin = 0) {
-  let best = { gain: -1, cost: Infinity, alloc: new Array(LANES).fill(0) };
+export function bestResponse(prediction, values, budget, margin = 0, price = 0) {
+  let best = { net: -Infinity, cost: Infinity, alloc: new Array(LANES).fill(0) };
 
   for (let mask = 0; mask < (1 << LANES); mask++) {
     const alloc = new Array(LANES).fill(0);
@@ -36,9 +46,10 @@ export function bestResponse(prediction, values, budget, margin = 0) {
       cost += bid;
       gain += values[i];
     }
+    if (cost > budget) continue;
 
-    const better = gain > best.gain || (gain === best.gain && cost < best.cost);
-    if (cost <= budget && better) best = { gain, cost, alloc };
+    const net = gain - price * cost;
+    if (net > best.net || (net === best.net && cost < best.cost)) best = { net, cost, alloc };
   }
 
   return best.alloc.slice();
@@ -74,11 +85,12 @@ export function proportional(values, budget, fraction, jitter = false) {
  * shape itself is what defeats the read — which is exactly why a player who
  * always dumps everything on the top lane beats the Mirror.
  */
-export function mixedShape(values, budget) {
-  if (budget <= 0) return new Array(LANES).fill(0);
-
-  // Weight each candidate subset by its average lane value, sharpened so that
-  // rich pairs are preferred without ever being certain.
+/**
+ * Sample which lanes to contest, weighted by their average value and sharpened
+ * so rich pairs are preferred without ever being certain. Shared by every mixed
+ * strategy so they all vary shape the same way.
+ */
+export function sampleContestSet(values) {
   const subsets = [];
   for (let mask = 1; mask < (1 << LANES); mask++) {
     const lanes = [];
@@ -89,12 +101,17 @@ export function mixedShape(values, budget) {
 
   const totalWeight = subsets.reduce((a, s) => a + s.weight, 0);
   let roll = Math.random() * totalWeight;
-  let chosen = subsets[0];
   for (const s of subsets) {
     roll -= s.weight;
-    if (roll <= 0) { chosen = s; break; }
+    if (roll <= 0) return s.lanes;
   }
+  return subsets[0].lanes;
+}
 
+export function mixedShape(values, budget) {
+  if (budget <= 0) return new Array(LANES).fill(0);
+
+  const chosen = { lanes: sampleContestSet(values) };
   const spend = clamp(Math.round(budget * (0.45 + Math.random() * 0.55)), 1, budget);
   const worth = sum(chosen.lanes.map((i) => values[i])) || 1;
   const alloc = new Array(LANES).fill(0);
@@ -107,6 +124,34 @@ export function mixedShape(values, budget) {
   }
   while (remainder-- > 0) alloc[chosen.lanes[randInt(chosen.lanes.length)]]++;
 
+  return alloc;
+}
+
+/**
+ * Mixed play that also sizes its bids.
+ *
+ * mixedShape() picks a good shape but spends a random 45–100% of bank on it,
+ * which bleeds supply against anyone who bids economically. This picks the
+ * shape the same way, then bids near the level a lane is actually likely to be
+ * contested at, and banks the rest.
+ *
+ * This is what "unexploitable by default" should mean: unreadable *and* solvent.
+ */
+export function economicMix(values, budget) {
+  if (budget <= 0) return new Array(LANES).fill(0);
+
+  const lanes = sampleContestSet(values);
+  const meanValue = sum(values) / LANES || 1;
+  const base = 1.5 + Math.random() * 2.5;
+  const alloc = new Array(LANES).fill(0);
+
+  let left = budget;
+  for (const i of lanes) {
+    const bid = Math.min(left, Math.max(1, Math.round(base * values[i] / meanValue)));
+    alloc[i] = bid;
+    left -= bid;
+    if (left <= 0) break;
+  }
   return alloc;
 }
 

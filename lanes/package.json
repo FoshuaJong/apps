@@ -1,0 +1,11 @@
+{
+  "name": "signal-and-noise",
+  "version": "1.0.0",
+  "description": "A three-lane simultaneous-commitment game whose opponents build a model of you.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "serve": "python3 -m http.server 8000",
+    "simulate": "node tools/simulate.js"
+  }
+}

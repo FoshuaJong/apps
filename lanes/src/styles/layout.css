@@ -1,0 +1,39 @@
+/* Page shell, generic containers, and buttons. */
+
+.wrap { max-width: 1060px; margin: 0 auto; padding: 20px 16px 64px; }
+
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 14px;
+  margin-bottom: 22px;
+}
+.masthead__sub { max-width: 44ch; color: var(--dim); font-size: 13px; margin: 6px 0 0; }
+
+.panel { background: var(--panel); border: 1px solid var(--rule); padding: 16px; }
+.grid { display: grid; gap: 14px; }
+
+.section { margin-top: 26px; }
+
+.btn {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  background: var(--phosphor);
+  color: var(--ink);
+  border: 1px solid var(--phosphor);
+  padding: 11px 20px;
+  cursor: pointer;
+}
+.btn:hover { background: #F0D68A; border-color: #F0D68A; }
+
+.btn--ghost { background: transparent; color: var(--dim); border-color: var(--rule); }
+.btn--ghost:hover { background: transparent; color: var(--chalk); border-color: var(--chalk); }
+
+.actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }

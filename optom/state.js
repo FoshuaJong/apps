@@ -72,8 +72,6 @@ function freshPosteriorState(){
 function defaultPosteriorState(){
   var p = freshPosteriorState();
   p.imaging.optos = true;
-  p.vit.R.clear = true;
-  p.vit.L.clear = true;
   p.macula.R.clear = true;
   p.macula.L.clear = true;
   p.arcades = true;

@@ -245,6 +245,11 @@ function groupText(group, historyState){
 
 // Groups that read better merged than listed separately. Each returns one
 // clause; everything else in the note is a plain groupText call.
+function visitClause(h){
+  var pieces = [groupText(G.reason, h), groupText(G.lastEE, h)].filter(Boolean);
+  return pieces.length ? pieces.join("; ") : null;
+}
+
 function specsClause(h){
   var pieces = [groupText(G.wearables, h), groupText(G.cl, h)].filter(Boolean);
   return pieces.length ? pieces.join(", ") : groupText(G.specsNone, h);
@@ -265,8 +270,7 @@ function dedClause(h){
 function buildHistoryNote(historyState){
   var h = historyState;
   return [
-    groupText(G.reason, h),
-    groupText(G.lastEE, h),
+    visitClause(h),
     specsClause(h),
     visionClause(h),
     groupText(G.ha, h),

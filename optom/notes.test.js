@@ -66,7 +66,7 @@ const TESTS = [
   {
     name: "posterior: defaults",
     run: () => buildPosteriorNote(defaultPosteriorState()),
-    expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+    expect: "OPTOS | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
   {
     name: "posterior: dim reflex swaps the macula baseline phrase",
@@ -75,7 +75,7 @@ const TESTS = [
       p.maculaReflex = "dim";
       return buildPosteriorNote(p);
     },
-    expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, dim reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+    expect: "OPTOS | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, dim reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
   {
     name: "posterior: clear reflex swaps the macula baseline phrase",
@@ -84,7 +84,7 @@ const TESTS = [
       p.maculaReflex = "clear";
       return buildPosteriorNote(p);
     },
-    expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+    expect: "OPTOS | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear reflex OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
   {
     name: "posterior: dim reflex still applies to the fellow eye when one eye has a finding",
@@ -95,7 +95,7 @@ const TESTS = [
       p.macula.R.ERM = true;
       return buildPosteriorNote(p);
     },
-    expect: "OPTOS | vit clear OU | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula R ERM L flat, even pigmentation, dim reflex | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+    expect: "OPTOS | ONH distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula R ERM L flat, even pigmentation, dim reflex | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
   {
     name: "posterior: PPA prefixes the always-present ONH baseline",
@@ -104,7 +104,7 @@ const TESTS = [
       p.onh.R.PPA = true;
       return buildPosteriorNote(p);
     },
-    expect: "OPTOS | vit clear OU | ONH R PPA, distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
+    expect: "OPTOS | ONH R PPA, distinct margins, evenly perfused OU | CDR R0.3 L0.3 | macula flat, even pigmentation, clear OU | arcades clear OU | BV 2:3, non-tort, oblique crossings OU | mid periphery clear undilated 90D OU"
   },
 
   // ---------- history ----------
@@ -123,8 +123,7 @@ const TESTS = [
       return buildHistoryNote(h);
     },
     expect: [
-      "REE",
-      "last EE 2024",
+      "REE; last EE 2024",
       "no specs or CLs",
       "no changes in vision",
       "no HA or DIP",
@@ -152,8 +151,7 @@ const TESTS = [
       return buildHistoryNote(h);
     },
     expect: [
-      "First time in OPSM",
-      "last EE 2025",
+      "First time in OPSM; last EE 2025",
       "using progs, SVD and SVN, Daily CLs",
       "DV blurry, no changes in NV",
       "HA, no DIP",
@@ -161,6 +159,16 @@ const TESTS = [
       "dry, watery eyes",
       "using 3 screens at work"
     ].join("\n")
+  },
+  {
+    name: "history: last EE alone has no stray separator",
+    run: () => {
+      const h = freshHistoryState();
+      h.lastEE = "2023";
+      h.ha = "noHA";
+      return buildHistoryNote(h);
+    },
+    expect: "last EE 2023\nno HA or DIP"
   },
   {
     name: "history: empty state produces an empty note",

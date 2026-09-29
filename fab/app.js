@@ -243,6 +243,65 @@
     } else if (!on && gyroOn) { removeEventListener("deviceorientation", onGyro); gyroOn = false; }
   }
 
+
+  // ---------- pack wallet (drip-feed) ----------
+  // Start with a box of packs; bank up to a case; one new pack every 5 minutes, including while away.
+  const WALLET = { start: PACKS_PER_BOX, cap: PACKS_PER_BOX * BOXES_PER_CASE, everyMs: 5 * 60 * 1000 };
+  function walletNow() {
+    const now = Date.now();
+    let w = store.get("wallet", null);
+    if (!w || typeof w.packs !== "number" || typeof w.t !== "number") w = { packs: WALLET.start, t: now };
+    if (w.t > now) w.t = now; // clock moved backwards
+    if (w.packs >= WALLET.cap) { w.packs = WALLET.cap; w.t = now; }
+    else {
+      const n = Math.floor((now - w.t) / WALLET.everyMs);
+      if (n > 0) { w.packs = Math.min(WALLET.cap, w.packs + n); w.t = w.packs >= WALLET.cap ? now : w.t + n * WALLET.everyMs; }
+    }
+    store.set("wallet", w);
+    return w;
+  }
+  function spendPacks(k) {
+    const w = walletNow();
+    if (w.packs < k) return false;
+    if (w.packs >= WALLET.cap) w.t = Date.now(); // the timer starts once you drop below a full case
+    w.packs -= k; store.set("wallet", w); renderWallet();
+    return true;
+  }
+  const nextPackMs = () => { const w = walletNow(); return w.packs >= WALLET.cap ? 0 : WALLET.everyMs - (Date.now() - w.t); };
+  const mmss = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
+  let lastPacks = null;
+  function renderWallet() {
+    const w = walletNow(), ms = nextPackMs(), full = w.packs >= WALLET.cap;
+    const el = $("wallet"); if (!el) return;
+    el.querySelector(".w-count").textContent = w.packs;
+    el.querySelector(".w-next").textContent = full ? "full" : `+1 in ${mmss(ms)}`;
+    el.querySelector(".w-bar i").style.width = full ? "100%" : `${(100 * (1 - ms / WALLET.everyMs)).toFixed(1)}%`;
+    el.classList.toggle("empty", w.packs === 0);
+    el.title = `${w.packs} of ${WALLET.cap} packs banked. You get one pack every 5 minutes, even while the page is closed, up to a case (${WALLET.cap}).`;
+    if (lastPacks !== null && w.packs > lastPacks && lastPacks === 0) { toast("A fresh pack arrived", "Time to tear.", "✉"); S.play("toast"); }
+    if (lastPacks !== null && w.packs !== lastPacks) refreshLocks();
+    lastPacks = w.packs;
+    const lockNote = $("lockNote"); if (lockNote) lockNote.textContent = mmss(ms);
+  }
+  function outOfPacks(extra = "") {
+    toast("Out of packs", `${extra}Next pack in ${mmss(nextPackMs())}.`, "⏳");
+  }
+  // Re-render whatever is on screen that depends on the pack count.
+  function refreshLocks() {
+    if (state.busy) return;
+    if (state.view === "sealed" && state.pack) lockSealed();
+    else if (state.view === "box" && state.box) showBox();
+    else if (state.view === "case" && state.cse) showCase();
+  }
+  function lockSealed() {
+    const has = walletNow().packs > 0, btn = $("tearBtn"), pack = $("pack");
+    if (!btn || !pack) return;
+    pack.classList.toggle("locked", !has);
+    btn.disabled = !has;
+    btn.innerHTML = has ? `Tear open <kbd>Space</kbd>` : `Next pack in <span id="lockNote">${mmss(nextPackMs())}</span>`;
+    if (!has) hint(`You're out of packs. One arrives every 5 minutes, and you can bank up to ${WALLET.cap}.`);
+  }
+
   // ---------- small UI utilities ----------
   function announce(msg) { const l = $("live"); l.textContent = ""; setTimeout(() => (l.textContent = msg), 30); }
   function toast(title, sub, ico = "★") {
@@ -250,6 +309,7 @@
     el.className = "toast";
     el.innerHTML = `<span class="ico">${esc(ico)}</span><b>${esc(title)}</b><small>${esc(sub || "")}</small>`;
     $("toasts").appendChild(el);
+    const all = $("toasts").children; while (all.length > 3) all[0].remove();
     setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 320); }, 4200);
   }
   async function copyText(text, okMsg) {
@@ -412,6 +472,7 @@
     $("tearBtn").addEventListener("click", tear);
     $("backToBox")?.addEventListener("click", () => (state.cse && b.caseIdx != null ? showBox() : showBox()));
     wirePackDrag();
+    lockSealed();
     preload(pack.entries);
   }
   function packArtInner() {
@@ -466,6 +527,7 @@
     if (state.view !== "sealed" || state.busy) return;
     S.unlock();
     state.busy = true;
+    if (!spendPacks(1)) { state.busy = false; lockSealed(); outOfPacks(); const p = $("pack"); if (p) { p.style.setProperty("--tear", 0); p.querySelector(".pack-top").style.transform = ""; } return; }
     commitPack(state.pack);
     const pack = $("pack");
     pack.style.setProperty("--tear", 1);
@@ -696,7 +758,7 @@
 
   // Recap
   function toRecap() {
-    if (state.view === "recap") return;
+    if (state.view !== "reveal" || !state.pack) return; // stale timer after a mode switch
     clearTimeout(state.autoTimer);
     state.held = null;
     state.view = "recap";
@@ -766,7 +828,7 @@
       </div></div>
       <div class="box-actions">
         <button class="btn primary" id="boxNext">Open the next pack <kbd>Space</kbd></button>
-        <button class="btn" id="boxAll">Open the rest instantly</button>
+        <button class="btn" id="boxAll" ${walletNow().packs ? "" : "disabled"}>${!walletNow().packs ? `Out of packs · next in ${mmss(nextPackMs())}` : Math.min(left, walletNow().packs) < left ? `Open ${walletNow().packs} instantly (all your packs)` : "Open the rest instantly"}</button>
         ${b.caseIdx != null ? `<button class="btn ghost" id="boxCase">Back to case</button>` : `<button class="btn ghost" id="boxNew">New box</button>`}
       </div></div>`;
     $("spread").hidden = true;
@@ -780,12 +842,17 @@
     $("boxNew")?.addEventListener("click", () => startBox(newSeed()));
     $("boxCase")?.addEventListener("click", showCase);
   }
-  function openRestOfBox(b) {
+  function openRestOfBox(b, { stay = false } = {}) {
     S.unlock();
-    b.opened.forEach((o, i) => { if (!o) { const p = packFromBox(b, i); commitPack(p); p.entries.forEach(e => firstTimeCheck(e, tierOf(e), true)); checkPackAchievements(p.entries); } });
+    const left = b.opened.map((o, i) => (o ? -1 : i)).filter(i => i >= 0);
+    const can = Math.min(left.length, walletNow().packs);
+    if (!can) { if (!stay) outOfPacks(); return 0; }
+    spendPacks(can);
+    left.slice(0, can).forEach(i => { const p = packFromBox(b, i); commitPack(p); p.entries.forEach(e => firstTimeCheck(e, tierOf(e), true)); checkPackAchievements(p.entries); });
     S.play("slide");
-    finishBox(b);
-    showBoxSummary(b);
+    if (b.opened.every(Boolean)) { finishBox(b); if (!stay) showBoxSummary(b); }
+    else if (!stay) { showBox(); outOfPacks(`Opened ${can}; ${left.length - can} still sealed in this box. `); }
+    return can;
   }
   function finishBox(b) {
     if (b.counted) return;
@@ -922,12 +989,18 @@
         <small>${n === b.packs.length ? "Finished · view summary" : n ? `${b.packs.length - n} packs left` : "Sealed"}</small></button>`;
     }).join("")}</div>
       <div class="box-actions">${done === cse.boxes.length ? `<button class="btn gold" id="caseSum">Case summary <kbd>Space</kbd></button>` : `<button class="btn primary" id="caseNext">Open the next box <kbd>Space</kbd></button>`}
-      <button class="btn" id="caseAll">Open the whole case instantly</button><button class="btn ghost" id="caseNew">New case</button></div></div>`;
+      <button class="btn" id="caseAll" ${walletNow().packs ? "" : "disabled"}>Open the whole case instantly</button><button class="btn ghost" id="caseNew">New case</button></div></div>`;
     hint("A case holds four boxes, each with its own guaranteed cold foil.");
     $("table").querySelectorAll("[data-box]").forEach(el => el.addEventListener("click", () => { S.unlock(); S.play("pick"); openCaseBox(+el.dataset.box); }));
     $("caseNext")?.addEventListener("click", () => openCaseBox(cse.boxes.findIndex(b => !b.opened.every(Boolean))));
     $("caseSum")?.addEventListener("click", showCaseSummary);
-    $("caseAll").addEventListener("click", () => { cse.boxes.forEach(b => { if (!b.opened.every(Boolean)) { state.box = b; openRestOfBox(b); } }); showCaseSummary(); });
+    $("caseAll").addEventListener("click", () => {
+      let opened = 0;
+      for (const b of cse.boxes) { if (!b.opened.every(Boolean)) { state.box = b; opened += openRestOfBox(b, { stay: true }); } if (!walletNow().packs) break; }
+      saveResume();
+      if (cse.boxes.every(b => b.opened.every(Boolean))) showCaseSummary();
+      else { showCase(); outOfPacks(opened ? `Opened ${opened} packs. ` : ""); }
+    });
     $("caseNew").addEventListener("click", () => startCase(newSeed()));
   }
   function openCaseBox(i) {
@@ -1156,7 +1229,7 @@
     $("bImport").addEventListener("change", importData);
     $("bReset").addEventListener("click", () => {
       $("bConfirm").innerHTML = `<div class="confirm">Delete your binder, stats, history and achievements? <button class="btn small primary" id="bYes">Delete</button><button class="btn small" id="bNo">Keep</button></div>`;
-      $("bYes").addEventListener("click", () => { collection = {}; stats = newStats(); history = []; ach = {}; store.del("armory"); saveProgress(); toast("Fresh start", "Binder and stats cleared.", "↺"); renderBinder(); });
+      $("bYes").addEventListener("click", () => { collection = {}; stats = newStats(); history = []; ach = {}; store.del("armory"); store.del("wallet"); saveProgress(); renderWallet(); toast("Fresh start", "Binder and stats cleared. You're back to a box of packs.", "↺"); renderBinder(); });
       $("bNo").addEventListener("click", () => ($("bConfirm").innerHTML = ""));
     });
     fillBinder();
@@ -1403,6 +1476,7 @@
   // ---------- boot ----------
   X.mount(); X.setEnabled(settings.particles); X.setAmbient(settings.ambient);
   document.querySelector('.modes [data-mode="armory"]').hidden = !ARMORY;
+  renderWallet(); setInterval(renderWallet, 1000);
   (async function findCardBack() {
     for (const f of ["img/cardback.webp", "img/cardback.png", "img/cardback.jpg"]) {
       const ok = await new Promise(res => { const im = new Image(); im.onload = () => res(im.naturalWidth > 0); im.onerror = () => res(false); im.src = f; });

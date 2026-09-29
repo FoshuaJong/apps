@@ -43,6 +43,12 @@
     <button role="tab" data-mode="armory" aria-selected="false" hidden>Armory <small>Malice</small></button>
   </nav>
   <div class="top-tools">
+    <div class="wallet" id="wallet" aria-live="off">
+      <span class="w-pack" aria-hidden="true"></span>
+      <span class="w-text"><b class="w-count">24</b><small>/96 packs</small></span>
+      <span class="w-next">+1 in 5:00</span>
+      <span class="w-bar"><i></i></span>
+    </div>
     <div class="seedbox" title="A seed pins the result: the same seed always opens the same pack, box or case.">
       <label for="seed">Seed</label>
       <input id="seed" type="text" placeholder="random" autocomplete="off" spellcheck="false">

@@ -441,3 +441,31 @@ table.data td .dot { display: inline-block; width: 8px; height: 8px; border-radi
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Armory Deck ---------- */
+.armory-shop { display: flex; flex-wrap: wrap; gap: 32px; align-items: center; justify-content: center; max-width: 900px; }
+.armory-box { position: relative; width: clamp(200px, 22vw, 260px); aspect-ratio: 5 / 7; border-radius: 10px; overflow: hidden; perspective: 900px;
+  background: linear-gradient(160deg, #2c1234, #120a18); border: 1px solid rgba(240, 195, 90, .45); box-shadow: 0 30px 60px rgba(0,0,0,.6), inset 0 0 0 6px rgba(0,0,0,.35); animation: pack-float 4s ease-in-out infinite; }
+.armory-box-art { position: absolute; inset: 8% 8% 26%; border-radius: 6px; overflow: hidden; }
+.armory-box-art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%; }
+.armory-box-label { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 12px 14px; display: grid; gap: 2px; text-align: center; background: linear-gradient(to top, rgba(10,6,14,.95), rgba(10,6,14,.6)); }
+.armory-box-label small { font-family: var(--f-mono); font-size: .6rem; letter-spacing: .24em; text-transform: uppercase; color: var(--gold); }
+.armory-box-label b { font-family: var(--f-display); font-size: 1.8rem; line-height: 1; color: #fbe9c6; }
+.armory-box-label span { font-size: .72rem; color: var(--muted); }
+.armory-box.opening { animation: armory-open calc(.7s * var(--spd)) cubic-bezier(.5, 0, .7, .4) forwards; }
+@keyframes armory-open { 30% { transform: scale(1.05) rotate(-2deg); } 100% { transform: translateY(-40px) scale(.9); opacity: 0; } }
+.armory-copy { max-width: 440px; display: grid; gap: 12px; }
+.armory-copy h2 { margin: 0; font-family: var(--f-display); font-size: 2.2rem; line-height: 1.05; }
+.armory-copy p { margin: 0; color: var(--muted); }
+.armory { width: min(1180px, 100%); display: grid; gap: 22px; }
+.armory-group h3 { margin: 0 0 10px; font-family: var(--f-mono); font-weight: 500; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.armory-group h3 span { color: var(--gold); margin-left: 6px; }
+.armory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 18px 12px; }
+.acell { position: relative; display: grid; gap: 6px; }
+.acell .c3 { cursor: pointer; }
+.acell .c3.dealt { animation: deal-in calc(.45s * var(--spd)) cubic-bezier(.2, .9, .3, 1.1) both; }
+.acell .cap { font-size: .72rem; color: var(--muted); text-align: center; line-height: 1.25; }
+.acell .pdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; vertical-align: middle; background: var(--dim); }
+.acell .pdot[data-p="1"] { background: #c8483f; } .acell .pdot[data-p="2"] { background: #d9b13b; } .acell .pdot[data-p="3"] { background: #3f74c8; }
+.qty-badge { position: absolute; top: -8px; right: -8px; z-index: 4; min-width: 30px; height: 26px; padding: 0 7px; display: grid; place-items: center; border-radius: 999px; background: var(--crimson); color: #fff; font-family: var(--f-mono); font-size: .76rem; box-shadow: 0 4px 12px rgba(0,0,0,.5); }
+.excl { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); z-index: 4; white-space: nowrap; font-family: var(--f-mono); font-size: .54rem; letter-spacing: .12em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; background: #0d0a12; border: 1px solid var(--gold); color: var(--gold); }

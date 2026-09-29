@@ -984,9 +984,8 @@
     info(`<span class="ctx">${esc(ARMORY.name)}</span><span class="chip">${esc(ARMORY.format)}</span><span class="chip"><b>${deckCount}</b>-card deck + hero, weapon, 4 equipment</span>`);
     if (!owned) {
       $("table").innerHTML = `<div class="armory-shop">
-        <div class="armory-box" id="armoryBox">
-          <div class="armory-box-art">${imgTag(hero.img, hero.n)}</div>
-          <div class="armory-box-label"><small>Armory Deck</small><b>Malice</b><span>Domina of the Dead · Classic Constructed</span></div>
+        <div class="armory-box" id="armoryBox" role="img" aria-label="Armory Deck: Malice box">
+          <img src="img/armory-malice.webp" alt="" draggable="false">
         </div>
         <div class="armory-copy"><h2>Ready to play, once.</h2>
           <p>A fixed deck: every copy has the same ${ARMORY.contents.reduce((a, x) => a + x.qty, 0)} cards, so you can only open it once per binder.

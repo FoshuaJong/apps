@@ -125,7 +125,7 @@
   const state = {
     mode: "pack", view: "loading",
     pack: null,          // { entries, label, seed, box, idx, readOnly }
-    revealed: 0, busy: false, spot: null, autoTimer: 0,
+    revealed: 0, busy: false, spot: null, autoTimer: 0, held: null,
     looseNo: store.get("looseNo", 0),
     box: null, cse: null,
   };
@@ -142,14 +142,22 @@
       <div class="c3-text" aria-hidden="true"><div class="n">${esc(f.n)}</div><div class="id">${esc(c.id)}</div><div class="t">${esc(f.t)}</div></div>
       <div class="c3-shine"></div><div class="c3-glare"></div></div>`;
   }
-  const BACK_HTML = `<div class="c3-back"><svg aria-hidden="true"><use href="#i-throne"/></svg></div>`;
+  // Face-down side: double-faced cards show their own back image (local copy over the LSS copy);
+  // everything else shows the Flesh and Blood card back (img/cardback.*) or the built-in fallback design.
+  function backHTML(c) {
+    if (c.back && c.back.img) {
+      const file = c.back.img.slice(c.back.img.lastIndexOf("/") + 1);
+      return `<div class="c3-back own-back" style="background-image:url('${esc(c.back.img)}'),url('${esc(REMOTE_IMG + file)}')"></div>`;
+    }
+    return `<div class="c3-back"><svg aria-hidden="true"><use href="#i-throne"/></svg></div>`;
+  }
   function cardHTML(entry, o = {}) {
     const c = CARDS[entry.card], tier = o.tier || tierOf(entry);
     const t = TIERS[tier];
     const tag = o.tag && t.rank >= 1 ? `<span class="tag">${esc(entry.guarantee && tier === "cold" ? "Cold foil" : t.label)}</span>` : "";
     const label = o.up ? `${c.n}, ${t.label}${c.f !== "S" ? ", " + FINISH[c.f] : ""}` : "Face-down card";
     return `<button class="c3 tiltable f-${c.f} r-${c.r}${o.up ? " up" : ""}${o.cls ? " " + o.cls : ""}" data-tier="${tier}" ${o.tell && t.tell ? `data-tell="${tier}"` : ""} data-card="${entry.card}" ${o.attrs || ""} aria-label="${esc(label)}">
-      <div class="c3-tilt"><div class="c3-flip">${faceHTML(c, o.back ? c.back : null)}${BACK_HTML}</div></div>${tag}</button>`;
+      <div class="c3-tilt"><div class="c3-flip">${faceHTML(c, o.back ? c.back : null)}${backHTML(c)}</div></div>${tag}</button>`;
   }
   // image fallback chain: local -> LSS bucket -> text render
   document.addEventListener("error", e => {
@@ -460,7 +468,7 @@
   // Reveal
   function enterReveal() {
     const pack = state.pack;
-    state.view = "reveal"; state.revealed = 0;
+    state.view = "reveal"; state.revealed = 0; state.held = null;
     if (spd() === 0) { revealInstant(); return; }
     if (settings.style === "grid") {
       $("spread").innerHTML = pack.entries.map((e, i) => `<div class="slot">${cardHTML(e, { tell: true, tag: true, cls: "dealt", attrs: `data-slot="${i}" style="--dy:-60px;--dr:${(i % 3 - 1) * 4}deg;animation-delay:${(i * 40 * spd()) | 0}ms"` })}</div>`).join("");
@@ -477,35 +485,56 @@
     maybeAutoDeal();
   }
   function renderStack() {
-    const pack = state.pack, i = state.revealed, left = pack.entries.length - i;
-    if (left <= 0) { $("table").innerHTML = ""; return; }
-    const top = pack.entries[i];
-    const ghosts = Math.min(4, left - 1);
+    const pack = state.pack, i = state.revealed, left = pack.entries.length - i, held = state.held;
+    if (left <= 0 && !held) { $("table").innerHTML = ""; return; }
+    // Keep the element of a card that was just flipped, so its flip animation isn't interrupted.
+    const keep = held && $("stackTop")?.dataset.held === String(held.i) ? $("stackTop") : null;
+    const ghosts = Math.min(4, held ? left : left - 1);
+    const nextTier = held && left > 0 ? tierOf(pack.entries[i]) : null;
+    const nextTell = nextTier && TIERS[nextTier].tell ? nextTier : null;
+    const top = held
+      ? (keep ? `<i id="stackTopSlot"></i>` : cardHTML(held.entry, { up: true, cls: "stack-top held", attrs: `id="stackTop" data-held="${held.i}"` }))
+      : cardHTML(pack.entries[i], { tell: true, cls: "stack-top", attrs: `id="stackTop"` });
+    const nextLabel = held && left === 0 ? "Finish pack" : "Flip next";
     $("table").innerHTML = `<div class="stack-wrap">
-      <div class="stack" id="stack" title="Flip the next card">
-        ${Array.from({ length: ghosts }, (_, k) => `<div class="ghost" style="transform:translate(${(k + 1) * 3}px, ${(k + 1) * 3}px) rotate(${(k % 2 ? 1 : -1) * (k + 1) * 0.8}deg);z-index:${-k}"></div>`).join("")}
-        ${cardHTML(top, { tell: true, cls: "stack-top", attrs: `id="stackTop"` })}
-        <span class="count" aria-label="${left} cards left">${left}</span>
+      <div class="stack${held ? " has-held" : ""}" id="stack" title="${held ? "Flip the next card" : "Flip this card"}">
+        ${Array.from({ length: ghosts }, (_, k) => `<div class="ghost${k === 0 && nextTell ? " tell" : ""}" ${k === 0 && nextTell ? `data-tier="${nextTell}"` : ""} style="transform:translate(${(k + 1) * 3 + (held ? 10 : 0)}px, ${(k + 1) * 3 + (held ? -8 : 0)}px) rotate(${(k % 2 ? 1 : -1) * (k + 1) * 0.8 + (held ? 3 : 0)}deg);z-index:${-k}"></div>`).join("")}
+        ${top}
+        ${left > 0 ? `<span class="count" aria-label="${left} cards left">${left}</span>` : ""}
       </div>
-      <div class="stack-actions"><button class="btn primary" id="nextBtn">Flip next <kbd>Space</kbd></button><button class="btn ghost" id="revealAllBtn">Reveal the rest <kbd>A</kbd></button></div></div>`;
+      <div class="stack-actions"><button class="btn primary" id="nextBtn">${nextLabel} <kbd>Space</kbd></button>${left > 0 ? `<button class="btn ghost" id="revealAllBtn">Reveal the rest <kbd>A</kbd></button>` : ""}</div></div>`;
+    if (keep) $("stackTopSlot").replaceWith(keep);
     $("stack").addEventListener("click", () => revealNext());
-    $("nextBtn").addEventListener("click", () => revealNext());
-    $("revealAllBtn").addEventListener("click", revealAll);
+    $("nextBtn").addEventListener("click", e => { e.stopPropagation(); revealNext(); });
+    $("revealAllBtn")?.addEventListener("click", e => { e.stopPropagation(); revealAll(); });
   }
   function maybeAutoDeal() {
     clearTimeout(state.autoTimer);
-    if (!settings.autoCommons || state.view !== "reveal" || settings.style === "grid") return;
+    if (!settings.autoCommons || state.view !== "reveal" || settings.style === "grid" || state.held) return;
     const next = state.pack.entries[state.revealed];
     if (next && tierOf(next) === "common") state.autoTimer = setTimeout(() => revealNext(true), (state.revealed === 0 ? 450 : 170) * spd());
+  }
+  // Move the held card from the stack to its slot in the spread.
+  function releaseHeld() {
+    if (!state.held) return false;
+    const h = state.held; state.held = null;
+    placeInSlot(h.entry, h.i, $("stackTop"));
+    return true;
   }
 
   async function revealNext(auto = false) {
     if (state.spot) { closeSpot(); return; }
     if (state.view !== "reveal" || state.busy) return;
     if (settings.style === "grid") { const el = document.querySelector(`#spread .c3:not(.up)`); if (el) flipGridCard(el); return; }
-    const pack = state.pack, i = state.revealed;
-    if (i >= pack.entries.length) return;
+    const pack = state.pack;
     clearTimeout(state.autoTimer);
+    if (releaseHeld()) {
+      S.play("deal");
+      if (state.revealed >= pack.entries.length) { renderStack(); await wait(300); toRecap(); return; }
+      renderStack();
+    }
+    const i = state.revealed;
+    if (i >= pack.entries.length) return;
     state.busy = true;
     const entry = pack.entries[i], tier = tierOf(entry), t = TIERS[tier];
     const topEl = $("stackTop");
@@ -514,19 +543,32 @@
       S.play("charge", { dur: t.charge * spd() });
       await wait(t.charge * 1000);
     }
-    if (topEl) { topEl.classList.remove("charging"); topEl.classList.add("up"); topEl.removeAttribute("data-tell"); }
+    if (topEl) {
+      topEl.getBoundingClientRect(); // make sure a freshly rendered card starts face-down so the flip animates
+      await new Promise(r => requestAnimationFrame(r));
+      topEl.classList.remove("charging"); topEl.removeAttribute("data-tell");
+      if (!auto) { topEl.dataset.held = String(i); topEl.classList.add("held"); }
+      topEl.classList.add("up");
+      topEl.setAttribute("aria-label", `${CARDS[entry.card].n}, ${t.label}`);
+    }
     S.play("flip");
     await wait(t.spot ? 380 : 160);
     state.revealed++;
-    placeInSlot(entry, i, topEl);
     firstTimeCheck(entry, tier);
     announce(`${CARDS[entry.card].n}, ${t.label}`);
-    if (t.spot) { await openSpot(entry, tier); }
-    else if (tier !== "common") celebrate(tier, document.querySelector(`#spread [data-slot="${i}"]`));
-    else S.play("deal");
-    renderStack();
+    if (auto) {
+      placeInSlot(entry, i, topEl);
+      if (tier !== "common") celebrate(tier, document.querySelector(`#spread [data-slot="${i}"]`)); else S.play("deal");
+      renderStack();
+    } else {
+      // Manual flip: the card stays big on the stack until the next flip.
+      state.held = { entry, i };
+      renderStack();
+      if (t.spot) await openSpot(entry, tier);
+      else if (tier !== "common") celebrate(tier, $("stackTop"));
+    }
     state.busy = false;
-    if (state.revealed >= pack.entries.length && !state.spot) { await wait(350); toRecap(); return; }
+    if (auto && state.revealed >= pack.entries.length && !state.spot) { await wait(350); toRecap(); return; }
     if (!state.spot) maybeAutoDeal();
   }
   function placeInSlot(entry, i, fromEl) {
@@ -572,6 +614,7 @@
         S.play("flip"); await wait(80);
       }
     } else {
+      releaseHeld();
       while (state.revealed < pack.entries.length) {
         const i = state.revealed, e = pack.entries[i];
         placeInSlot(e, i, $("stackTop")); state.revealed++;
@@ -628,6 +671,7 @@
     $("spot").hidden = true; $("spot").innerHTML = "";
     r && r();
     if (silent) return;
+    if (state.held) { hint(state.revealed >= state.pack.entries.length ? "Last card. Press <kbd>Space</kbd> or click it to finish the pack." : `Click the stack or press <kbd>Space</kbd> to flip the next card · <kbd>A</kbd> reveals the rest`); return; }
     if (state.view === "reveal" && state.revealed >= state.pack.entries.length) setTimeout(toRecap, 250 * spd());
     else maybeAutoDeal();
   }
@@ -637,6 +681,7 @@
   function toRecap() {
     if (state.view === "recap") return;
     clearTimeout(state.autoTimer);
+    state.held = null;
     state.view = "recap";
     const pack = state.pack;
     // make sure every card is face-up in the spread
@@ -1243,6 +1288,12 @@
 
   // ---------- boot ----------
   X.mount(); X.setEnabled(settings.particles); X.setAmbient(settings.ambient);
+  (async function findCardBack() {
+    for (const f of ["img/cardback.webp", "img/cardback.png", "img/cardback.jpg"]) {
+      const ok = await new Promise(res => { const im = new Image(); im.onload = () => res(im.naturalWidth > 0); im.onerror = () => res(false); im.src = f; });
+      if (ok) { document.documentElement.style.setProperty("--cardback", `url("${f}")`); document.documentElement.classList.add("has-cardback"); return; }
+    }
+  })();
   applySpeed(); applyMute(); S.setVolume(settings.volume);
   if (settings.gyro) setGyro(true);
   $("commit").textContent = `@ ${SET.sourceCommit.slice(0, 7)}`;

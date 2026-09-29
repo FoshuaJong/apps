@@ -26,7 +26,10 @@
   }
   const CARDS = SET.cards;
   const KEY_INDEX = new Map(CARDS.map((c, i) => [c.k, i]));
-  const POOLED = new Set(Object.values(SET.pools).flat()); // printings that can come out of a pack
+  // Printings a booster can actually produce (pools with weight in the default config). Promo-only
+  // printings (see config.notInBoosters) are left out of the binder's completion counts.
+  const POOLED = new Set([...DEFAULT_CONFIG.slots, ...(DEFAULT_CONFIG.boxGuarantees || [])]
+    .flatMap(s => Object.entries(s.pools).filter(([, w]) => w > 0).flatMap(([k]) => SET.pools[k] || [])));
 
   // ---------- storage (per viewer, best effort) ----------
   const NS = `fabsim:v2:${SET.set}:`;
@@ -158,6 +161,14 @@
     const label = o.up ? `${c.n}, ${t.label}${c.f !== "S" ? ", " + FINISH[c.f] : ""}` : "Face-down card";
     return `<button class="c3 tiltable f-${c.f} r-${c.r}${o.up ? " up" : ""}${o.cls ? " " + o.cls : ""}" data-tier="${tier}" ${o.tell && t.tell ? `data-tell="${tier}"` : ""} data-card="${entry.card}" ${o.attrs || ""} aria-label="${esc(label)}">
       <div class="c3-tilt"><div class="c3-flip">${faceHTML(c, o.back ? c.back : null)}${backHTML(c)}</div></div>${tag}</button>`;
+  }
+  // Turn a face-down card face-up with the keyframed flip.
+  function flipUp(el) {
+    if (!el || el.classList.contains("up")) return;
+    el.classList.add("flipping", "up");
+    const done = () => el.classList.remove("flipping");
+    el.querySelector(".c3-flip")?.addEventListener("animationend", done, { once: true });
+    setTimeout(done, 700 * Math.max(spd(), 0.05) + 60);
   }
   // image fallback chain: local -> LSS bucket -> text render
   document.addEventListener("error", e => {
@@ -397,9 +408,7 @@
     preload(pack.entries);
   }
   function packArtInner() {
-    return `<svg class="pack-crest" viewBox="0 0 64 80" aria-hidden="true"><use href="#i-throne"/></svg>
-      <div class="pack-title"><small>Flesh and Blood</small>Usurp the<br>Shadow Throne</div>
-      <div class="pack-foot">Booster · 16 cards · ${esc(SET.set)}</div>`;
+    return `<img src="img/pack.webp" alt="" draggable="false">`;
   }
   function crimp(y0, y1, up, n = 12) { // zigzag edge points from left to right between y0 and y1
     const pts = [];
@@ -412,9 +421,10 @@
     return pts;
   }
   function applyPackClips() {
-    const topEdge = crimp(0, 2.6, false), bottomEdge = crimp(97.4, 100, true).reverse(), line = jag(12.8);
-    const top = [...topEdge, ...[...line].reverse()].join(",");
-    const body = [...line, ...bottomEdge].join(",");
+    // The wrapper art has its own crimped edges; we only split it along a torn line under the top crimp.
+    const line = jag(6.4, 22);
+    const top = ["0% -2%", "100% -2%", ...[...line].reverse()].join(",");
+    const body = [...line, "100% 102%", "0% 102%"].join(",");
     document.querySelector(".pack-top").style.clipPath = `polygon(${top})`;
     document.querySelector(".pack-body").style.clipPath = `polygon(${body})`;
   }
@@ -548,7 +558,7 @@
       await new Promise(r => requestAnimationFrame(r));
       topEl.classList.remove("charging"); topEl.removeAttribute("data-tell");
       if (!auto) { topEl.dataset.held = String(i); topEl.classList.add("held"); }
-      topEl.classList.add("up");
+      flipUp(topEl);
       topEl.setAttribute("aria-label", `${CARDS[entry.card].n}, ${t.label}`);
     }
     S.play("flip");
@@ -587,7 +597,7 @@
     const i = +el.dataset.slot, entry = state.pack.entries[i], tier = tierOf(entry), t = TIERS[tier];
     state.busy = true;
     if (t.charge) { el.classList.add("charging"); S.play("charge", { dur: t.charge * spd() }); await wait(t.charge * 900); el.classList.remove("charging"); }
-    el.classList.add("up"); el.removeAttribute("data-tell");
+    el.removeAttribute("data-tell"); flipUp(el);
     el.setAttribute("aria-label", `${CARDS[entry.card].n}, ${t.label}`);
     S.play("flip");
     state.revealed++;
@@ -608,7 +618,7 @@
       const els = [...document.querySelectorAll("#spread .c3:not(.up)")];
       for (const el of els) {
         const e = pack.entries[+el.dataset.slot];
-        el.classList.add("up"); el.removeAttribute("data-tell"); state.revealed++;
+        el.removeAttribute("data-tell"); flipUp(el); state.revealed++;
         firstTimeCheck(e, tierOf(e), true);
         if (!best || TIERS[tierOf(e)].rank > TIERS[tierOf(best)].rank) best = e;
         S.play("flip"); await wait(80);

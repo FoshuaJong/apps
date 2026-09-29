@@ -46,8 +46,7 @@
       "pools": {
         "RF_C": 0.69,
         "RF_R": 0.22,
-        "RF_M": 0.08,
-        "RF_B": 0.01
+        "RF_M": 0.08
       }
     },
     {
@@ -72,7 +71,6 @@
       "replacesSlot": "wildcard",
       "pools": {
         "CF_C": 0.35,
-        "CF_B": 0.15,
         "CF_R": 0.1,
         "CF_M": 0.3,
         "CF_L": 0.1
@@ -96,5 +94,12 @@
       "wildcard",
       "coldFoil"
     ]
+  },
+  "notInBoosters": {
+    "pools": [
+      "CF_B",
+      "RF_B"
+    ],
+    "reason": "Inferred: the pre-release promo pack holds 3 cold foil promos and 1 rainbow foil. The data has exactly three cold foil basics (Hex Gauntlet, Appalling Bearers, Grasp of the Darknight: one piece of equipment per hero) and one rainbow foil basic (Corrupted Corpse), so these are treated as promo-only."
   }
 }

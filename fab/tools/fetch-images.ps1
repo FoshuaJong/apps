@@ -1,10 +1,10 @@
-# Downloads the card images listed in images.txt into ..\img (skips files already there).
-# Run from anywhere:  powershell -ExecutionPolicy Bypass -File fab\tools\fetch-images.ps1
+# Downloads every card image listed in tools\images*.txt into ..\img (skips files already there).
+# Run from the repo root:  powershell -ExecutionPolicy Bypass -File fab\tools\fetch-images.ps1
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $out = Join-Path (Split-Path -Parent $here) 'img'
 New-Item -ItemType Directory -Force -Path $out | Out-Null
-$urls = Get-Content (Join-Path $here 'images.txt') | Where-Object { $_.Trim() -ne '' }
+$urls = Get-ChildItem -Path $here -Filter 'images*.txt' | ForEach-Object { Get-Content $_.FullName } | Where-Object { $_.Trim() -ne '' } | Sort-Object -Unique
 $ProgressPreference = 'SilentlyContinue'   # the progress bar makes Invoke-WebRequest very slow
 $done = 0; $skipped = 0; $failed = @()
 foreach ($u in $urls) {

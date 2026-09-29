@@ -1,0 +1,38 @@
+Name: Armory Deck: Malice
+Hero: Malice, Domina of the Dead
+Format: Classic Constructed
+
+Arena cards
+1x Corrupted Crown
+1x Drop Dead Bodice
+1x Mage Master Boots
+1x Undead Grasp
+1x Vox Necropolis
+
+Deck cards
+3x Commit to Corruption (red)
+2x Darkest Hour (red)
+3x Dig for Souls (red)
+3x Ominous Toll (red)
+3x Restless Commander (red)
+3x Restless Looter (red)
+3x Restless Magister (red)
+1x Restless Outlaw (red)
+2x Restless Quartermaster (red)
+3x Restless Steed (red)
+3x Shadowrealm Strength (red)
+3x Sink Below (red)
+3x Skeletal Puppetry (red)
+3x Clambering Corpses (blue)
+3x Countdown to Extinction (blue)
+2x Mark of Ushering (blue)
+3x Otherworldly Ossuary (blue)
+3x Pull from Beyond (blue)
+3x Rites of Nightfall (blue)
+3x Shadowrealm Solace (blue)
+3x Shadowrealm Strength (blue)
+2x Skeletal Puppetry (blue)
+
+Tokens
+1x Corrupted Corpse
+1x Gate to i'Arathael

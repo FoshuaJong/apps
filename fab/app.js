@@ -24,7 +24,12 @@
     $("loadMsg").textContent = `Couldn't load the card data (${e.message}). Reload the page to try again.`;
     return;
   }
-  const CARDS = SET.cards;
+  // Optional: the Malice Armory Deck (a fixed product, never in boosters).
+  let ARMORY = null;
+  try { const r = await fetch("ama.json"); if (r.ok) ARMORY = await r.json(); } catch { /* armory is optional */ }
+  const ARMORY_OFFSET = SET.cards.length;
+  const CARDS = ARMORY ? SET.cards.concat(ARMORY.cards) : SET.cards;
+  const ARMORY_CARDS = ARMORY ? ARMORY.cards.map((_, i) => ARMORY_OFFSET + i) : [];
   const KEY_INDEX = new Map(CARDS.map((c, i) => [c.k, i]));
   // Printings a booster can actually produce (pools with weight in the default config). Promo-only
   // printings (see config.notInBoosters) are left out of the binder's completion counts.
@@ -99,7 +104,7 @@
     if (pool === "R") return "rare";
     return "common";
   }
-  const RARITY = { C: "Common", R: "Rare", S: "Super Rare", M: "Majestic", L: "Legendary", F: "Fabled", T: "Token", B: "Basic", V: "Marvel", P: "Promo" };
+  const RARITY = { C: "Common", R: "Rare", S: "Super Rare", M: "Majestic", L: "Legendary", F: "Fabled", T: "Token", B: "Basic", V: "Marvel", P: "Promo", U: "Unlisted" };
   const FINISH = { S: "Standard", R: "Rainbow foil", C: "Cold foil", G: "Gold cold foil" };
   const ART = { EA: "Extended art", FA: "Full art", AA: "Alternate art" };
   const PITCH = { "1": "Red", "2": "Yellow", "3": "Blue" };
@@ -313,6 +318,7 @@
     ["box", "Full display", "Open every pack in a box"],
     ["case", "Case breaker", "Open all four boxes in a case"],
     ["packs100", "Century", "Open 100 packs"],
+    ["armory", "Armed to the teeth", "Open the Malice Armory Deck"],
     ["set50", "Halfway to the throne", "Own half the set's card numbers"],
     ["set100", "Usurper", "Own every card number in the set"],
   ];
@@ -364,6 +370,7 @@
     if (mode === "pack") startLoosePack();
     else if (mode === "box") { if (!state.box || state.box.caseIdx != null || fresh) startBox(); else showBox(); }
     else if (mode === "case") { if (!state.cse || fresh) startCase(); else showCase(); }
+    else if (mode === "armory") showArmory();
   }
   function info(html) { $("info").innerHTML = html; }
   function seedChip(seed, kind) {
@@ -658,17 +665,17 @@
   }
 
   // Spotlight
-  function openSpot(entry, tier) {
+  function openSpot(entry, tier, opts = {}) {
     const c = CARDS[entry.card], t = TIERS[tier];
     const spot = $("spot");
     spot.dataset.tier = tier;
     spot.style.setProperty("--tc", t.color);
     const finish = entry.guarantee ? "Cold foil · the box's guaranteed cold" : FINISH[c.f];
-    const title = tier === "cold" ? "Cold foil" : (c.f === "C" || c.f === "G") && tier !== "marvel" ? `Cold foil ${t.label}` : (c.f === "R" && tier !== "foil" ? `Rainbow ${t.label}` : t.label);
+    const title = opts.title ? opts.title : tier === "cold" ? "Cold foil" : (c.f === "C" || c.f === "G") && tier !== "marvel" ? `Cold foil ${t.label}` : (c.f === "R" && tier !== "foil" ? `Rainbow ${t.label}` : t.label);
     spot.innerHTML = `${cardHTML(entry, { up: true, attrs: `id="spotCard"` })}
       <div class="spot-label">${entry._first ? `<span class="first">First ever</span>` : ""}<span class="tier">${esc(title)}</span>
       <span class="name">${esc(c.n)}${c.p ? ` <span style="color:var(--muted)">(${PITCH[c.p]})</span>` : ""}</span>
-      <span class="sub">${esc(finish)} · ${esc(c.id)} · click or press Space to continue</span></div>`;
+      <span class="sub">${esc(opts.sub || finish)} · ${esc(c.id)} · click or press Space to continue</span></div>`;
     spot.hidden = false;
     state.spot = { entry, tier };
     requestAnimationFrame(() => celebrate(tier, $("spotCard")));
@@ -943,6 +950,101 @@
     $("fixOdds").addEventListener("click", () => openDrawer("odds"));
   }
 
+
+  // ---------- Armory Deck (fixed product, bought once) ----------
+  const armoryState = () => store.get("armory", null);
+  const IAR_NAMES = new Set(SET.cards.map(c => c.n));
+  const armoryEntries = () => ARMORY.contents.map(x => ({ card: ARMORY_OFFSET + x.card, qty: x.qty, zone: x.zone }));
+  function armoryCardHTML(e, i, dealt) {
+    const c = CARDS[e.card], excl = !IAR_NAMES.has(c.n);
+    return `<div class="acell">${cardHTML(e, { up: true, cls: dealt ? "dealt" : "", attrs: `data-arm="${i}" style="animation-delay:${dealt ? (i * 45 * Math.max(spd(), 0.05)) | 0 : 0}ms;--dy:-40px;--dr:0deg"` })}
+      ${e.qty > 1 ? `<span class="qty-badge">×${e.qty}</span>` : ""}${excl ? `<span class="excl">Not in boosters</span>` : ""}
+      <div class="cap">${esc(c.n)}${c.p ? ` <i class="pdot" data-p="${esc(c.p)}"></i>` : ""}</div></div>`;
+  }
+  function renderArmoryLayout(entries, dealt) {
+    const groups = [
+      ["Hero", entries.filter(e => e.zone === "hero")],
+      ["Weapon and equipment", entries.filter(e => e.zone === "arena")],
+      ["Deck · red", entries.filter(e => e.zone === "deck" && CARDS[e.card].p === "1")],
+      ["Deck · yellow", entries.filter(e => e.zone === "deck" && CARDS[e.card].p === "2")],
+      ["Deck · blue", entries.filter(e => e.zone === "deck" && CARDS[e.card].p === "3")],
+      ["Tokens", entries.filter(e => e.zone === "tokens")],
+    ].filter(g => g.length && g[1].length);
+    let n = 0;
+    return groups.map(([label, list]) => `<section class="armory-group"><h3>${esc(label)} <span>${list.reduce((a, e) => a + e.qty, 0)}</span></h3>
+      <div class="armory-grid">${list.map(e => armoryCardHTML(e, n++, dealt)).join("")}</div></section>`).join("");
+  }
+  function showArmory() {
+    if (!ARMORY) return;
+    state.view = "armory"; state.pack = null; $("spread").hidden = true;
+    const owned = armoryState(), entries = armoryEntries();
+    const hero = CARDS[entries.find(e => e.zone === "hero").card];
+    const exclusive = [...new Set(entries.filter(e => !IAR_NAMES.has(CARDS[e.card].n)).map(e => CARDS[e.card].n))];
+    const deckCount = entries.filter(e => e.zone === "deck").reduce((a, e) => a + e.qty, 0);
+    info(`<span class="ctx">${esc(ARMORY.name)}</span><span class="chip">${esc(ARMORY.format)}</span><span class="chip"><b>${deckCount}</b>-card deck + hero, weapon, 4 equipment</span>`);
+    if (!owned) {
+      $("table").innerHTML = `<div class="armory-shop">
+        <div class="armory-box" id="armoryBox">
+          <div class="armory-box-art">${imgTag(hero.img, hero.n)}</div>
+          <div class="armory-box-label"><small>Armory Deck</small><b>Malice</b><span>Domina of the Dead · Classic Constructed</span></div>
+        </div>
+        <div class="armory-copy"><h2>Ready to play, once.</h2>
+          <p>A fixed deck: every copy has the same ${ARMORY.contents.reduce((a, x) => a + x.qty, 0)} cards, so you can only open it once per binder.
+          ${exclusive.length} of its cards can't be pulled from boosters: ${exclusive.map(esc).join(", ")}.</p>
+          <div class="box-actions"><button class="btn gold" id="armoryBuy">Open the Armory Deck <kbd>Space</kbd></button></div></div></div>`;
+      hint("");
+      $("armoryBuy").addEventListener("click", openArmory);
+      return;
+    }
+    renderArmoryOwned(owned, false);
+  }
+  function renderArmoryOwned(owned, dealt) {
+    const entries = armoryEntries();
+    $("table").innerHTML = `<div class="armory">
+      <div class="summary-head"><div><h2>${esc(ARMORY.name)}</h2><p>Opened ${new Date(owned.t).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })} · every card is in your binder</p></div>
+        <div class="summary-actions"><button class="btn" id="armoryBinder">See it in the binder</button><button class="btn ghost" id="armoryReset">Undo purchase</button></div></div>
+      <div id="armoryConfirm"></div>
+      ${renderArmoryLayout(entries, dealt)}</div>`;
+    hint("Click any card for a closer look.");
+    const flat = [];
+    ["hero", "arena", "deck", "tokens"].forEach(z => entries.filter(e => e.zone === z).forEach(e => flat.push(e)));
+    $("table").querySelectorAll("[data-arm]").forEach(el => el.addEventListener("click", () => {
+      const all = [...$("table").querySelectorAll("[data-arm]")].map(x => ({ card: +x.dataset.card }));
+      openDetail(all, +el.dataset.arm);
+    }));
+    $("armoryBinder").addEventListener("click", () => { binderF.set = "ama"; openDrawer("binder"); });
+    $("armoryReset").addEventListener("click", () => {
+      $("armoryConfirm").innerHTML = `<div class="confirm">Take the Armory Deck's cards back out of your binder? <button class="btn small primary" id="arYes">Undo purchase</button><button class="btn small" id="arNo">Keep it</button></div>`;
+      $("arYes").addEventListener("click", () => {
+        for (const e of entries) { const k = CARDS[e.card].k; collection[k] = Math.max(0, (collection[k] || 0) - e.qty); if (!collection[k]) delete collection[k]; }
+        store.del("armory"); saveProgress(); toast("Armory Deck returned", "Its cards are out of your binder.", "↺"); showArmory();
+      });
+      $("arNo").addEventListener("click", () => ($("armoryConfirm").innerHTML = ""));
+    });
+  }
+  async function openArmory() {
+    if (!ARMORY || armoryState() || state.busy) return;
+    S.unlock(); state.busy = true;
+    const entries = armoryEntries();
+    for (const e of entries) { const k = CARDS[e.card].k; collection[k] = (collection[k] || 0) + e.qty; }
+    const owned = { t: Date.now() };
+    store.set("armory", owned);
+    history.unshift({ t: owned.t, label: ARMORY.name, seed: "", keys: entries.map(e => CARDS[e.card].k) });
+    if (history.length > 150) history.length = 150;
+    saveProgress(); $("binderPip").hidden = false;
+    const box = $("armoryBox");
+    S.play("tear");
+    if (box) { box.classList.add("opening"); await wait(700); }
+    const heroE = entries.find(e => e.zone === "hero");
+    await openSpot({ card: heroE.card }, "legendary", { title: "Your hero", sub: "Armory Deck · rainbow foil" });
+    renderArmoryOwned(owned, true);
+    S.play("slide");
+    for (let i = 0; i < 6; i++) setTimeout(() => S.play("deal"), i * 120 * Math.max(spd(), 0.2));
+    unlock("armory");
+    announce(`${ARMORY.name} opened: ${entries.reduce((a, e) => a + e.qty, 0)} cards added to your binder.`);
+    state.busy = false;
+  }
+
   // ---------- detail modal ----------
   let modalCtx = null;
   function openDetail(list, idx, showBack = false) {
@@ -1009,7 +1111,7 @@
   document.querySelectorAll("[data-drawer]").forEach(b => b.addEventListener("click", () => (drawerKind === b.dataset.drawer ? closeDrawer() : openDrawer(b.dataset.drawer))));
 
   // Binder
-  const binderF = { finish: "all", tier: "all", own: "all", q: "" };
+  const binderF = { set: "iar", finish: "all", tier: "all", own: "all", q: "" };
   function completion() {
     const nums = new Set(), have = new Set();
     let prints = 0, pHave = 0, hits = 0, hHave = 0;
@@ -1037,6 +1139,7 @@
         <div class="ring">${ringSVG(comp.hits.have / comp.hits.total, "#f0c35a")}<b>${comp.hits.have} / ${comp.hits.total}</b><small>Majestic and up</small></div>
       </div>
       <div class="filters">
+        ${ARMORY ? seg("set", [["iar", "Usurp the Shadow Throne"], ["ama", `Armory Deck: Malice (${ARMORY_CARDS.filter(i => collection[CARDS[i].k]).length}/${ARMORY_CARDS.length})`]]) : ""}
         <input class="search" id="bq" type="search" placeholder="Search names and rules text" value="${esc(binderF.q)}" aria-label="Search the binder">
         ${seg("own", [["all", "All"], ["owned", "Owned"], ["missing", "Missing"], ["dupes", "Duplicates"]])}
         ${seg("finish", [["all", "Any finish"], ["S", "Standard"], ["R", "Rainbow"], ["C", "Cold"]])}
@@ -1054,14 +1157,15 @@
     $("bImport").addEventListener("change", importData);
     $("bReset").addEventListener("click", () => {
       $("bConfirm").innerHTML = `<div class="confirm">Delete your binder, stats, history and achievements? <button class="btn small primary" id="bYes">Delete</button><button class="btn small" id="bNo">Keep</button></div>`;
-      $("bYes").addEventListener("click", () => { collection = {}; stats = newStats(); history = []; ach = {}; saveProgress(); toast("Fresh start", "Binder and stats cleared.", "↺"); renderBinder(); });
+      $("bYes").addEventListener("click", () => { collection = {}; stats = newStats(); history = []; ach = {}; store.del("armory"); saveProgress(); toast("Fresh start", "Binder and stats cleared.", "↺"); renderBinder(); });
       $("bNo").addEventListener("click", () => ($("bConfirm").innerHTML = ""));
     });
     fillBinder();
   }
   function binderList() {
     const q = binderF.q.trim().toLowerCase();
-    return [...POOLED].sort((a, b) => CARDS[a].id.localeCompare(CARDS[b].id) || CARDS[a].f.localeCompare(CARDS[b].f)).filter(i => {
+    const source = binderF.set === "ama" && ARMORY ? ARMORY_CARDS : [...POOLED];
+    return [...source].sort((a, b) => CARDS[a].id.localeCompare(CARDS[b].id) || CARDS[a].f.localeCompare(CARDS[b].f)).filter(i => {
       const c = CARDS[i], n = collection[c.k] || 0;
       if (binderF.own === "owned" && !n) return false;
       if (binderF.own === "missing" && n) return false;
@@ -1280,7 +1384,7 @@
     }
     if (e.target.closest("button, a")) { /* let buttons keep their own keys */ }
     if (k === "a" && state.view === "reveal") revealAll();
-    else if (k === "1") setMode("pack"); else if (k === "2") setMode("box"); else if (k === "3") setMode("case");
+    else if (k === "1") setMode("pack"); else if (k === "2") setMode("box"); else if (k === "3") setMode("case"); else if (k === "4" && ARMORY) setMode("armory");
     else if (k === "c") openDrawer("binder"); else if (k === "s") openDrawer("stats"); else if (k === "h") openDrawer("history");
     else if (k === "m") $("muteBtn").click();
   });
@@ -1293,11 +1397,13 @@
       case "box": if (state.box) { S.play("pick"); showSealed(packFromBox(state.box, state.box.opened.indexOf(false))); } break;
       case "boxDone": case "caseDone": $("sumNext")?.click(); break;
       case "case": ($("caseNext") || $("caseSum"))?.click(); break;
+      case "armory": if (!armoryState()) openArmory(); break;
     }
   }
 
   // ---------- boot ----------
   X.mount(); X.setEnabled(settings.particles); X.setAmbient(settings.ambient);
+  document.querySelector('.modes [data-mode="armory"]').hidden = !ARMORY;
   (async function findCardBack() {
     for (const f of ["img/cardback.webp", "img/cardback.png", "img/cardback.jpg"]) {
       const ok = await new Promise(res => { const im = new Image(); im.onload = () => res(im.naturalWidth > 0); im.onerror = () => res(false); im.src = f; });

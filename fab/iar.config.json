@@ -3,20 +3,98 @@
   "setName": "Usurp the Shadow Throne",
   "packSize": 16,
   "packsPerBox": 24,
+  "boxesPerCase": 4,
   "slots": [
-    { "name": "basic",    "label": "Basic",            "count": 1,  "pools": { "B": 1 } },
-    { "name": "common",   "label": "Common",           "count": 11, "pools": { "C": 1 }, "noDuplicates": true },
-    { "name": "rare",     "label": "Rare",             "count": 1,  "pools": { "R": 1 } },
-    { "name": "rarePlus", "label": "Rare or Majestic", "count": 1,  "pools": { "R": 0.75, "M": 0.25 } },
-    { "name": "foil",     "label": "Rainbow foil",     "count": 1,  "pools": { "RF_C": 0.69, "RF_R": 0.22, "RF_M": 0.08, "RF_B": 0.01 } },
-    { "name": "wildcard", "label": "Basic or better",  "count": 1,  "pools": { "B": 0.678, "X": 0.25, "V": 0.04, "RF_L": 0.03, "RF_F": 0.001, "F": 0.001 } }
+    {
+      "name": "basic",
+      "label": "Basic",
+      "count": 1,
+      "pools": {
+        "B": 1
+      }
+    },
+    {
+      "name": "common",
+      "label": "Common",
+      "count": 11,
+      "pools": {
+        "C": 1
+      },
+      "noDuplicates": true
+    },
+    {
+      "name": "rare",
+      "label": "Rare",
+      "count": 1,
+      "pools": {
+        "R": 1
+      }
+    },
+    {
+      "name": "rarePlus",
+      "label": "Rare or Majestic",
+      "count": 1,
+      "pools": {
+        "R": 0.75,
+        "M": 0.25
+      }
+    },
+    {
+      "name": "foil",
+      "label": "Rainbow foil",
+      "count": 1,
+      "pools": {
+        "RF_C": 0.69,
+        "RF_R": 0.22,
+        "RF_M": 0.08,
+        "RF_B": 0.01
+      }
+    },
+    {
+      "name": "wildcard",
+      "label": "Basic or better",
+      "count": 1,
+      "pools": {
+        "B": 0.728382,
+        "X": 0.25,
+        "V": 0.009662,
+        "RF_L": 0.01087,
+        "RF_F": 0.000543,
+        "F": 0.000543
+      }
+    }
   ],
   "boxGuarantees": [
-    { "name": "coldFoil", "label": "Cold foil", "perBox": 1, "replacesSlot": "wildcard",
-      "pools": { "CF_C": 0.35, "CF_B": 0.15, "CF_R": 0.10, "CF_M": 0.30, "CF_L": 0.10 } }
+    {
+      "name": "coldFoil",
+      "label": "Cold foil",
+      "perBox": 1,
+      "replacesSlot": "wildcard",
+      "pools": {
+        "CF_C": 0.35,
+        "CF_B": 0.15,
+        "CF_R": 0.1,
+        "CF_M": 0.3,
+        "CF_L": 0.1
+      }
+    }
+  ],
+  "revealOrder": [
+    "common",
+    "basic",
+    "foil",
+    "rare",
+    "rarePlus",
+    "wildcard"
   ],
   "sourced": {
     "structure": "16 cards: 11 Common, 1 Rare + 1 Rare or Majestic, 1 Rainbow Foil, 1 Basic + 1 Basic/Expansion Slot/Legendary/Cold Foil/Marvel/Fabled; Cold Foil 1 per 24 packs, replacing a Basic (MinMax Games, Chaos Cards listings).",
-    "placeholders": ["rarePlus", "foil", "wildcard", "coldFoil"]
+    "rates": "Community estimates (unsourced): Majestic ~1 in 4 packs, Cold Foil 1 per box, Legendary ~1 per case (1/96 packs), Marvel ~1/108 packs, Fabled ~1/960 packs. Wildcard weights are scaled by 24/23 because the cold foil takes that slot in one pack per box. Expansion slot rate and the rainbow-foil and cold-foil rarity splits are guesses.",
+    "placeholders": [
+      "rarePlus",
+      "foil",
+      "wildcard",
+      "coldFoil"
+    ]
   }
 }

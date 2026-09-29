@@ -3,110 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0c0c0e">
-  <title>Joshua Fong — FaB pack opener</title>
-  <meta name="description" content="Open Flesh and Blood booster packs and boxes of Usurp the Shadow Throne, with the set's real slot layout and editable odds.">
-  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
-
+  <meta name="theme-color" content="#0b0910">
+  <title>Shadow Throne Pack Opener</title>
+  <meta name="description" content="Tear open Flesh and Blood booster packs, boxes and cases of Usurp the Shadow Throne. Real slot layout, holo foils, a binder that remembers your pulls, and luck stats.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='7' y='3' width='18' height='26' rx='2' fill='%23d23a4e'/%3E%3Cpath d='M11 12l5-5 5 5-5 9z' fill='%23f0c35a'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/variables.css">
-  <link rel="stylesheet" href="../css/base.css">
-  <link rel="stylesheet" href="../css/apps.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-binder" viewBox="0 0 24 24"><path d="M5 3h11a3 3 0 0 1 3 3v15H8a3 3 0 0 1-3-3z M8 3v18 M11 8h5 M11 11h5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-stats" viewBox="0 0 24 24"><path d="M4 20h16 M7 17V11 M12 17V6 M17 17v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7 M3 4v4h4 M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-odds" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="9" r="1.4" fill="currentColor"/><circle cx="15" cy="15" r="1.4" fill="currentColor"/><circle cx="15" cy="9" r="1.4" fill="currentColor"/><circle cx="9" cy="15" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z M16 9a4 4 0 0 1 0 6 M18.5 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z M16 9l5 6 M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 2.5v3 M12 18.5v3 M2.5 12h3 M18.5 12h3 M5.3 5.3l2.1 2.1 M16.6 16.6l2.1 2.1 M5.3 18.7l2.1-2.1 M16.6 7.4l2.1-2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="9" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="15" cy="15" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12 M7 8l5-5 5 5 M5 13v6h14v-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12 M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-throne" viewBox="0 0 64 80"><path d="M18 40V14l4-8 4 8v-4l6-8 6 8v4l4-8 4 8v26z M26 38V23q6-9 12 0v15z M10 31h8v9h-8z M46 31h8v9h-8z M11 40h42v7H11z M14 47h6v29h-6z M44 47h6v29h-6z M20 61h24v4H20z" fill="currentColor" fill-rule="evenodd"/></symbol>
+  </defs>
+</svg>
 
-<nav>
-  <div class="container">
-    <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
-    <ul class="nav-links" id="navLinks">
-      <li><a href="/">Apps</a></li>
-      <li class="nav-sep"></li>
-      <li><a href="/fab/" aria-current="page">Pack opener</a></li>
-    </ul>
-    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
-      <span></span><span></span><span></span>
-    </button>
+<header class="topbar">
+  <a class="brand" href="./" aria-label="Shadow Throne Pack Opener, start over">
+    <svg class="brand-mark" aria-hidden="true"><use href="#i-throne"/></svg>
+    <span class="brand-text"><b>Shadow Throne</b><small>Pack opener</small></span>
+  </a>
+  <nav class="modes" role="tablist" aria-label="What to open">
+    <button role="tab" data-mode="pack" aria-selected="true">Pack</button>
+    <button role="tab" data-mode="box" aria-selected="false">Box <small>24</small></button>
+    <button role="tab" data-mode="case" aria-selected="false">Case <small>4 boxes</small></button>
+  </nav>
+  <div class="top-tools">
+    <div class="seedbox" title="A seed pins the result: the same seed always opens the same pack, box or case.">
+      <label for="seed">Seed</label>
+      <input id="seed" type="text" placeholder="random" autocomplete="off" spellcheck="false">
+      <button class="icon-btn small" id="rollSeed" aria-label="Clear seed (use random)"><svg><use href="#i-dice"/></svg></button>
+    </div>
+    <button class="icon-btn" data-drawer="binder" aria-label="Binder (C)"><svg><use href="#i-binder"/></svg><span class="lbl">Binder</span><span class="pip" id="binderPip" hidden></span></button>
+    <button class="icon-btn" data-drawer="stats" aria-label="Stats (S)"><svg><use href="#i-stats"/></svg><span class="lbl">Stats</span></button>
+    <button class="icon-btn" data-drawer="history" aria-label="History (H)"><svg><use href="#i-history"/></svg><span class="lbl">History</span></button>
+    <button class="icon-btn" data-drawer="odds" aria-label="Odds"><svg><use href="#i-odds"/></svg><span class="lbl">Odds</span></button>
+    <button class="icon-btn" id="muteBtn" aria-label="Sound on (M)"><svg><use href="#i-sound"/></svg></button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings" aria-expanded="false"><svg><use href="#i-gear"/></svg></button>
   </div>
-</nav>
+</header>
 
-<main>
-  <header class="fab-hero">
-    <div class="container">
-      <p class="section-label" id="setLabel">Flesh and Blood · IAR · 16 cards, 24 packs</p>
-      <h1 id="setName">Usurp the Shadow Throne</h1>
-      <p class="sub">Open a loose pack or a sealed box. Pulls follow the set's published slot layout, and every box holds exactly one cold foil.</p>
-    </div>
-  </header>
+<div class="settings-pop" id="settings" hidden></div>
 
-  <div class="container fab-main">
-    <div class="fab-bar" role="toolbar" aria-label="Opening controls">
-      <button class="btn-primary" id="openPack" disabled>Open pack <kbd>Space</kbd></button>
-      <button class="btn-secondary" id="openBox" disabled>Open box</button>
-      <button class="btn-secondary" id="revealAll">Reveal all <kbd>R</kbd></button>
-      <label class="fab-check"><input type="checkbox" id="stepBox" checked> Show each pack in a box</label>
-      <span class="spacer"></span>
-      <div class="fab-field"><label for="seed">Seed</label><input type="text" id="seed" placeholder="random" autocomplete="off" spellcheck="false"></div>
-    </div>
-
-    <div class="fab-errors" id="errors" hidden><p>These odds can't be used yet</p><ul id="errorList"></ul></div>
-    <div class="fab-status" id="status" aria-live="polite">Loading card data…</div>
-    <section class="spread" id="spread" aria-label="Current pack"></section>
-
-    <div class="fab-panels">
-      <section class="fab-panel" aria-labelledby="tallyTitle">
-        <div class="panel-head">
-          <h2 id="tallyTitle">Tally</h2>
-          <div class="tabs" role="tablist">
-            <button role="tab" id="tabBox" aria-selected="true">Last box</button>
-            <button role="tab" id="tabSession" aria-selected="false">Session</button>
-            <button role="tab" id="tabSim" aria-selected="false">10,000 boxes</button>
-          </div>
-        </div>
-        <p class="note" id="tallyNote"></p>
-        <div class="tablewrap"><table id="tally"></table></div>
-      </section>
-      <section class="fab-panel" aria-labelledby="logTitle">
-        <div class="panel-head"><h2 id="logTitle">Pull log</h2><span class="note" id="logCount"></span></div>
-        <ul class="log" id="log"></ul>
-      </section>
-    </div>
-
-    <details class="fab-odds" id="oddsSheet">
-      <summary><h2>Odds</h2><span class="note">The slot layout is published. Rates for Majestic, Legendary, Marvel, Fabled, Expansion and foils are not, so those are placeholders you can edit.</span></summary>
-      <div class="odds-body">
-        <div class="slotgrid" id="slotgrid"></div>
-        <div><button class="btn-secondary" id="resetOdds">Reset to defaults</button></div>
-        <p class="srcnote" id="srcnote"></p>
-      </div>
-    </details>
-
-    <p class="fab-credit">Card data from <a href="https://github.com/the-fab-cube/flesh-and-blood-cards" target="_blank" rel="noopener">the-fab-cube/flesh-and-blood-cards</a> (<span class="mono" id="commit"></span>). Card images © Legend Story Studios. Fan-made simulator, not affiliated with or endorsed by Legend Story Studios.</p>
-  </div>
+<main class="stage" id="stage">
+  <div class="info" id="info"></div>
+  <div class="table" id="table"><div class="loading"><div class="spinner"></div><p id="loadMsg">Shuffling the set…</p></div></div>
+  <p class="hint" id="hint"></p>
+  <section class="spread" id="spread" aria-label="Cards in this pack"></section>
 </main>
 
-<footer>
-  <div class="container">
-    <p>&copy; 2026 Joshua Fong</p>
-    <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
-  </div>
+<div class="spot" id="spot" hidden></div>
+
+<div class="drawer-scrim" id="drawerScrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-labelledby="drawerTitle" role="dialog" aria-modal="true">
+  <header class="drawer-head"><h2 id="drawerTitle"></h2><button class="icon-btn" id="drawerClose" aria-label="Close"><svg><use href="#i-close"/></svg></button></header>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mName"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="sr-only" id="live" aria-live="assertive"></div>
+
+<footer class="foot">
+  <p>Fan-made simulator, not affiliated with or endorsed by Legend Story Studios. Card images and names © Legend Story Studios. Card data: <a href="https://github.com/the-fab-cube/flesh-and-blood-cards" target="_blank" rel="noopener">the-fab-cube</a> <span id="commit"></span>. Rarity rates beyond the slot layout are community estimates.</p>
 </footer>
 
-<div class="scrim" id="scrim" hidden>
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dName" id="dialog"></div>
-</div>
-
-<script>
-  const navToggle = document.getElementById('navToggle');
-  const navLinks = document.getElementById('navLinks');
-  navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
-  navLinks.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => navLinks.classList.remove('open'));
-  });
-</script>
 <script src="gen.js"></script>
+<script src="sfx.js"></script>
+<script src="fx.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

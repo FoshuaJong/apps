@@ -64,7 +64,9 @@ def main(repo, set_id, out, images_out=None):
             raw.append({"u": p["unique_id"], "id": p["id"], "n": c["name"], "p": c["pitch"],
                         "t": c["type_text"], "r": p["rarity"], "f": f, "x": bool(p["expansion_slot"]),
                         "a": p["art_variations"], "c": c["cost"], "pw": c["power"], "d": c["defense"],
-                        "hp": c.get("health", ""), "img": p["image_url"] or ""})
+                        "hp": c.get("health", ""), "img": p["image_url"] or "",
+                        "ft": c.get("functional_text_plain", "") or "", "ar": ", ".join(p.get("artists") or []),
+                        "tcg": p.get("tcgplayer_url") or ""})
     if not raw: die(f"no printings for set {set_id}")
 
     # Merge double-faced cards: records sharing number, rarity, finish and art where one is the back.
@@ -80,7 +82,7 @@ def main(repo, set_id, out, images_out=None):
             die(f"can't pair faces for {key}: {[r['n'] for r in g]}")
         if backs:
             front, back = fronts[0], backs[0]
-            front["back"] = {"n": back["n"], "t": back["t"], "img": back["img"]}
+            front["back"] = {"n": back["n"], "t": back["t"], "img": back["img"], "ft": back["ft"]}
             recs.append(front)
         else:
             recs.extend(g)
@@ -106,6 +108,12 @@ def main(repo, set_id, out, images_out=None):
         warn(f"no published composition for {set_id}; size check skipped")
 
     recs.sort(key=lambda r: (r["id"], r["f"], r["r"]))
+    # Stable key per printing (indices shift when data is rebuilt; saved collections use this).
+    keys = collections.Counter()
+    for r in recs:
+        k = f'{r["id"]}-{r["r"]}{r["f"]}' + ("-" + "".join(r["a"]) if r["a"] else "")
+        keys[k] += 1
+        r["k"] = k if keys[k] == 1 else f"{k}~{keys[k]}"
     pools = collections.defaultdict(list)
     for i, r in enumerate(recs):
         if r["pool"]: pools[r["pool"]].append(i)

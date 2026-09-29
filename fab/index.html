@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0c0c0e">
+  <title>Joshua Fong — FaB pack opener</title>
+  <meta name="description" content="Open Flesh and Blood booster packs and boxes of Usurp the Shadow Throne, with the set's real slot layout and editable odds.">
+  <link rel="icon" type="image/svg+xml" href="../images/favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/apps.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <div class="nav-mark"><span><a href="https://joshua.fong.nz">JF</a></span> / <a href="https://apps.fong.nz">apps</a></div>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="/">Apps</a></li>
+      <li class="nav-sep"></li>
+      <li><a href="/fab/" aria-current="page">Pack opener</a></li>
+    </ul>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<main>
+  <header class="fab-hero">
+    <div class="container">
+      <p class="section-label" id="setLabel">Flesh and Blood · IAR · 16 cards, 24 packs</p>
+      <h1 id="setName">Usurp the Shadow Throne</h1>
+      <p class="sub">Open a loose pack or a sealed box. Pulls follow the set's published slot layout, and every box holds exactly one cold foil.</p>
+    </div>
+  </header>
+
+  <div class="container fab-main">
+    <div class="fab-bar" role="toolbar" aria-label="Opening controls">
+      <button class="btn-primary" id="openPack" disabled>Open pack <kbd>Space</kbd></button>
+      <button class="btn-secondary" id="openBox" disabled>Open box</button>
+      <button class="btn-secondary" id="revealAll">Reveal all <kbd>R</kbd></button>
+      <label class="fab-check"><input type="checkbox" id="stepBox" checked> Show each pack in a box</label>
+      <span class="spacer"></span>
+      <div class="fab-field"><label for="seed">Seed</label><input type="text" id="seed" placeholder="random" autocomplete="off" spellcheck="false"></div>
+    </div>
+
+    <div class="fab-errors" id="errors" hidden><p>These odds can't be used yet</p><ul id="errorList"></ul></div>
+    <div class="fab-status" id="status" aria-live="polite">Loading card data…</div>
+    <section class="spread" id="spread" aria-label="Current pack"></section>
+
+    <div class="fab-panels">
+      <section class="fab-panel" aria-labelledby="tallyTitle">
+        <div class="panel-head">
+          <h2 id="tallyTitle">Tally</h2>
+          <div class="tabs" role="tablist">
+            <button role="tab" id="tabBox" aria-selected="true">Last box</button>
+            <button role="tab" id="tabSession" aria-selected="false">Session</button>
+            <button role="tab" id="tabSim" aria-selected="false">10,000 boxes</button>
+          </div>
+        </div>
+        <p class="note" id="tallyNote"></p>
+        <div class="tablewrap"><table id="tally"></table></div>
+      </section>
+      <section class="fab-panel" aria-labelledby="logTitle">
+        <div class="panel-head"><h2 id="logTitle">Pull log</h2><span class="note" id="logCount"></span></div>
+        <ul class="log" id="log"></ul>
+      </section>
+    </div>
+
+    <details class="fab-odds" id="oddsSheet">
+      <summary><h2>Odds</h2><span class="note">The slot layout is published. Rates for Majestic, Legendary, Marvel, Fabled, Expansion and foils are not, so those are placeholders you can edit.</span></summary>
+      <div class="odds-body">
+        <div class="slotgrid" id="slotgrid"></div>
+        <div><button class="btn-secondary" id="resetOdds">Reset to defaults</button></div>
+        <p class="srcnote" id="srcnote"></p>
+      </div>
+    </details>
+
+    <p class="fab-credit">Card data from <a href="https://github.com/the-fab-cube/flesh-and-blood-cards" target="_blank" rel="noopener">the-fab-cube/flesh-and-blood-cards</a> (<span class="mono" id="commit"></span>). Card images © Legend Story Studios. Fan-made simulator, not affiliated with or endorsed by Legend Story Studios.</p>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Joshua Fong</p>
+    <span class="footer-note"><a href="https://joshua.fong.nz">joshua.fong.nz</a></span>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dName" id="dialog"></div>
+</div>
+
+<script>
+  const navToggle = document.getElementById('navToggle');
+  const navLinks = document.getElementById('navLinks');
+  navToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => navLinks.classList.remove('open'));
+  });
+</script>
+<script src="gen.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

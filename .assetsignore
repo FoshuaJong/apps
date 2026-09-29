@@ -13,3 +13,4 @@ CLAUDE.md
 .env*
 .worktrees
 docs
+fab/tools

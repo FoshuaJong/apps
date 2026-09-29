@@ -304,10 +304,11 @@
 
   // ---------- small UI utilities ----------
   function announce(msg) { const l = $("live"); l.textContent = ""; setTimeout(() => (l.textContent = msg), 30); }
-  function toast(title, sub, ico = "★") {
+  function toast(title, sub, ico = "★", onClick) {
     const el = document.createElement("div");
-    el.className = "toast";
+    el.className = "toast" + (onClick ? " clickable" : "");
     el.innerHTML = `<span class="ico">${esc(ico)}</span><b>${esc(title)}</b><small>${esc(sub || "")}</small>`;
+    if (onClick) { el.setAttribute("role", "button"); el.tabIndex = 0; el.addEventListener("click", () => { el.remove(); onClick(); }); }
     $("toasts").appendChild(el);
     const all = $("toasts").children; while (all.length > 3) all[0].remove();
     setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 320); }, 4200);
@@ -386,7 +387,8 @@
     if (ach[id]) return;
     ach[id] = Date.now(); store.set("ach", ach);
     const a = ACH.find(x => x[0] === id);
-    if (a) { toast(a[1], a[2], "✦"); S.play("toast"); }
+    if (a) { toast(`Achievement: ${a[1]}`, a[2], "✦", () => openDrawer("ach")); S.play("toast"); }
+    updateAchPip();
   }
   function checkPackAchievements(entries) {
     unlock("first_pack");
@@ -722,7 +724,8 @@
       ach[id] = Date.now(); store.set("ach", ach);
       const a = ACH.find(x => x[0] === id);
       entry._first = true;
-      setTimeout(() => { toast(a[1], a[2], "✦"); if (!quiet) S.play("toast"); }, quiet ? 200 : 1400 * Math.max(spd(), 0.3));
+      updateAchPip();
+      setTimeout(() => { toast(`Achievement: ${a[1]}`, a[2], "✦", () => openDrawer("ach")); if (!quiet) S.play("toast"); }, quiet ? 200 : 1400 * Math.max(spd(), 0.3));
     }
   }
 
@@ -1117,6 +1120,47 @@
     state.busy = false;
   }
 
+
+  // ---------- achievements drawer ----------
+  // Progress toward each achievement, as [have, need] (need 1 for one-off events).
+  function achProgress(id) {
+    const comp = completion();
+    switch (id) {
+      case "first_pack": return [Math.min(stats.packs, 1), 1];
+      case "packs100": return [Math.min(stats.packs, 100), 100];
+      case "box": return [Math.min(stats.boxes, 1), 1];
+      case "case": return [Math.min(stats.cases, 1), 1];
+      case "set50": return [Math.min(comp.numbers.have, Math.ceil(comp.numbers.total / 2)), Math.ceil(comp.numbers.total / 2)];
+      case "set100": return [comp.numbers.have, comp.numbers.total];
+      case "armory": return [armoryState() ? 1 : 0, 1];
+      default: return [ach[id] ? 1 : 0, 1];
+    }
+  }
+  const ACH_ICON = { first_pack: "✉", first_majestic: "◆", first_cold: "❄", first_marvel: "✧", first_legendary: "♛", first_fabled: "✺",
+    double: "⁂", box: "▦", case: "▩", packs100: "C", set50: "½", set100: "♚", armory: "⚔" };
+  function renderAchievements() {
+    const got = ACH.filter(a => ach[a[0]]).length;
+    store.set("achSeen", got); updateAchPip();
+    const order = [...ACH].sort((a, b) => (ach[b[0]] ? 1 : 0) - (ach[a[0]] ? 1 : 0) || (ach[b[0]] || 0) - (ach[a[0]] || 0));
+    $("drawerBody").innerHTML = `
+      <div class="ach-head">${ringSVG(got / ACH.length, "#f0c35a")}<div><b>${got} of ${ACH.length} unlocked</b>
+        <p class="note">Unlocked first, newest at the top. Achievements live in this browser with your binder.</p></div></div>
+      <div class="ach-list">${order.map(([id, name, desc]) => {
+        const when = ach[id], [have, need] = achProgress(id), pct = Math.min(100, have / need * 100);
+        return `<div class="ach-card${when ? " got" : ""}">
+          <span class="ach-ico" aria-hidden="true">${ACH_ICON[id] || "✦"}</span>
+          <div class="ach-body"><b>${esc(name)}</b><span>${esc(desc)}</span>
+            ${when ? `<small>Unlocked ${new Date(when).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</small>`
+              : need > 1 ? `<div class="ach-prog"><div class="bar"><i style="width:${pct.toFixed(1)}%"></i></div><small>${fmt(have)} / ${fmt(need)}</small></div>`
+              : `<small>Locked</small>`}
+          </div></div>`;
+      }).join("")}</div>`;
+  }
+  function updateAchPip() {
+    const got = ACH.filter(a => ach[a[0]]).length, seen = store.get("achSeen", 0);
+    const pip = $("achPip"); if (pip) pip.hidden = got <= seen;
+  }
+
   // ---------- detail modal ----------
   let modalCtx = null;
   function openDetail(list, idx, showBack = false) {
@@ -1170,11 +1214,12 @@
   function openDrawer(kind) {
     drawerKind = kind;
     $("drawer").hidden = false; $("drawerScrim").hidden = false;
-    $("drawerTitle").textContent = { binder: "Binder", stats: "Stats", history: "History", odds: "Odds" }[kind];
+    $("drawerTitle").textContent = { binder: "Binder", stats: "Stats", history: "History", odds: "Odds", ach: "Achievements" }[kind];
     if (kind === "binder") { $("binderPip").hidden = true; renderBinder(); }
     if (kind === "stats") renderStats();
     if (kind === "history") renderHistory();
     if (kind === "odds") renderOdds();
+    if (kind === "ach") renderAchievements();
     $("drawerClose").focus({ preventScroll: true });
   }
   function closeDrawer() { $("drawer").hidden = true; $("drawerScrim").hidden = true; drawerKind = null; }
@@ -1229,7 +1274,7 @@
     $("bImport").addEventListener("change", importData);
     $("bReset").addEventListener("click", () => {
       $("bConfirm").innerHTML = `<div class="confirm">Delete your binder, stats, history and achievements? <button class="btn small primary" id="bYes">Delete</button><button class="btn small" id="bNo">Keep</button></div>`;
-      $("bYes").addEventListener("click", () => { collection = {}; stats = newStats(); history = []; ach = {}; store.del("armory"); store.del("wallet"); saveProgress(); renderWallet(); toast("Fresh start", "Binder and stats cleared. You're back to a box of packs.", "↺"); renderBinder(); });
+      $("bYes").addEventListener("click", () => { collection = {}; stats = newStats(); history = []; ach = {}; store.del("armory"); store.del("wallet"); store.del("achSeen"); saveProgress(); renderWallet(); toast("Fresh start", "Binder and stats cleared. You're back to a box of packs.", "↺"); renderBinder(); });
       $("bNo").addEventListener("click", () => ($("bConfirm").innerHTML = ""));
     });
     fillBinder();
@@ -1304,10 +1349,11 @@
         <p class="note" style="margin-top:6px">Expected counts use the current odds. The tick marks expected; bars past it mean you're running hot.</p></div>
       <div><h3>Packs since your last…</h3><div class="drought">${drought}</div><p class="note" style="margin-top:6px">Second number is the typical gap between pulls.</p></div>
       ${stats.boxScores.length ? `<div><h3>Recent box scores</h3>${sparkSVG(stats.boxScores)}</div>` : ""}
-      <div><h3>Achievements · ${ACH.filter(a => ach[a[0]]).length} / ${ACH.length}</h3><div class="ach-grid">${ACH.map(([id, n, d]) => `<div class="ach${ach[id] ? " got" : ""}"><b>${ach[id] ? "✦ " : ""}${esc(n)}</b>${esc(d)}</div>`).join("")}</div></div>
+      <div><h3>Achievements</h3><p class="note">${ACH.filter(a => ach[a[0]]).length} of ${ACH.length} unlocked. <button class="btn small" id="statsAch">See all achievements</button></p></div>
       <div><h3>Check the generator</h3><p class="note">Simulates 10,000 boxes with the current odds and compares every pool with its expected count.</p>
         <p><button class="btn small" id="simBtn">Simulate 10,000 boxes</button></p><div id="simOut"></div></div>`;
     $("simBtn").addEventListener("click", runSim);
+    $("statsAch").addEventListener("click", () => openDrawer("ach"));
   }
   function sparkSVG(v) {
     const W = 520, H = 80, max = Math.max(...v, 1), n = v.length;
@@ -1458,7 +1504,7 @@
     if (k === "a" && state.view === "reveal") revealAll();
     else if (k === "1") setMode("pack"); else if (k === "2") setMode("box"); else if (k === "3") setMode("case"); else if (k === "4" && ARMORY) setMode("armory");
     else if (k === "c") openDrawer("binder"); else if (k === "s") openDrawer("stats"); else if (k === "h") openDrawer("history");
-    else if (k === "m") $("muteBtn").click();
+    else if (k === "m") $("muteBtn").click(); else if (k === "t") openDrawer("ach");
   });
   function primaryAction() {
     if (state.spot) { closeSpot(); return; }
@@ -1476,7 +1522,7 @@
   // ---------- boot ----------
   X.mount(); X.setEnabled(settings.particles); X.setAmbient(settings.ambient);
   document.querySelector('.modes [data-mode="armory"]').hidden = !ARMORY;
-  renderWallet(); setInterval(renderWallet, 1000);
+  renderWallet(); setInterval(renderWallet, 1000); updateAchPip();
   (async function findCardBack() {
     for (const f of ["img/cardback.webp", "img/cardback.png", "img/cardback.jpg"]) {
       const ok = await new Promise(res => { const im = new Image(); im.onload = () => res(im.naturalWidth > 0); im.onerror = () => res(false); im.src = f; });

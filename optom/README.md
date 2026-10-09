@@ -55,6 +55,9 @@ if a refactor changes one, that is a bug unless it was the point of the change.
 - Findings on the same eye join with a space on anterior, `", "` on posterior.
 - Nasal + temporal findings (conj ping, corneal pterygium) collapse to
   `<noun> N+T`; a single side reads `nasal <noun>` / `temporal <noun>`.
+- Lid papillae read `inf lid papillae gd<n>` as their own part straight after
+  `lid/lashes` (schema `ownPart: true`). With no MGD/bleph the `lid/lashes`
+  part drops out, e.g. `inf lid papillae gd3 OU | conj clear OU | ...`.
 - Some sections have an always-present baseline rather than a clear/not-clear
   flag: ONH (`distinct margins, evenly perfused`), macula (`flat, even
   pigmentation, clear`, with the trailing word replaced by `dim reflex` or

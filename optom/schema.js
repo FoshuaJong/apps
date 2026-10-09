@@ -13,9 +13,15 @@ var OptomSchema = (function(){
 const VH_VALUES = ["0.1","0.3","0.5","0.7","1.0"];
 const CDR_VALUES = ["0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8"];
 
+// Papillae sit on the inferior palpebral conj, so they get their own note part
+// ("inf lid papillae gd3 OU") rather than reading as "lid/lashes papillae ...".
+// `ownPart` conditions are pulled out of the section and emitted straight after
+// it, unlabelled; an eye with only an ownPart finding adds nothing to the
+// section itself, so papillae OU with no MGD/bleph drops "lid/lashes" entirely.
 const LID_CONDITIONS = [
-  { key: "MGD",   label: "MGD",   grades: true },
-  { key: "bleph", label: "bleph", grades: true }
+  { key: "MGD",      label: "MGD",      grades: true },
+  { key: "bleph",    label: "bleph",    grades: true },
+  { key: "papillae", label: "papillae", grades: true, text: "inf lid papillae", ownPart: true }
 ];
 const CONJ_CONDITIONS = [
   { key: "hyperaemia",    label: "mild hyperaemia", grades: false },

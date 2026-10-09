@@ -35,7 +35,7 @@ function buildClauses(eyeState, sectionKey, conditions){
   var out = [];
   conditions.forEach(function(c){
     if (c.grades){
-      if (eyeState[c.key]) out.push({ key: c.key, text: c.label + " gd" + eyeState[c.key] });
+      if (eyeState[c.key]) out.push({ key: c.key, text: (c.text || c.label) + " gd" + eyeState[c.key] });
     } else if (c.choices){
       if (eyeState[c.key]) out.push({ key: c.key, text: c.label + " " + eyeState[c.key] });
     } else {
@@ -83,7 +83,7 @@ function formatEyeSegments(compacted, rClear, lClear, joiner, clearLabel){
 
 function sectionText(state, sectionKey){
   var s = state[sectionKey];
-  var conditions = CONDITIONS_MAP[sectionKey];
+  var conditions = CONDITIONS_MAP[sectionKey].filter(function(c){ return !c.ownPart; });
 
   var rClear = s.R.clear, lClear = s.L.clear;
   if (rClear && lClear) return "clear OU";
@@ -92,6 +92,17 @@ function sectionText(state, sectionKey){
   var lClauses = buildClauses(s.L, sectionKey, conditions);
 
   return formatEyeSegments(compactEyeClauses(rClauses, lClauses), rClear, lClear);
+}
+
+// The section's `ownPart` findings (lid papillae), each its own " | " part with
+// no section label and no "clear" fallback - an eye without it says nothing.
+function ownPartTexts(state, sectionKey){
+  var s = state[sectionKey];
+  return CONDITIONS_MAP[sectionKey].filter(function(c){ return c.ownPart; }).map(function(c){
+    var rClauses = buildClauses(s.R, sectionKey, [c]);
+    var lClauses = buildClauses(s.L, sectionKey, [c]);
+    return formatEyeSegments(compactEyeClauses(rClauses, lClauses), false, false);
+  }).filter(Boolean);
 }
 
 // Shared by posterior's vit/macula: same clear+conditions shape as sectionText,
@@ -153,6 +164,7 @@ function buildNote(state){
 
   var lidsTxt = sectionText(state, "lids");
   if (lidsTxt) parts.push(OUTPUT_LABELS.lids + " " + lidsTxt);
+  parts.push.apply(parts, ownPartTexts(state, "lids"));
 
   var conjTxt = sectionText(state, "conj");
   if (conjTxt) parts.push(OUTPUT_LABELS.conj + " " + conjTxt);

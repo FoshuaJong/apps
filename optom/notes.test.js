@@ -61,6 +61,42 @@ const TESTS = [
     },
     expect: "lid/lashes clear OU | conj clear OU | cornea clear OU | VH R 1.0/1.0 L 1.0/1.0 | lens R NS gd2 L clear | no IrisT OU | AC deep and Q OU"
   },
+  {
+    name: "anterior: inf lid papillae OU replaces the lid/lashes part",
+    run: () => {
+      const s = defaultState();
+      s.lids.R.clear = false;
+      s.lids.L.clear = false;
+      s.lids.R.papillae = 3;
+      s.lids.L.papillae = 3;
+      return buildNote(s);
+    },
+    expect: "inf lid papillae gd3 OU | conj clear OU | cornea clear OU | VH R 1.0/1.0 L 1.0/1.0 | lens clear OU | no IrisT OU | AC deep and Q OU"
+  },
+  {
+    name: "anterior: papillae alongside MGD gets its own part after lid/lashes",
+    run: () => {
+      const s = defaultState();
+      s.lids.R.clear = false;
+      s.lids.L.clear = false;
+      s.lids.R.MGD = 2;
+      s.lids.L.MGD = 2;
+      s.lids.R.papillae = 3;
+      s.lids.L.papillae = 2;
+      return buildNote(s);
+    },
+    expect: "lid/lashes MGD gd2 OU | R inf lid papillae gd3 L inf lid papillae gd2 | conj clear OU | cornea clear OU | VH R 1.0/1.0 L 1.0/1.0 | lens clear OU | no IrisT OU | AC deep and Q OU"
+  },
+  {
+    name: "anterior: papillae on one eye leaves the fellow eye's lids clear",
+    run: () => {
+      const s = defaultState();
+      s.lids.R.clear = false;
+      s.lids.R.papillae = 1;
+      return buildNote(s);
+    },
+    expect: "lid/lashes L clear | R inf lid papillae gd1 | conj clear OU | cornea clear OU | VH R 1.0/1.0 L 1.0/1.0 | lens clear OU | no IrisT OU | AC deep and Q OU"
+  },
 
   // ---------- posterior ----------
   {

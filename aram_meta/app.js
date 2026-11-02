@@ -5,15 +5,6 @@
   const VIEW_W = 960;
   const VIEW_H = 560;
   const PORTRAIT_R = 9;
-  const CLASS_ORDER = ['Assassin', 'Fighter', 'Mage', 'Marksman', 'Support', 'Tank'];
-  const CLASS_SHAPE = {
-    Assassin: 'circle',
-    Fighter: 'square',
-    Mage: 'diamond',
-    Marksman: 'triangle',
-    Support: 'pentagon',
-    Tank: 'hexagon',
-  };
 
   const state = {
     champions: [],
@@ -36,8 +27,6 @@
     chartStatus: document.getElementById('chartStatus'),
     chartSvg: document.getElementById('chartSvg'),
     chartWrap: document.getElementById('chartWrap'),
-    chartLegend: document.getElementById('chartLegend'),
-    legendScale: document.getElementById('legendScale'),
     tooltip: document.getElementById('tooltip'),
     classFilters: document.getElementById('classFilters'),
     searchInput: document.getElementById('searchInput'),
@@ -71,8 +60,6 @@
     }
     els.chartStatus.hidden = true;
     els.chartSvg.hidden = false;
-    els.chartLegend.hidden = false;
-    renderLegend();
     renderChart();
     renderTable();
   }
@@ -169,42 +156,17 @@
     );
   }
 
-  function polygonPoints(cx, cy, r, sides, rotationDeg) {
-    const points = [];
-    for (let i = 0; i < sides; i++) {
-      const angle = ((360 / sides) * i + rotationDeg) * (Math.PI / 180);
-      points.push(`${(cx + r * Math.cos(angle)).toFixed(2)},${(cy + r * Math.sin(angle)).toFixed(2)}`);
-    }
-    return points.join(' ');
-  }
-
-  const SHAPE_SIDES = { square: 4, diamond: 4, triangle: 3, pentagon: 5, hexagon: 6 };
-  const SHAPE_ROTATION = { square: 45, diamond: 0, triangle: -90, pentagon: -90, hexagon: 0 };
-  // Each regular polygon's horizontal bounding-box width varies with vertex
-  // count/rotation even at equal circumradius (a square's flat side sits at
-  // r*cos(45°), a diamond's corner sits at r) — these scale factors correct
-  // each shape's radius so its bounding-box width matches the circle's
-  // diameter (2 * PORTRAIT_R), keeping visual weight consistent across
-  // classes. Verified against the actual rendered SVG geometry.
-  const SHAPE_R_SCALE = { circle: 1, square: 1.4142, diamond: 1, triangle: 1.1547, pentagon: 1.0515, hexagon: 1 };
-
-  // Ring outline only (stroke, no fill), reusing the existing
-  // .chart-portrait-ring class so hover/emphasis CSS applies unchanged
-  // regardless of whether this renders a <circle> or a <polygon>.
-  function ringShapeEl(shape, cx, cy, r) {
-    const scaledR = r * (SHAPE_R_SCALE[shape] ?? 1);
-    const attrs = {
+  // Plain circular ring around each portrait, using .chart-portrait-ring so
+  // hover/emphasis CSS applies.
+  function ringEl(cx, cy, r) {
+    return svgEl('circle', {
       class: 'chart-portrait-ring',
       fill: 'none',
       stroke: 'var(--accent)',
       'stroke-width': 2,
-    };
-    if (!shape || shape === 'circle') {
-      return svgEl('circle', { ...attrs, cx, cy, r: scaledR });
-    }
-    return svgEl('polygon', {
-      ...attrs,
-      points: polygonPoints(cx, cy, scaledR, SHAPE_SIDES[shape], SHAPE_ROTATION[shape]),
+      cx,
+      cy,
+      r,
     });
   }
 
@@ -419,7 +381,7 @@
           height: PORTRAIT_R * 2,
           'clip-path': 'url(#portraitClip)',
         });
-        const ring = ringShapeEl(CLASS_SHAPE[c.primaryClass], PORTRAIT_R, PORTRAIT_R, PORTRAIT_R);
+        const ring = ringEl(PORTRAIT_R, PORTRAIT_R, PORTRAIT_R);
         image.addEventListener('error', () => portrait.remove(), { once: true });
         portrait.appendChild(image);
         portrait.appendChild(ring);
@@ -506,25 +468,6 @@
 
   function hideTooltip() {
     els.tooltip.hidden = true;
-  }
-
-  function renderLegend() {
-    els.legendScale.replaceChildren();
-    CLASS_ORDER.forEach((cls) => {
-      const swatch = document.createElement('span');
-      swatch.className = 'legend-swatch';
-      // viewBox has a 2-unit margin beyond the 20x20 shape area so the
-      // triangle's miter join (which slightly overshoots its vertex at
-      // this stroke-width) doesn't get clipped by the svg's default
-      // overflow:hidden.
-      const svg = svgEl('svg', { class: 'legend-shape', viewBox: '-2 -2 24 24', width: '14', height: '14' });
-      svg.appendChild(ringShapeEl(CLASS_SHAPE[cls], 10, 10, 8));
-      swatch.appendChild(svg);
-      const label = document.createElement('span');
-      label.textContent = cls;
-      swatch.appendChild(label);
-      els.legendScale.appendChild(swatch);
-    });
   }
 
   // --- Table ---

@@ -346,7 +346,13 @@
       : [];
     const searchActive = searchTerms.length > 0;
 
-    champs.forEach((c) => {
+    // Paint order = DOM order (later draws on top), so sort ascending:
+    // higher win rate ends up on top, ties broken by higher pick rate.
+    const paintOrder = [...champs].sort(
+      (a, b) => (a.winRate ?? -Infinity) - (b.winRate ?? -Infinity) ||
+        (a.pickRate ?? -Infinity) - (b.pickRate ?? -Infinity)
+    );
+    paintOrder.forEach((c) => {
       if (c.pickRate == null || c.winRate == null) return;
       const cx = xPos(c.pickRate);
       const cy = yPos(c.winRate);

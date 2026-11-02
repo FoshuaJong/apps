@@ -399,6 +399,13 @@
         'aria-label': `${c.name}, tier ${c.tier}, ${c.classes && c.classes.length ? c.classes.join('/') : '—'}, ${formatPercent(c.winRate)} win rate, ${formatPercent(c.pickRate)} pick rate. Opens mayhemmeta.com stats page.`,
       });
       const activate = () => {
+        // SVG has no z-index: paint order is DOM order, so move this point
+        // to the end of its group to draw it above overlapping portraits.
+        if (pointsGroup.lastChild !== g) {
+          const hadFocus = document.activeElement === hit;
+          pointsGroup.appendChild(g);
+          if (hadFocus && document.activeElement !== hit) hit.focus({ preventScroll: true });
+        }
         if (!matchesSearch) g.classList.add('is-emphasized');
         showTooltip(c, cx, cy);
       };
